@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, Calendar, MapPin, ImageIcon } from "lucide-react";
+import { ArrowRight, Calendar, MapPin, ImageIcon, Camera } from "lucide-react";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 
@@ -32,10 +32,19 @@ interface NextMatch {
   location: string | null;
 }
 
+interface SerializedAlbum {
+  id: string;
+  title: string;
+  slug: string;
+  cover_url: string | null;
+  event_date: string | null;
+}
+
 interface HomeClientProps {
   articles: SerializedArticle[];
   events: SerializedEvent[];
   nextMatch: NextMatch | null;
+  albums: SerializedAlbum[];
 }
 
 function formatMatchDate(dateStr: string): string {
@@ -47,7 +56,7 @@ function formatMatchDate(dateStr: string): string {
   return `${day} ${date} — ${time}`;
 }
 
-export default function HomeClient({ articles, events, nextMatch }: HomeClientProps) {
+export default function HomeClient({ articles, events, nextMatch, albums }: HomeClientProps) {
   const featured = articles[0];
   const sidebar = articles.slice(1, 5);
 
@@ -60,12 +69,12 @@ export default function HomeClient({ articles, events, nextMatch }: HomeClientPr
             src="/hero-team.jpg"
             alt="Tým TJ Dolany"
             fill
-            className="object-cover object-left grayscale brightness-50"
+            className="object-cover object-left brightness-75"
             priority
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-brand-dark/80" />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/60 to-brand-dark/40" />
+          <div className="absolute inset-0 bg-brand-dark/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/30 to-transparent" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -295,6 +304,61 @@ export default function HomeClient({ articles, events, nextMatch }: HomeClientPr
                   })}
                 </div>
               </div>
+            </div>
+          </section>
+        </AnimatedSection>
+      )}
+
+      {/* ── PHOTO GALLERY ── */}
+      {albums.length > 0 && (
+        <AnimatedSection>
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-1">Fotogalerie</p>
+                <h2 className="text-2xl font-bold text-text tracking-tight">Z našich akcí</h2>
+              </div>
+              <Link href="/galerie" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
+                Všechny galerie <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {albums.map((album) => (
+                <StaggerItem key={album.id}>
+                  <Link
+                    href={`/galerie/${album.slug}`}
+                    className="group block relative rounded-xl overflow-hidden aspect-[4/3] bg-brand-dark"
+                  >
+                    {album.cover_url ? (
+                      <Image
+                        src={album.cover_url}
+                        alt={album.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-brand-dark to-brand-dark-light flex items-center justify-center">
+                        <Camera size={32} className="text-text-muted/30" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all">
+                      <h3 className="text-sm font-semibold text-white leading-snug line-clamp-2">{album.title}</h3>
+                      {album.event_date && (
+                        <span className="text-xs text-white/70">{formatDateCzech(album.event_date)}</span>
+                      )}
+                    </div>
+                  </Link>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+
+            <div className="text-center mt-6 sm:hidden">
+              <Link href="/galerie" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors inline-flex items-center gap-1">
+                Všechny galerie <ArrowRight size={14} />
+              </Link>
             </div>
           </section>
         </AnimatedSection>
