@@ -18,12 +18,12 @@ interface SerializedArticle {
   article_images: { url: string; alt: string | null }[];
 }
 
-interface SerializedEvent {
+interface HeroEvent {
   id: string;
   title: string;
   description: string | null;
   date: string;
-  poster: string | null;
+  event_type: string;
 }
 
 interface NextMatch {
@@ -42,7 +42,7 @@ interface SerializedAlbum {
 
 interface HomeClientProps {
   articles: SerializedArticle[];
-  events: SerializedEvent[];
+  heroEvents: (HeroEvent | null)[];
   nextMatch: NextMatch | null;
   albums: SerializedAlbum[];
 }
@@ -56,7 +56,7 @@ function formatMatchDate(dateStr: string): string {
   return `${day} ${date} — ${time}`;
 }
 
-export default function HomeClient({ articles, events, nextMatch, albums }: HomeClientProps) {
+export default function HomeClient({ articles, heroEvents, nextMatch, albums }: HomeClientProps) {
   const featured = articles[0];
   const sidebar = articles.slice(1, 5);
 
@@ -295,39 +295,60 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
       {/* ── section divider ── */}
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
-      {/* ── EVENTS ── */}
-      {events.length > 0 && (
+      {/* ── EVENTS — 3 cards: past | next (highlighted) | future ── */}
+      {heroEvents.some(Boolean) && (
         <AnimatedSection>
           <section className="bg-surface">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <div className="w-1 h-6 bg-brand-red rounded-full" />
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Následující akce</p>
+                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Akce TJ Dolany</p>
                 </div>
                 <h2 className="text-2xl font-bold text-text tracking-tight">Co nás čeká</h2>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {events.slice(0, 4).map((event) => {
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                {heroEvents.map((event, idx) => {
+                  if (!event) return <div key={idx} />;
                   const d = new Date(event.date);
+                  const isHighlighted = idx === 1;
+                  const isPast = idx === 0;
                   return (
-                    <div key={event.id} className="text-center">
-                      <div className="bg-surface-alt rounded-2xl p-5 border border-border-strong shadow-sm hover:shadow-lg hover:border-brand-red/40 hover:-translate-y-1 transition-all duration-300">
-                        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-brand-red/10 flex items-center justify-center">
-                          <Calendar size={20} className="text-brand-red" />
-                        </div>
-                        <span className="text-lg font-bold text-brand-red">
-                          {d.getDate()}.{d.getMonth() + 1}.
-                        </span>
-                        <h3 className="font-semibold text-text text-sm leading-snug mt-2 line-clamp-2">
-                          {event.title}
-                        </h3>
-                        {event.description && (
-                          <p className="text-xs text-text-muted mt-2 line-clamp-2">{event.description}</p>
-                        )}
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className={`text-center rounded-2xl p-6 border transition-all duration-300 ${
+                        isHighlighted
+                          ? "bg-brand-red/10 border-brand-red/40 shadow-lg shadow-brand-red/10 scale-105 ring-2 ring-brand-red/20"
+                          : isPast
+                            ? "bg-surface-alt border-border-strong opacity-70"
+                            : "bg-surface-alt border-border-strong shadow-sm hover:shadow-lg hover:border-brand-red/40 hover:-translate-y-1"
+                      }`}
+                    >
+                      {isPast && (
+                        <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">Proběhlo</span>
+                      )}
+                      {isHighlighted && (
+                        <span className="text-[10px] font-bold text-brand-red uppercase tracking-wider">Příští akce</span>
+                      )}
+                      <div className={`w-12 h-12 mx-auto mb-3 mt-2 rounded-full flex items-center justify-center ${
+                        isHighlighted ? "bg-brand-red/20" : "bg-brand-red/10"
+                      }`}>
+                        <Calendar size={20} className="text-brand-red" />
                       </div>
-                    </div>
+                      <span className={`text-lg font-bold ${isHighlighted ? "text-brand-red" : "text-brand-red/80"}`}>
+                        {d.getDate()}.{d.getMonth() + 1}.
+                      </span>
+                      <h3 className="font-semibold text-text text-sm leading-snug mt-2 line-clamp-2">
+                        {event.title}
+                      </h3>
+                      {event.description && (
+                        <p className="text-xs text-text-muted mt-2 line-clamp-2">{event.description}</p>
+                      )}
+                    </motion.div>
                   );
                 })}
               </div>

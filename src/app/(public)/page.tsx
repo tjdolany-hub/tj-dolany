@@ -6,26 +6,39 @@ export const revalidate = 60;
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [articlesResult, eventsResult, matchResult, albumsResult] = await Promise.all([
+  const now = new Date().toISOString();
+
+  const [articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult] = await Promise.all([
     supabase
       .from("articles")
       .select("id, title, slug, summary, category, created_at, updated_at, article_images(url, alt)")
       .eq("published", true)
       .order("created_at", { ascending: false })
       .limit(5),
+    // Last past TJ event (akce/volne only)
     supabase
-      .from("future_events")
-      .select("id, title, description, date, poster")
-      .eq("published", true)
-      .gte("date", new Date().toISOString())
+      .from("calendar_events")
+      .select("id, title, description, date, event_type")
+      .in("event_type", ["akce", "volne"])
+      .eq("is_public", true)
+      .lt("date", now)
+      .order("date", { ascending: false })
+      .limit(1),
+    // Next 2 future TJ events (akce/volne only)
+    supabase
+      .from("calendar_events")
+      .select("id, title, description, date, event_type")
+      .in("event_type", ["akce", "volne"])
+      .eq("is_public", true)
+      .gte("date", now)
       .order("date", { ascending: true })
-      .limit(4),
+      .limit(2),
     supabase
       .from("calendar_events")
       .select("title, date, location")
       .eq("event_type", "zapas")
       .eq("is_public", true)
-      .gte("date", new Date().toISOString())
+      .gte("date", now)
       .order("date", { ascending: true })
       .limit(1),
     supabase
@@ -50,13 +63,15 @@ export default async function HomePage() {
     article_images: a.article_images ?? [],
   }));
 
-  const events = (eventsResult.data ?? []) as unknown as {
-    id: string;
-    title: string;
-    description: string | null;
-    date: string;
-    poster: string | null;
-  }[];
+  type CalEvent = { id: string; title: string; description: string | null; date: string; event_type: string };
+  const pastEvent = (pastEventResult.data?.[0] ?? null) as CalEvent | null;
+  const futureEvents = (futureEventsResult.data ?? []) as CalEvent[];
+  // Build 3-card array: [past, next (highlighted), future]
+  const heroEvents = [
+    pastEvent,
+    futureEvents[0] ?? null,
+    futureEvents[1] ?? null,
+  ];
 
   const matchData = matchResult.data;
   const nextMatch = matchData && matchData.length > 0
@@ -74,7 +89,7 @@ export default async function HomePage() {
   return (
     <HomeClient
       articles={articles}
-      events={events}
+      heroEvents={heroEvents}
       nextMatch={nextMatch}
       albums={albums}
     />

@@ -437,6 +437,36 @@ export interface Database {
           }
         ];
       };
+      weekly_schedule: {
+        Row: {
+          id: string;
+          day_of_week: number;
+          title: string;
+          time_from: string;
+          time_to: string | null;
+          location: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          day_of_week: number;
+          title: string;
+          time_from: string;
+          time_to?: string | null;
+          location?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          day_of_week?: number;
+          title?: string;
+          time_from?: string;
+          time_to?: string | null;
+          location?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
