@@ -122,7 +122,7 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
       {nextMatch && (
         <div className="bg-brand-red text-white overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 py-2.5">
+            <div className="flex items-center justify-center gap-3 py-2.5">
               <span className="shrink-0 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                 <span className="font-bold text-sm uppercase tracking-wide">Příští zápas</span>
@@ -158,17 +158,17 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
             {featured && (
               <motion.div
                 className="lg:col-span-7"
-                whileHover={{ y: -3 }}
+                whileHover={{ y: -5, scale: 1.01 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
                 <Link
                   href={`/aktuality/${featured.slug}`}
-                  className="group block bg-surface rounded-xl border border-border overflow-hidden hover:shadow-xl hover:shadow-brand-red/10 hover:border-brand-red/20 transition-all h-full"
+                  className="group block bg-surface rounded-xl border-2 border-border overflow-hidden hover:shadow-2xl hover:shadow-brand-red/20 hover:border-brand-red/40 hover:bg-surface-muted transition-all duration-300 h-full"
                 >
                   {featured.article_images?.[0] ? (
                     <div className="relative h-64 md:h-80 overflow-hidden">
                       <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
                         style={{ backgroundImage: `url(${featured.article_images[0].url})` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
@@ -214,7 +214,7 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
                 <StaggerItem key={article.id}>
                   <Link
                     href={`/aktuality/${article.slug}`}
-                    className="group flex gap-4 bg-surface rounded-xl border border-border p-3 hover:border-brand-red/20 hover:shadow-md transition-all card-hover"
+                    className="group flex gap-4 bg-surface rounded-xl border-2 border-border p-3 hover:border-brand-red/40 hover:shadow-lg hover:shadow-brand-red/10 hover:bg-surface-muted hover:-translate-y-1 transition-all duration-300"
                   >
                     {article.article_images?.[0] ? (
                       <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden">
@@ -222,7 +222,7 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
                           src={article.article_images[0].url}
                           alt={article.article_images[0].alt || article.title}
                           fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          className="object-cover transition-transform duration-500 group-hover:scale-115"
                           sizes="80px"
                         />
                       </div>
