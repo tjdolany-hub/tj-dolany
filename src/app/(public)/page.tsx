@@ -19,7 +19,7 @@ export default async function HomePage() {
       .eq("published", true)
       .gte("date", new Date().toISOString())
       .order("date", { ascending: true })
-      .limit(6),
+      .limit(4),
     supabase
       .from("calendar_events")
       .select("title, date, location")

@@ -143,179 +143,191 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
 
       {/* ── FEATURED ARTICLE + SIDEBAR ── */}
       <AnimatedSection>
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-1">Novinky</p>
-              <h2 className="text-2xl font-bold text-text tracking-tight">Aktuality</h2>
+        <section className="bg-surface-alt">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1 h-6 bg-brand-red rounded-full" />
+                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Novinky</p>
+                </div>
+                <h2 className="text-2xl font-bold text-text tracking-tight">Aktuality</h2>
+              </div>
+              <Link href="/aktuality" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
+                Všechny články <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
-            <Link href="/aktuality" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
-              Všechny články <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            {featured && (
-              <motion.div
-                className="lg:col-span-7"
-                whileHover={{ y: -5, scale: 1.01 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <Link
-                  href={`/aktuality/${featured.slug}`}
-                  className="group block bg-surface rounded-xl border-2 border-border overflow-hidden hover:shadow-2xl hover:shadow-brand-red/20 hover:border-brand-red/40 hover:bg-surface-muted transition-all duration-300 h-full"
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {featured && (
+                <motion.div
+                  className="lg:col-span-7"
+                  whileHover={{ y: -5, scale: 1.01 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
-                  {featured.article_images?.[0] ? (
-                    <div className="relative h-64 md:h-80 overflow-hidden">
-                      <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                        style={{ backgroundImage: `url(${featured.article_images[0].url})` }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-bold text-white bg-brand-red px-2 py-0.5 rounded uppercase tracking-wider">
-                            {CATEGORIES.find((c) => c.value === featured.category)?.label}
-                          </span>
-                          <span className="text-xs text-white/70">{formatDateCzech(featured.created_at)}</span>
-                        </div>
-                        <h3 className="text-xl md:text-2xl font-bold text-white leading-tight drop-shadow-lg">
-                          {featured.title}
-                        </h3>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-64 md:h-80 bg-gradient-to-br from-brand-dark to-brand-dark-light flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="flex items-center gap-2 justify-center mb-3">
-                          <span className="text-xs font-bold text-white bg-brand-red px-2 py-0.5 rounded uppercase tracking-wider">
-                            {CATEGORIES.find((c) => c.value === featured.category)?.label}
-                          </span>
-                          <span className="text-xs text-gray-400">{formatDateCzech(featured.created_at)}</span>
-                        </div>
-                        <h3 className="text-xl md:text-2xl font-bold text-white px-6">{featured.title}</h3>
-                      </div>
-                    </div>
-                  )}
-                  {featured.summary && (
-                    <div className="p-5">
-                      <p className="text-sm text-text-muted leading-relaxed line-clamp-3">{featured.summary}</p>
-                      <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-red mt-3 group-hover:gap-2 transition-all">
-                        Číst článek <ArrowRight size={14} />
-                      </span>
-                    </div>
-                  )}
-                </Link>
-              </motion.div>
-            )}
-
-            <StaggerContainer className="lg:col-span-5 flex flex-col gap-3">
-              {sidebar.map((article) => (
-                <StaggerItem key={article.id}>
                   <Link
-                    href={`/aktuality/${article.slug}`}
-                    className="group flex gap-4 bg-surface rounded-xl border-2 border-border p-3 hover:border-brand-red/40 hover:shadow-lg hover:shadow-brand-red/10 hover:bg-surface-muted hover:-translate-y-1 transition-all duration-300"
+                    href={`/aktuality/${featured.slug}`}
+                    className="group block bg-surface rounded-2xl border border-border-strong shadow-lg overflow-hidden hover:shadow-2xl hover:shadow-brand-red/15 hover:border-brand-red/50 transition-all duration-300 h-full"
                   >
-                    {article.article_images?.[0] ? (
-                      <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden">
-                        <Image
-                          src={article.article_images[0].url}
-                          alt={article.article_images[0].alt || article.title}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-115"
-                          sizes="80px"
+                    {featured.article_images?.[0] ? (
+                      <div className="relative h-64 md:h-80 overflow-hidden">
+                        <div
+                          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                          style={{ backgroundImage: `url(${featured.article_images[0].url})` }}
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-bold text-white bg-brand-red px-2.5 py-1 rounded-md uppercase tracking-wider shadow-md">
+                              {CATEGORIES.find((c) => c.value === featured.category)?.label}
+                            </span>
+                            <span className="text-xs text-white/80 font-medium">{formatDateCzech(featured.created_at)}</span>
+                          </div>
+                          <h3 className="text-xl md:text-2xl font-bold text-white leading-tight drop-shadow-lg">
+                            {featured.title}
+                          </h3>
+                        </div>
                       </div>
                     ) : (
-                      <div className="w-20 h-20 shrink-0 rounded-lg bg-brand-dark/5 flex items-center justify-center">
-                        <ImageIcon size={20} className="text-text-muted/50" />
+                      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-dark to-brand-dark-light flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="flex items-center gap-2 justify-center mb-3">
+                            <span className="text-xs font-bold text-white bg-brand-red px-2.5 py-1 rounded-md uppercase tracking-wider">
+                              {CATEGORIES.find((c) => c.value === featured.category)?.label}
+                            </span>
+                            <span className="text-xs text-gray-400">{formatDateCzech(featured.created_at)}</span>
+                          </div>
+                          <h3 className="text-xl md:text-2xl font-bold text-white px-6">{featured.title}</h3>
+                        </div>
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold text-brand-red uppercase tracking-wider">
-                          {CATEGORIES.find((c) => c.value === article.category)?.label}
+                    {featured.summary && (
+                      <div className="p-5 border-t border-border">
+                        <p className="text-sm text-text-muted leading-relaxed line-clamp-3">{featured.summary}</p>
+                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand-red mt-3 group-hover:gap-2 transition-all">
+                          Číst článek <ArrowRight size={14} />
                         </span>
-                        <span className="text-[10px] text-text-muted">{formatDateCzech(article.created_at)}</span>
                       </div>
-                      <h3 className="font-semibold text-text group-hover:text-brand-red transition-colors text-sm leading-snug line-clamp-2">
-                        {article.title}
-                      </h3>
-                      {article.summary && (
-                        <p className="text-xs text-text-muted mt-1 line-clamp-1">{article.summary}</p>
-                      )}
-                    </div>
+                    )}
                   </Link>
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          </div>
+                </motion.div>
+              )}
 
-          <div className="text-center mt-6 sm:hidden">
-            <Link href="/aktuality" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors inline-flex items-center gap-1">
-              Všechny články <ArrowRight size={14} />
-            </Link>
+              <StaggerContainer className="lg:col-span-5 flex flex-col gap-3">
+                {sidebar.map((article) => (
+                  <StaggerItem key={article.id}>
+                    <Link
+                      href={`/aktuality/${article.slug}`}
+                      className="group flex gap-4 bg-surface rounded-xl border border-border-strong shadow-sm p-3 hover:border-brand-red/50 hover:shadow-lg hover:shadow-brand-red/10 hover:-translate-y-1 transition-all duration-300"
+                    >
+                      {article.article_images?.[0] ? (
+                        <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden ring-1 ring-border-strong">
+                          <Image
+                            src={article.article_images[0].url}
+                            alt={article.article_images[0].alt || article.title}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-115"
+                            sizes="80px"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 shrink-0 rounded-lg bg-surface-alt flex items-center justify-center ring-1 ring-border-strong">
+                          <ImageIcon size={20} className="text-text-muted/50" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold text-brand-red uppercase tracking-wider">
+                            {CATEGORIES.find((c) => c.value === article.category)?.label}
+                          </span>
+                          <span className="text-[10px] text-text-muted">{formatDateCzech(article.created_at)}</span>
+                        </div>
+                        <h3 className="font-semibold text-text group-hover:text-brand-red transition-colors text-sm leading-snug line-clamp-2">
+                          {article.title}
+                        </h3>
+                        {article.summary && (
+                          <p className="text-xs text-text-muted mt-1 line-clamp-1">{article.summary}</p>
+                        )}
+                      </div>
+                    </Link>
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+            </div>
+
+            <div className="text-center mt-6 sm:hidden">
+              <Link href="/aktuality" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors inline-flex items-center gap-1">
+                Všechny články <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
         </section>
       </AnimatedSection>
 
-      {/* ── EVENTS TIMELINE ── */}
+      {/* ── section divider ── */}
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/20 to-transparent" />
+
+      {/* ── EVENTS ── */}
       {events.length > 0 && (
         <AnimatedSection>
-          <section className="bg-surface border-y border-border">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-1">Pozvánky</p>
-                  <h2 className="text-2xl font-bold text-text tracking-tight">Nejbližší akce</h2>
+          <section className="bg-surface">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+              <div className="text-center mb-8">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="w-1 h-6 bg-brand-red rounded-full" />
+                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Následující akce</p>
                 </div>
-                <Link href="/plan-akci" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
-                  Všechny akce <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
+                <h2 className="text-2xl font-bold text-text tracking-tight">Co nás čeká</h2>
               </div>
 
-              <div className="relative">
-                <div className="absolute top-8 left-0 right-0 h-0.5 bg-border hidden md:block" />
-
-                <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide md:grid md:grid-cols-3 lg:grid-cols-6 md:overflow-visible md:pb-0 md:mx-0 md:px-0">
-                  {events.map((event) => {
-                    const d = new Date(event.date);
-                    return (
-                      <div key={event.id} className="shrink-0 w-48 md:w-auto">
-                        <div className="hidden md:flex justify-center mb-4">
-                          <div className="w-4 h-4 rounded-full bg-brand-red border-2 border-surface shadow-md relative z-10" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {events.slice(0, 4).map((event) => {
+                  const d = new Date(event.date);
+                  return (
+                    <div key={event.id} className="text-center">
+                      <div className="bg-surface-alt rounded-2xl p-5 border border-border-strong shadow-sm hover:shadow-lg hover:border-brand-red/40 hover:-translate-y-1 transition-all duration-300">
+                        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-brand-red/10 flex items-center justify-center">
+                          <Calendar size={20} className="text-brand-red" />
                         </div>
-                        <div className="bg-surface-muted rounded-xl p-4 border border-border hover:border-brand-red/20 hover:shadow-md transition-all">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Calendar size={14} className="text-brand-red" />
-                            <span className="text-xs font-semibold text-brand-red">
-                              {d.getDate()}.{d.getMonth() + 1}.
-                            </span>
-                          </div>
-                          <h3 className="font-semibold text-text text-sm leading-snug line-clamp-2">
-                            {event.title}
-                          </h3>
-                          {event.description && (
-                            <p className="text-xs text-text-muted mt-1 line-clamp-2">{event.description}</p>
-                          )}
-                        </div>
+                        <span className="text-lg font-bold text-brand-red">
+                          {d.getDate()}.{d.getMonth() + 1}.
+                        </span>
+                        <h3 className="font-semibold text-text text-sm leading-snug mt-2 line-clamp-2">
+                          {event.title}
+                        </h3>
+                        {event.description && (
+                          <p className="text-xs text-text-muted mt-2 line-clamp-2">{event.description}</p>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="text-center mt-6">
+                <Link href="/plan-akci" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors inline-flex items-center gap-1 group">
+                  Všechny akce <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
             </div>
           </section>
         </AnimatedSection>
       )}
 
+      {/* ── section divider ── */}
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/20 to-transparent" />
+
       {/* ── PHOTO GALLERY ── */}
       {albums.length > 0 && (
         <AnimatedSection>
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div className="flex items-center justify-between mb-6">
+          <section className="bg-surface-alt">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="flex items-center justify-between mb-8">
               <div>
-                <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-1">Fotogalerie</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1 h-6 bg-brand-red rounded-full" />
+                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Fotogalerie</p>
+                </div>
                 <h2 className="text-2xl font-bold text-text tracking-tight">Z našich akcí</h2>
               </div>
               <Link href="/galerie" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
@@ -360,6 +372,7 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
                 Všechny galerie <ArrowRight size={14} />
               </Link>
             </div>
+          </div>
           </section>
         </AnimatedSection>
       )}

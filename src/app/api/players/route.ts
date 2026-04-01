@@ -8,6 +8,7 @@ const playerSchema = z.object({
   number: z.number().nullable().optional(),
   photo: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  birth_date: z.string().nullable().optional(),
   sort_order: z.number().default(0),
   active: z.boolean().default(true),
 });

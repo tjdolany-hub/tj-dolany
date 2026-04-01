@@ -10,8 +10,10 @@
   --color-brand-dark-light: #1E293B;
   --color-surface: #FFFFFF;
   --color-surface-muted: #F8FAFC;
+  --color-surface-alt: #F1F5F9;
   --color-surface-glass: rgba(255, 255, 255, 0.7);
   --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
   --color-text: #0F172A;
   --color-text-muted: #64748B;
 
@@ -22,8 +24,10 @@
 [data-theme="dark"] {
   --color-surface: #0F172A;
   --color-surface-muted: #0B1120;
+  --color-surface-alt: #162033;
   --color-surface-glass: rgba(15, 23, 42, 0.8);
   --color-border: #1E293B;
+  --color-border-strong: #334155;
   --color-text: #F1F5F9;
   --color-text-muted: #94A3B8;
 }

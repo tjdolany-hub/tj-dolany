@@ -8,6 +8,7 @@ const updateSchema = z.object({
   number: z.number().nullable().optional(),
   photo: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  birth_date: z.string().nullable().optional(),
   sort_order: z.number().optional(),
   active: z.boolean().optional(),
 });

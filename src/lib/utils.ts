@@ -69,9 +69,9 @@ export const POSITION_LABELS: Record<string, string> = {
 
 export const POSITION_COLORS: Record<string, string> = {
   brankar: "bg-yellow-500 text-black",
-  obrance: "bg-red-600 text-white",
-  zaloznik: "bg-green-600 text-white",
-  utocnik: "bg-orange-500 text-white",
+  obrance: "bg-blue-500 text-white",
+  zaloznik: "bg-green-500 text-white",
+  utocnik: "bg-red-500 text-white",
 };
 
 export const EVENT_TYPE_COLORS: Record<string, string> = {

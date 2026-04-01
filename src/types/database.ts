@@ -115,6 +115,7 @@ export interface Database {
           name: string;
           position: "brankar" | "obrance" | "zaloznik" | "utocnik";
           number: number | null;
+          birth_date: string | null;
           photo: string | null;
           description: string | null;
           sort_order: number;
@@ -126,6 +127,7 @@ export interface Database {
           name: string;
           position: "brankar" | "obrance" | "zaloznik" | "utocnik";
           number?: number | null;
+          birth_date?: string | null;
           photo?: string | null;
           description?: string | null;
           sort_order?: number;
@@ -137,6 +139,7 @@ export interface Database {
           name?: string;
           position?: "brankar" | "obrance" | "zaloznik" | "utocnik";
           number?: number | null;
+          birth_date?: string | null;
           photo?: string | null;
           description?: string | null;
           sort_order?: number;
@@ -190,6 +193,7 @@ export interface Database {
           score_away: number;
           is_home: boolean;
           competition: string | null;
+          season: string | null;
           summary: string | null;
           article_id: string | null;
           created_at: string;
@@ -202,6 +206,7 @@ export interface Database {
           score_away?: number;
           is_home?: boolean;
           competition?: string | null;
+          season?: string | null;
           summary?: string | null;
           article_id?: string | null;
           created_at?: string;
@@ -214,6 +219,7 @@ export interface Database {
           score_away?: number;
           is_home?: boolean;
           competition?: string | null;
+          season?: string | null;
           summary?: string | null;
           article_id?: string | null;
           created_at?: string;
@@ -224,6 +230,81 @@ export interface Database {
             columns: ["article_id"];
             isOneToOne: false;
             referencedRelation: "articles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      match_lineups: {
+        Row: {
+          id: string;
+          match_id: string;
+          player_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          player_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          player_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_lineups_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "match_results";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_lineups_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      match_scorers: {
+        Row: {
+          id: string;
+          match_id: string;
+          player_id: string;
+          goals: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          player_id: string;
+          goals?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          player_id?: string;
+          goals?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_scorers_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "match_results";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_scorers_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
             referencedColumns: ["id"];
           }
         ];
