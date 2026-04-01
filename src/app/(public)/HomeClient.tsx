@@ -74,6 +74,20 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
             sizes="100vw"
           />
           <div className="absolute inset-0 bg-brand-dark/40" />
+          {/* Diagonal red-yellow stripe from left ~30% */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(
+                115deg,
+                rgba(196, 30, 58, 0.85) 0%,
+                rgba(196, 30, 58, 0.7) 12%,
+                rgba(245, 197, 24, 0.6) 20%,
+                rgba(245, 197, 24, 0.3) 26%,
+                transparent 32%
+              )`,
+            }}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/30 to-transparent" />
         </div>
 
