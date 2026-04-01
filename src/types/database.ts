@@ -25,6 +25,7 @@ export interface Database {
           role?: "admin" | "editor";
           created_at?: string;
         };
+        Relationships: [];
       };
       articles: {
         Row: {
@@ -63,6 +64,15 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       article_images: {
         Row: {
@@ -89,6 +99,15 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "article_images_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "articles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       players: {
         Row: {
@@ -124,6 +143,7 @@ export interface Database {
           active?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       calendar_events: {
         Row: {
@@ -159,6 +179,7 @@ export interface Database {
           is_public?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       match_results: {
         Row: {
@@ -197,6 +218,15 @@ export interface Database {
           article_id?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "match_results_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "articles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       season_draws: {
         Row: {
@@ -223,6 +253,7 @@ export interface Database {
           active?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       future_events: {
         Row: {
@@ -255,6 +286,7 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
         };
+        Relationships: [];
       };
       photo_albums: {
         Row: {
@@ -287,6 +319,7 @@ export interface Database {
           published?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       photos: {
         Row: {
@@ -313,7 +346,20 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "photos_album_id_fkey";
+            columns: ["album_id"];
+            isOneToOne: false;
+            referencedRelation: "photo_albums";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

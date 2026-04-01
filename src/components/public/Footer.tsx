@@ -35,9 +35,9 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               {[
                 { href: "/aktuality", label: "Aktuality" },
-                { href: "/fotbal", label: "Fotbal" },
-                { href: "/sokolovna", label: "Sokolovna" },
-                { href: "/akce", label: "Akce" },
+                { href: "/tym", label: "Tým" },
+                { href: "/historie", label: "Historie" },
+                { href: "/plan-akci", label: "Plán akcí" },
                 { href: "/o-nas", label: "O nás" },
               ].map((item) => (
                 <li key={item.href}>
@@ -58,18 +58,18 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/fotbal" className="hover:text-white transition-colors">
+                <Link href="/tym" className="hover:text-white transition-colors">
                   Kádr mužstva
                 </Link>
               </li>
               <li>
-                <Link href="/sokolovna" className="hover:text-white transition-colors">
+                <Link href="/plan-akci" className="hover:text-white transition-colors">
                   Kalendář akcí
                 </Link>
               </li>
               <li>
-                <Link href="/sokolovna" className="hover:text-white transition-colors">
-                  Pronájem sokolovny
+                <Link href="/historie" className="hover:text-white transition-colors">
+                  Historie klubu
                 </Link>
               </li>
             </ul>

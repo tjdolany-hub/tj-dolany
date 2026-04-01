@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/fotbal", destination: "/tym", permanent: true },
+      { source: "/sokolovna", destination: "/plan-akci", permanent: true },
+      { source: "/budoucnost", destination: "/plan-akci", permanent: true },
+      { source: "/akce", destination: "/plan-akci", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

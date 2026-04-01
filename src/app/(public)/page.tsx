@@ -1,52 +1,67 @@
 import { createClient } from "@/lib/supabase/server";
+import HomeClient from "./HomeClient";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [{ data: articles }, { data: events }] = await Promise.all([
+  const [articlesResult, eventsResult, matchResult] = await Promise.all([
     supabase
       .from("articles")
       .select("id, title, slug, summary, category, created_at, updated_at, article_images(url, alt)")
       .eq("published", true)
       .order("created_at", { ascending: false })
-      .limit(5),
+      .limit(6),
     supabase
       .from("future_events")
       .select("id, title, description, date, poster")
       .eq("published", true)
       .gte("date", new Date().toISOString())
       .order("date", { ascending: true })
-      .limit(3),
+      .limit(6),
+    supabase
+      .from("calendar_events")
+      .select("title, date, location")
+      .eq("event_type", "zapas")
+      .eq("is_public", true)
+      .gte("date", new Date().toISOString())
+      .order("date", { ascending: true })
+      .limit(1),
   ]);
 
-  return (
-    <div>
-      {/* Hero section placeholder - will be built with chosen design */}
-      <section className="relative bg-brand-dark overflow-hidden min-h-[60vh] flex items-center justify-center">
-        <div className="text-center text-white">
-          <h1 className="text-5xl font-extrabold tracking-tight">
-            Tělovýchovná jednota{" "}
-            <span className="gradient-text">Dolany</span>
-          </h1>
-          <p className="mt-4 text-gray-300 text-lg">
-            Fotbal, sokolovna a komunitní akce
-          </p>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-red via-brand-yellow to-brand-red" />
-      </section>
+  const articles = ((articlesResult.data ?? []) as unknown as {
+    id: string;
+    title: string;
+    slug: string;
+    summary: string | null;
+    category: string;
+    created_at: string;
+    updated_at: string;
+    article_images: { url: string; alt: string | null }[];
+  }[]).map((a) => ({
+    ...a,
+    article_images: a.article_images ?? [],
+  }));
 
-      {/* Content placeholder */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-text-muted">
-          {articles?.length ?? 0} článků | {events?.length ?? 0} nadcházejících
-          akcí
-        </p>
-        <p className="text-text-muted mt-2 text-sm">
-          Design bude vybrán a implementován v dalším kroku.
-        </p>
-      </section>
-    </div>
+  const events = (eventsResult.data ?? []) as unknown as {
+    id: string;
+    title: string;
+    description: string | null;
+    date: string;
+    poster: string | null;
+  }[];
+
+  const matchData = matchResult.data;
+  const nextMatch = matchData && matchData.length > 0
+    ? matchData[0] as unknown as { title: string; date: string; location: string | null }
+    : null;
+
+  return (
+    <HomeClient
+      articles={articles}
+      events={events}
+      nextMatch={nextMatch}
+    />
   );
 }

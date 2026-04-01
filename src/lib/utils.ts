@@ -54,3 +54,30 @@ export const EVENT_TYPES = [
 export function getSupabasePublicUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${path}`;
 }
+
+export function formatDateTimeCzech(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${formatDateCzech(dateStr)} ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+}
+
+export const POSITION_LABELS: Record<string, string> = {
+  brankar: "Brankář",
+  obrance: "Obránce",
+  zaloznik: "Záložník",
+  utocnik: "Útočník",
+};
+
+export const POSITION_COLORS: Record<string, string> = {
+  brankar: "bg-yellow-500 text-black",
+  obrance: "bg-red-600 text-white",
+  zaloznik: "bg-green-600 text-white",
+  utocnik: "bg-orange-500 text-white",
+};
+
+export const EVENT_TYPE_COLORS: Record<string, string> = {
+  zapas: "bg-red-500",
+  trenink: "bg-yellow-500",
+  akce: "bg-green-500",
+  pronajem: "bg-blue-500",
+  volne: "bg-gray-200",
+};
