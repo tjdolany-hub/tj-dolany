@@ -63,7 +63,7 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
   return (
     <>
       {/* ── COMPACT HERO + LOGO ── */}
-      <section className="relative bg-brand-dark overflow-hidden">
+      <section className="relative bg-brand-dark overflow-hidden -mt-16 pt-16">
         <div className="absolute inset-0">
           <Image
             src="/hero-team.jpg"
@@ -293,7 +293,7 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
       </AnimatedSection>
 
       {/* ── section divider ── */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/20 to-transparent" />
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* ── EVENTS ── */}
       {events.length > 0 && (
@@ -343,7 +343,7 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
       )}
 
       {/* ── section divider ── */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/20 to-transparent" />
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* ── PHOTO GALLERY ── */}
       {albums.length > 0 && (
