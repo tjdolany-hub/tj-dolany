@@ -88,16 +88,16 @@ export default function HomeClient({ articles, events, nextMatch, albums }: Home
               )`,
             }}
           />
-          {/* Mirrored diagonal yellow-red stripe from right ~30% */}
+          {/* Mirrored diagonal stripe from right — yellow inside, red on edge */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background: `linear-gradient(
-                245deg,
-                rgba(245, 197, 24, 0.85) 0%,
-                rgba(245, 197, 24, 0.7) 12%,
-                rgba(196, 30, 58, 0.6) 20%,
-                rgba(196, 30, 58, 0.3) 26%,
+                295deg,
+                rgba(196, 30, 58, 0.85) 0%,
+                rgba(196, 30, 58, 0.7) 12%,
+                rgba(245, 197, 24, 0.6) 20%,
+                rgba(245, 197, 24, 0.3) 26%,
                 transparent 32%
               )`,
             }}
