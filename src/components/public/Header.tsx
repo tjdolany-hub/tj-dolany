@@ -12,9 +12,8 @@ const NAV_ITEMS = [
   { href: "/", label: "Úvod" },
   { href: "/aktuality", label: "Aktuality" },
   { href: "/tym", label: "Tým" },
-  { href: "/historie", label: "Historie" },
   { href: "/plan-akci", label: "Plán akcí" },
-  { href: "/o-nas", label: "O nás" },
+  { href: "/o-klubu", label: "O klubu" },
 ];
 
 export default function Header() {

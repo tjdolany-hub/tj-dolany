@@ -1,0 +1,306 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import AnimatedSection from "@/components/ui/AnimatedSection";
+import { ChevronDown, Landmark, Home, Trophy, Mail, MapPin, Phone, Users } from "lucide-react";
+
+const SEASONS = [
+  "2018/2019",
+  "2017/2018",
+  "2016/2017",
+  "2015/2016",
+  "2014/2015",
+  "2013/2014",
+  "2012/2013",
+  "2011/2012",
+  "2010/2011",
+  "2009/2010",
+  "2008/2009",
+  "2007/2008",
+  "2006/2007",
+  "2005/2006",
+  "2004/2005",
+  "2003/2004",
+];
+
+export default function OKlubuClient() {
+  const [openSeason, setOpenSeason] = useState<string | null>(null);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
+        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Náš klub</p>
+        <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
+      </motion.div>
+
+      {/* About */}
+      <AnimatedSection className="mb-10">
+        <section>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+            O TJ Dolany
+          </h2>
+          <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
+            <p>
+              Tělovýchovná jednota Dolany u Jaroměře sdružuje občany obce a okolí
+              ke sportovnímu vyžití a společenskému životu. Tělovýchovná činnost
+              v obci má dlouholetou tradici — po druhé světové válce zde místní
+              nadšenci svépomocí postavili sokolovnu a začali cvičit.
+            </p>
+            <p>
+              V Dolanech se nehraje pouze fotbal — zmodernizovaný sportovní areál slouží
+              škole i široké veřejnosti. V sokolovně se hraje stolní tenis, florbal,
+              na kurtu volejbal i nohejbal.
+            </p>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* Founding */}
+      <AnimatedSection delay={0.05} className="mb-10">
+        <section>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
+              <Landmark size={20} className="text-brand-red" />
+            </div>
+            Založení klubu
+          </h2>
+          <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
+            <p>
+              Tělovýchovná činnost v obci Dolany u Jaroměře má dlouholetou tradici.
+              Velkého rozmachu dosáhla po druhé světové válce, kdy místní nadšenci
+              svépomocí postavili <strong>sokolovnu</strong> a začali cvičit.
+            </p>
+            <p>
+              Koncem šedesátých let dvacátého století vzniká v obci <strong>fotbalové hřiště</strong>.
+              Dalším velkým mezníkem byl rok <strong>1970</strong>, kdy byl v Dolanech založen
+              fotbalový oddíl.
+            </p>
+            <p>
+              V té době se Dolanští pravidelně účastnili Zlatého poháru zemědělských družstev.
+              Nejlepším výsledkem v celorepublikové soutěži bylo skvělé <strong>osmé místo</strong>.
+              Dolaňáci hráli a hrají důstojnou roli také v oficiálních mistrovských soutěžích.
+            </p>
+            <p>
+              Spoustu cenných informací o historii TJ Dolany bylo načerpáno na jaře roku 2004
+              po vyjmutí základního kamene ze zdiva původní sokolovny. Pískovcový kvádr ukrýval
+              poselství o poválečném budování sokolovny psané vlastnoručně <strong>Josefem Borůvkou</strong>,
+              pozdějším ministrem zemědělství. Po následné rekonstrukci sokolovny bylo poselství
+              doplněné o vzkaz představitelů obce a současných tělovýchovných aktivistů vráceno
+              i s pískovcem zpět do zdiva objektu.
+            </p>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* Sokolovna */}
+      <AnimatedSection delay={0.1} className="mb-10">
+        <section>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
+              <Home size={20} className="text-brand-red" />
+            </div>
+            Sokolovna v Dolanech
+          </h2>
+          <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
+            <h3>70. výročí zahájení budování sokolovny</h3>
+            <p>
+              V květnu 2017 si obec připomněla 70. výročí zahájení budování dolanské sokolovny.
+              Lidé, kteří stáli u zrodu tohoto velkého díla, zaslouží poděkování. I díky jejich
+              práci a obětavosti dnes máme v obci důstojné zázemí pro pořádání sportovních,
+              kulturních i společenských akcí.
+            </p>
+            <h3>Rekonstrukce a modernizace</h3>
+            <p>
+              Celý dolanský sportovní areál byl z majetku TJ Dolany převeden do majetku obce,
+              která hradila nutnou rekonstrukci sokolovny a přístavbu klubovny se sociálním zázemím.
+              Tělovýchova má areál v dlouhodobém pronájmu.
+            </p>
+            <p>
+              Členové TJ Dolany provedli v sokolovně svépomocí celou řadu důležitých prací —
+              výměnu oken, nátěr plechové střechy, úpravy podlahy, instalaci věšáků,
+              nové olištování a práce v klubovně. Obec zakoupila topení, díky němuž
+              může být sportovní sál v celoročním provozu.
+            </p>
+            <p>
+              V sále jsou florbalové branky a hokejky, koše, míče, žíněnky, podložky na aerobic,
+              sítě, mobilní sloupky na volejbal a nohejbal.
+            </p>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* Historical results */}
+      <AnimatedSection delay={0.15} className="mb-10">
+        <section>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
+              <Trophy size={20} className="text-brand-red" />
+            </div>
+            Historické sezony
+          </h2>
+          <p className="text-text-muted text-sm mb-6">
+            Přehled sezon Okresního přeboru Náchodska, ve kterých TJ Dolany soutěžila.
+          </p>
+          <div className="space-y-2">
+            {SEASONS.map((season) => (
+              <div key={season} className="bg-surface rounded-xl border border-border overflow-hidden">
+                <button
+                  onClick={() => setOpenSeason(openSeason === season ? null : season)}
+                  className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-surface-muted transition-colors"
+                >
+                  <span className="font-semibold text-text text-sm">Sezona {season}</span>
+                  <motion.div
+                    animate={{ rotate: openSeason === season ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown size={18} className="text-text-muted" />
+                  </motion.div>
+                </button>
+                <AnimatePresence>
+                  {openSeason === season && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-4 text-sm text-text-muted">
+                        <p>
+                          Okresní přebor Náchodska, sezona {season}.
+                          Podrobné výsledky a tabulky budou doplněny.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* Board */}
+      <AnimatedSection delay={0.2} className="mb-10">
+        <section>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+            Výbor TJ Dolany
+          </h2>
+          <div className="bg-surface rounded-xl border border-border p-6">
+            <div className="flex items-start gap-3 text-text-muted">
+              <Users size={18} className="text-brand-red mt-0.5 shrink-0" />
+              <p>Složení výboru bude doplněno.</p>
+            </div>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* Contact */}
+      <AnimatedSection delay={0.25} className="mb-10">
+        <section>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+            Kontaktní údaje
+          </h2>
+          <div className="bg-surface rounded-xl border border-border p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-text mb-3">Adresa</h3>
+                <div className="flex items-start gap-3 text-text-muted">
+                  <MapPin size={18} className="text-brand-red mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-text">TJ Dolany</p>
+                    <p>Dolany 98</p>
+                    <p>552 01 Dolany u Jaroměře</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="font-semibold text-text mb-3">Kontakt</h3>
+                <div className="space-y-3">
+                  <a
+                    href="tel:+420604864424"
+                    className="flex items-center gap-3 text-text-muted hover:text-brand-red transition-colors group"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-brand-red/10 flex items-center justify-center group-hover:bg-brand-red/20 transition-colors">
+                      <Phone size={16} className="text-brand-red" />
+                    </div>
+                    604 864 424
+                  </a>
+                  <a
+                    href="mailto:tjdolany@gmail.com"
+                    className="flex items-center gap-3 text-text-muted hover:text-brand-red transition-colors group"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-brand-red/10 flex items-center justify-center group-hover:bg-brand-red/20 transition-colors">
+                      <Mail size={16} className="text-brand-red" />
+                    </div>
+                    tjdolany@gmail.com
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* Map */}
+      <AnimatedSection delay={0.3}>
+        <section>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+            Kde nás najdete
+          </h2>
+          <div className="bg-surface rounded-xl border border-border overflow-hidden shadow-lg">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5000!2d15.882!3d50.367!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470e7a0000000001%3A0x1!2sDolany+u+Jarom%C4%9B%C5%99e!5e0!3m2!1scs!2scz!4v1"
+              width="100%"
+              height="400"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Mapa - Dolany u Jaroměře"
+            />
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SportsOrganization",
+            name: "TJ Dolany",
+            sport: "Football",
+            foundingDate: "1970",
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: "Dolany 98",
+              postalCode: "552 01",
+              addressLocality: "Dolany u Jaroměře",
+              addressRegion: "Královéhradecký kraj",
+              addressCountry: "CZ",
+            },
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: "50.367",
+              longitude: "15.882",
+            },
+            email: "tjdolany@gmail.com",
+            telephone: "+420604864424",
+            url: "https://tjdolany.net",
+          }),
+        }}
+      />
+    </div>
+  );
+}

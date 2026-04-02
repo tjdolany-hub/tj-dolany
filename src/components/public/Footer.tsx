@@ -36,9 +36,8 @@ export default function Footer() {
               {[
                 { href: "/aktuality", label: "Aktuality" },
                 { href: "/tym", label: "Tým" },
-                { href: "/historie", label: "Historie" },
                 { href: "/plan-akci", label: "Plán akcí" },
-                { href: "/o-nas", label: "O nás" },
+                { href: "/o-klubu", label: "O klubu" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link
@@ -68,7 +67,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/historie" className="hover:text-white transition-colors">
+                <Link href="/o-klubu" className="hover:text-white transition-colors">
                   Historie klubu
                 </Link>
               </li>

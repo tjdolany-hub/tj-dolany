@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       { source: "/sokolovna", destination: "/plan-akci", permanent: true },
       { source: "/budoucnost", destination: "/plan-akci", permanent: true },
       { source: "/akce", destination: "/plan-akci", permanent: true },
+      { source: "/historie", destination: "/o-klubu", permanent: true },
+      { source: "/o-nas", destination: "/o-klubu", permanent: true },
     ];
   },
 };
