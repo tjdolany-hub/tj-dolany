@@ -22,7 +22,7 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-surface border-b border-border shadow-sm gradient-border">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-surface shadow-sm" style={{ borderBottom: "3px solid", borderImage: "linear-gradient(90deg, #C41E3A, #F5C518, #C41E3A) 1" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <Image
