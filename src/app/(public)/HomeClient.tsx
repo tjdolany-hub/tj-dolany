@@ -714,7 +714,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               <h2 className="text-2xl font-extrabold text-text tracking-tight">Sponzoři</h2>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-10">
-              <a href="https://www.obecdolany.cz" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">
+              <a href="https://www.dolany-na.cz/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">
                 <Image src="/sponsors/obec-dolany.png" alt="Obec Dolany" width={160} height={60} className="object-contain" />
               </a>
             </div>

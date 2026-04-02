@@ -99,11 +99,21 @@ export default function Footer() {
       </div>
 
       <div className="relative border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-xs text-gray-600">
             &copy; {new Date().getFullYear()} TJ Dolany. Všechna práva
             vyhrazena.
           </p>
+          <a
+            href="https://www.carbeat.cz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
+          >
+            Vytvořeno
+            <Image src="/sponsors/carbeat.png" alt="CarBeat.cz" width={20} height={20} className="rounded" />
+            <span className="font-semibold">CarBeat.cz</span>
+          </a>
           <Link
             href="/login"
             className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
