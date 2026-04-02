@@ -93,6 +93,76 @@ export default async function HomePage() {
     ? matchData[0] as unknown as { title: string; date: string; location: string | null }
     : null;
 
+  // ── Club banner data ──
+  // Last 5 played matches (for form: V/R/P)
+  const { data: recentMatches } = await supabase
+    .from("match_results")
+    .select("id, date, opponent, score_home, score_away, is_home, competition, season, article_id, articles(slug)")
+    .lt("date", now)
+    .order("date", { ascending: false })
+    .limit(5);
+
+  // All scorers + cards for current season for top scorer / most cards
+  const { data: allScorers } = await supabase
+    .from("match_scorers")
+    .select("player_id, goals, players(name)");
+  const { data: allCards } = await supabase
+    .from("match_cards")
+    .select("player_id, card_type, players(name)");
+
+  // League position
+  const { data: standings } = await supabase
+    .from("league_standings")
+    .select("position, team_name, points")
+    .eq("is_our_team", true)
+    .limit(1);
+
+  // Compute top scorer
+  const scorerMap = new Map<string, { name: string; goals: number }>();
+  (allScorers ?? []).forEach((s: { player_id: string; goals: number; players: { name: string } | null }) => {
+    const existing = scorerMap.get(s.player_id);
+    if (existing) existing.goals += s.goals;
+    else scorerMap.set(s.player_id, { name: s.players?.name || "?", goals: s.goals });
+  });
+  const topScorer = [...scorerMap.values()].sort((a, b) => b.goals - a.goals)[0] ?? null;
+
+  // Compute most cards (red = 2 points, yellow = 1)
+  const cardMap = new Map<string, { name: string; yellows: number; reds: number; score: number }>();
+  (allCards ?? []).forEach((c: { player_id: string; card_type: string; players: { name: string } | null }) => {
+    const existing = cardMap.get(c.player_id) || { name: c.players?.name || "?", yellows: 0, reds: 0, score: 0 };
+    if (c.card_type === "red") { existing.reds++; existing.score += 2; }
+    else { existing.yellows++; existing.score += 1; }
+    cardMap.set(c.player_id, existing);
+  });
+  const topCards = [...cardMap.values()].sort((a, b) => b.score - a.score)[0] ?? null;
+
+  // Build form array (last 5 results: V/R/P)
+  type FormResult = "V" | "R" | "P";
+  const form: FormResult[] = (recentMatches ?? []).map((m: { score_home: number; score_away: number; is_home: boolean }) => {
+    const our = m.is_home ? m.score_home : m.score_away;
+    const their = m.is_home ? m.score_away : m.score_home;
+    if (our > their) return "V" as FormResult;
+    if (our < their) return "P" as FormResult;
+    return "R" as FormResult;
+  });
+
+  // Last match
+  const lastMatch = recentMatches?.[0] as { id: string; date: string; opponent: string; score_home: number; score_away: number; is_home: boolean; articles: { slug: string } | null } | undefined ?? null;
+
+  const clubBanner = {
+    form,
+    topScorer,
+    topCards,
+    lastMatch: lastMatch ? {
+      opponent: lastMatch.opponent,
+      score_home: lastMatch.score_home,
+      score_away: lastMatch.score_away,
+      is_home: lastMatch.is_home,
+      articleSlug: lastMatch.articles?.slug ?? null,
+    } : null,
+    leaguePosition: standings?.[0]?.position ?? null,
+  };
+
   const albums = (albumsResult.data ?? []) as unknown as {
     id: string;
     title: string;
@@ -107,6 +177,7 @@ export default async function HomePage() {
       heroEvents={heroEvents}
       nextMatch={nextMatch}
       albums={albums}
+      clubBanner={clubBanner}
     />
   );
 }

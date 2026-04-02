@@ -210,16 +210,31 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
   );
 }
 
+type LeagueStanding = {
+  position: number;
+  team_name: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals_for: number;
+  goals_against: number;
+  points: number;
+  is_our_team: boolean;
+};
+
 export default function TymClient({
   players,
   draws,
   matches,
   playerStats,
+  standings,
 }: {
   players: Player[];
   draws: Draw[];
   matches: MatchResult[];
   playerStats?: PlayerStats;
+  standings?: LeagueStanding[];
 }) {
   const grouped = POSITION_ORDER.map((pos) => ({
     position: pos,
@@ -294,6 +309,53 @@ export default function TymClient({
       {/* Match results */}
       {matches.length > 0 && (
         <MatchResultsSection matches={matches} />
+      )}
+
+      {/* League table */}
+      {standings && standings.length > 0 && (
+        <AnimatedSection className="mb-16">
+          <section>
+            <h2 className="text-3xl font-bold text-text tracking-tight mb-6 text-center">
+              Tabulka soutěže
+            </h2>
+            <div className="bg-surface rounded-xl border border-border overflow-hidden max-w-4xl mx-auto">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-surface-muted">
+                      <th className="px-3 py-3 text-center font-semibold text-text-muted w-10">#</th>
+                      <th className="px-4 py-3 text-left font-semibold text-text-muted">Tým</th>
+                      <th className="px-2 py-3 text-center font-semibold text-text-muted">Z</th>
+                      <th className="px-2 py-3 text-center font-semibold text-text-muted">V</th>
+                      <th className="px-2 py-3 text-center font-semibold text-text-muted">R</th>
+                      <th className="px-2 py-3 text-center font-semibold text-text-muted">P</th>
+                      <th className="px-2 py-3 text-center font-semibold text-text-muted">Skóre</th>
+                      <th className="px-3 py-3 text-center font-bold text-text-muted">B</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {standings.map((s) => (
+                      <tr key={s.position} className={`border-b border-border last:border-0 transition-colors ${
+                        s.is_our_team ? "bg-brand-red/10 font-bold" : "hover:bg-surface-muted"
+                      }`}>
+                        <td className="px-3 py-2.5 text-center font-bold text-text">{s.position}.</td>
+                        <td className={`px-4 py-2.5 ${s.is_our_team ? "text-brand-red font-bold" : "text-text"}`}>
+                          {s.team_name}
+                        </td>
+                        <td className="px-2 py-2.5 text-center text-text-muted">{s.matches_played}</td>
+                        <td className="px-2 py-2.5 text-center text-text-muted">{s.wins}</td>
+                        <td className="px-2 py-2.5 text-center text-text-muted">{s.draws}</td>
+                        <td className="px-2 py-2.5 text-center text-text-muted">{s.losses}</td>
+                        <td className="px-2 py-2.5 text-center text-text-muted">{s.goals_for}:{s.goals_against}</td>
+                        <td className={`px-3 py-2.5 text-center font-bold ${s.is_our_team ? "text-brand-red" : "text-text"}`}>{s.points}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </AnimatedSection>
       )}
 
       {/* Season draws */}

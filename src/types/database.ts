@@ -512,6 +512,52 @@ export interface Database {
           }
         ];
       };
+      league_standings: {
+        Row: {
+          id: string;
+          season: string;
+          position: number;
+          team_name: string;
+          matches_played: number;
+          wins: number;
+          draws: number;
+          losses: number;
+          goals_for: number;
+          goals_against: number;
+          points: number;
+          is_our_team: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          season: string;
+          position: number;
+          team_name: string;
+          matches_played?: number;
+          wins?: number;
+          draws?: number;
+          losses?: number;
+          goals_for?: number;
+          goals_against?: number;
+          points?: number;
+          is_our_team?: boolean;
+        };
+        Update: {
+          id?: string;
+          season?: string;
+          position?: number;
+          team_name?: string;
+          matches_played?: number;
+          wins?: number;
+          draws?: number;
+          losses?: number;
+          goals_for?: number;
+          goals_against?: number;
+          points?: number;
+          is_our_team?: boolean;
+        };
+        Relationships: [];
+      };
       match_images: {
         Row: {
           id: string;

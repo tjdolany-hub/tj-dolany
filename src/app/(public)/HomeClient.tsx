@@ -41,11 +41,26 @@ interface SerializedAlbum {
   event_date: string | null;
 }
 
+interface ClubBanner {
+  form: ("V" | "R" | "P")[];
+  topScorer: { name: string; goals: number } | null;
+  topCards: { name: string; yellows: number; reds: number; score: number } | null;
+  lastMatch: {
+    opponent: string;
+    score_home: number;
+    score_away: number;
+    is_home: boolean;
+    articleSlug: string | null;
+  } | null;
+  leaguePosition: number | null;
+}
+
 interface HomeClientProps {
   articles: SerializedArticle[];
   heroEvents: (HeroEvent | null)[];
   nextMatch: NextMatch | null;
   albums: SerializedAlbum[];
+  clubBanner: ClubBanner;
 }
 
 function formatMatchDate(dateStr: string): string {
@@ -57,7 +72,7 @@ function formatMatchDate(dateStr: string): string {
   return `${day} ${date} — ${time}`;
 }
 
-export default function HomeClient({ articles, heroEvents, nextMatch, albums }: HomeClientProps) {
+export default function HomeClient({ articles, heroEvents, nextMatch, albums, clubBanner }: HomeClientProps) {
   const featured = articles[0];
   const sidebar = articles.slice(1, 5);
 
@@ -169,6 +184,114 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums }: 
           </div>
         </div>
       )}
+
+      {/* ── CLUB BANNER ── */}
+      <AnimatedSection>
+        <section className="bg-surface">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-brand-dark rounded-2xl overflow-hidden shadow-xl">
+              {/* Header */}
+              <div className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
+                <Image src="/logo.png" alt="TJ Dolany" width={40} height={40} className="drop-shadow-lg" />
+                <div>
+                  <h2 className="text-lg font-bold text-white tracking-tight">TJ Dolany</h2>
+                  <p className="text-xs text-gray-400">Okresní přebor • Náchod</p>
+                </div>
+                {clubBanner.leaguePosition && (
+                  <div className="ml-auto text-center">
+                    <span className="text-2xl font-extrabold text-brand-yellow">{clubBanner.leaguePosition}.</span>
+                    <span className="block text-[10px] text-gray-400 uppercase tracking-wider">místo</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/10">
+                {/* Forma */}
+                <div className="px-4 py-4">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Forma</span>
+                  <div className="flex gap-1.5">
+                    {clubBanner.form.length > 0 ? clubBanner.form.map((r, i) => (
+                      <span key={i} className={`w-7 h-7 rounded text-xs font-bold flex items-center justify-center ${
+                        r === "V" ? "bg-green-500 text-white" :
+                        r === "R" ? "bg-yellow-500 text-white" :
+                        "bg-red-500 text-white"
+                      }`}>{r}</span>
+                    )) : (
+                      <span className="text-xs text-gray-500">—</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Nejlepší střelec */}
+                <div className="px-4 py-4">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Nejlepší střelec</span>
+                  {clubBanner.topScorer ? (
+                    <div>
+                      <span className="text-sm font-bold text-white">{clubBanner.topScorer.name}</span>
+                      <span className="text-xs text-brand-yellow ml-1.5 font-bold">{clubBanner.topScorer.goals} gólů</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-500">—</span>
+                  )}
+                </div>
+
+                {/* Nejvíce karet */}
+                <div className="px-4 py-4">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Nejvíce karet</span>
+                  {clubBanner.topCards ? (
+                    <div>
+                      <span className="text-sm font-bold text-white">{clubBanner.topCards.name}</span>
+                      <span className="flex items-center gap-1.5 mt-0.5">
+                        {clubBanner.topCards.yellows > 0 && (
+                          <span className="flex items-center gap-0.5">
+                            <span className="w-3 h-4 rounded-sm bg-yellow-400 inline-block" />
+                            <span className="text-xs text-gray-300 font-medium">{clubBanner.topCards.yellows}</span>
+                          </span>
+                        )}
+                        {clubBanner.topCards.reds > 0 && (
+                          <span className="flex items-center gap-0.5">
+                            <span className="w-3 h-4 rounded-sm bg-red-500 inline-block" />
+                            <span className="text-xs text-gray-300 font-medium">{clubBanner.topCards.reds}</span>
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gray-500">({clubBanner.topCards.score} b.)</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-500">—</span>
+                  )}
+                </div>
+
+                {/* Poslední zápas */}
+                <div className="px-4 py-4">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Poslední zápas</span>
+                  {clubBanner.lastMatch ? (
+                    clubBanner.lastMatch.articleSlug ? (
+                      <Link href={`/aktuality/${clubBanner.lastMatch.articleSlug}`} className="group">
+                        <span className="text-sm font-bold text-white group-hover:text-brand-red transition-colors">
+                          {clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}
+                          <span className="text-brand-yellow mx-1">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
+                          {clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}
+                        </span>
+                        <span className="text-[10px] text-brand-red block mt-0.5 font-medium">▸ referát</span>
+                      </Link>
+                    ) : (
+                      <span className="text-sm font-bold text-white">
+                        {clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}
+                        <span className="text-brand-yellow mx-1">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
+                        {clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-xs text-gray-500">—</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </AnimatedSection>
 
       {/* ── FEATURED ARTICLE + SIDEBAR ── */}
       <AnimatedSection>

@@ -71,12 +71,20 @@ export default async function TymPage() {
     else playerStats[c.player_id].reds++;
   }
 
+  // League standings
+  const { data: leagueStandings } = await supabase
+    .from("league_standings")
+    .select("*")
+    .eq("season", currentSeason)
+    .order("position", { ascending: true });
+
   return (
     <TymClient
       players={players ?? []}
       draws={draws ?? []}
       matches={matches ?? []}
       playerStats={playerStats}
+      standings={leagueStandings ?? []}
     />
   );
 }
