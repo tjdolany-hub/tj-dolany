@@ -262,7 +262,7 @@ export default function PlanAkciClient({
         <AnimatedSection className="mb-16">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-8 flex items-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
-            Nadcházející akce
+            Nadcházející akce TJ Dolany
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             {upcoming.map((event, idx) => {
