@@ -34,7 +34,7 @@ export default function OKlubuClient() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Náš klub</p>
+        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš klub</p>
         <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
       </motion.div>
 

@@ -561,11 +561,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           <section className="bg-surface">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <div className="w-1 h-6 bg-brand-red rounded-full" />
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Akce TJ Dolany</p>
-                </div>
-                <h2 className="text-2xl font-bold text-text tracking-tight">Co nás čeká</h2>
+                <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Akce TJ Dolany</p>
+                <h2 className="text-2xl font-extrabold text-text tracking-tight">Co nás čeká</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
@@ -637,11 +634,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1 h-6 bg-brand-red rounded-full" />
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Fotogalerie</p>
-                </div>
-                <h2 className="text-2xl font-bold text-text tracking-tight">Z našich akcí</h2>
+                <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Fotogalerie</p>
+                <h2 className="text-2xl font-extrabold text-text tracking-tight">Z našich akcí</h2>
               </div>
               <Link href="/galerie" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
                 Všechny galerie <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />

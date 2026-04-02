@@ -37,7 +37,7 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Novinky</p>
+        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Novinky</p>
         <h1 className="text-4xl font-extrabold text-text tracking-tight">
           Aktuality
         </h1>
@@ -61,7 +61,7 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
       </div>
 
       {filtered.length > 0 ? (
-        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StaggerContainer key={filter} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((article) => (
             <StaggerItem key={article.id}>
               <Link
