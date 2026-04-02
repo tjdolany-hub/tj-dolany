@@ -171,7 +171,20 @@ export default function AdminMatchesPage() {
       summary: m.summary || "",
     });
     setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter })) || []);
-    setScorers(m.match_scorers?.map((s) => ({ player_id: s.player_id, goals: s.goals, minute: s.minute?.toString() ?? "" })) || []);
+    // Expand each scorer entry into individual goal rows (1 per goal) for editing
+    const expandedScorers: { player_id: string; goals: number; minute: string }[] = [];
+    (m.match_scorers || []).forEach((s) => {
+      if (s.goals > 1 && !s.minute) {
+        // Legacy: single row with goals count, no minute — keep as one row
+        expandedScorers.push({ player_id: s.player_id, goals: s.goals, minute: "" });
+      } else {
+        // One row per goal
+        for (let g = 0; g < s.goals; g++) {
+          expandedScorers.push({ player_id: s.player_id, goals: 1, minute: g === 0 && s.minute ? s.minute.toString() : "" });
+        }
+      }
+    });
+    setScorers(expandedScorers);
     setCards(m.match_cards?.map((c) => ({ player_id: c.player_id, card_type: c.card_type, minute: c.minute?.toString() ?? "" })) || []);
     setEditId(m.id);
     setShowForm(true);
@@ -182,7 +195,10 @@ export default function AdminMatchesPage() {
     e.preventDefault();
     setSaving(true);
 
-    const dateTime = form.time ? `${form.date}T${form.time}` : `${form.date}T00:00`;
+    // Build date as local time → convert to ISO so Supabase stores correct UTC
+    const dateTime = form.time
+      ? new Date(`${form.date}T${form.time}`).toISOString()
+      : new Date(`${form.date}T00:00`).toISOString();
     const body = {
       date: dateTime,
       opponent: form.opponent,
@@ -197,9 +213,10 @@ export default function AdminMatchesPage() {
       summary_title: form.summary_title || null,
       summary: form.summary || null,
       lineup,
-      scorers: scorers.map((s) => ({
+      // Each row = 1 goal; same player can appear multiple times
+      scorers: scorers.filter((s) => s.player_id).map((s) => ({
         player_id: s.player_id,
-        goals: s.goals,
+        goals: 1,
         minute: s.minute ? parseInt(s.minute) : null,
       })),
       cards: cards.map((c) => ({
@@ -481,11 +498,11 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Lineup */}
+              {/* Lineup — separated into Základní sestava and Lavička */}
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <p className="text-sm font-bold text-text flex items-center gap-2">
-                    <Users size={16} className="text-brand-red" /> Sestava ({lineup.length} hráčů)
+                    <Users size={16} className="text-brand-red" /> Sestava ({lineup.length} hráčů — {lineup.filter((l) => l.is_starter).length} ZS, {lineup.filter((l) => !l.is_starter).length} ST)
                   </p>
                   <button type="button" onClick={fillAllActive} className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
                     <UserPlus size={12} /> Všichni aktivní
@@ -494,52 +511,91 @@ export default function AdminMatchesPage() {
                     <RotateCcw size={12} /> Z předchozího
                   </button>
                 </div>
-                <div className="space-y-3">
-                  {[
-                    { pos: "brankar", label: "Brankáři", dot: "bg-yellow-500" },
-                    { pos: "obrance", label: "Obránci", dot: "bg-blue-500" },
-                    { pos: "zaloznik", label: "Záložníci", dot: "bg-green-500" },
-                    { pos: "utocnik", label: "Útočníci", dot: "bg-red-500" },
-                  ].map(({ pos, label, dot }) => {
-                    const posPlayers = players.filter((p) => p.position === pos);
-                    if (posPlayers.length === 0) return null;
-                    return (
-                      <div key={pos}>
-                        <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${dot}`} /> {label}
-                        </p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {posPlayers.map((p) => {
-                            const inLineup = lineup.find((l) => l.player_id === p.id);
-                            return (
-                              <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
-                                inLineup
-                                  ? "border-brand-red bg-brand-red/10 text-text font-medium"
-                                  : "border-border text-text-muted hover:border-brand-red/30"
-                              } ${!p.active ? "opacity-50" : ""}`}>
-                                <input type="checkbox" checked={!!inLineup} onChange={() => toggleLineup(p.id, true)} className="w-3.5 h-3.5 accent-brand-red" />
-                                <span className="flex-1 truncate">{p.name}</span>
-                                {inLineup && (
-                                  <button type="button" onClick={() => setStarterStatus(p.id, !inLineup.is_starter)}
-                                    title={inLineup.is_starter ? "Základní sestava" : "Střídající"}
-                                    className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${inLineup.is_starter ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
-                                    {inLineup.is_starter ? "ZS" : "ST"}
-                                  </button>
-                                )}
-                              </div>
-                            );
-                          })}
+
+                {/* Základní sestava */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2 pb-1 border-b border-green-200">
+                    <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Základní sestava</span>
+                    <span className="text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded font-bold">{lineup.filter((l) => l.is_starter).length}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { pos: "brankar", label: "Brankáři", dot: "bg-yellow-500" },
+                      { pos: "obrance", label: "Obránci", dot: "bg-blue-500" },
+                      { pos: "zaloznik", label: "Záložníci", dot: "bg-green-500" },
+                      { pos: "utocnik", label: "Útočníci", dot: "bg-red-500" },
+                    ].map(({ pos, label, dot }) => {
+                      const posPlayers = players.filter((p) => p.position === pos);
+                      if (posPlayers.length === 0) return null;
+                      return (
+                        <div key={pos}>
+                          <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full ${dot}`} /> {label}
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {posPlayers.map((p) => {
+                              const inLineup = lineup.find((l) => l.player_id === p.id);
+                              const isStarter = inLineup?.is_starter;
+                              return (
+                                <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                                  isStarter
+                                    ? "border-green-500 bg-green-50 text-text font-medium"
+                                    : inLineup
+                                      ? "border-orange-400 bg-orange-50 text-text font-medium"
+                                      : "border-border text-text-muted hover:border-brand-red/30"
+                                } ${!p.active ? "opacity-50" : ""}`}>
+                                  <input type="checkbox" checked={!!inLineup} onChange={() => toggleLineup(p.id, true)} className="w-3.5 h-3.5 accent-brand-red" />
+                                  <span className="flex-1 truncate">{p.name}</span>
+                                  {inLineup && (
+                                    <button type="button" onClick={() => setStarterStatus(p.id, !inLineup.is_starter)}
+                                      title={inLineup.is_starter ? "Klik → na lavičku" : "Klik → do základu"}
+                                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${inLineup.is_starter ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                                      {inLineup.is_starter ? "ZS" : "ST"}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Lavička */}
+                {lineup.filter((l) => !l.is_starter).length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 pb-1 border-b border-orange-200">
+                      <span className="text-xs font-bold text-orange-700 uppercase tracking-wider">Lavička</span>
+                      <span className="text-xs text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded font-bold">{lineup.filter((l) => !l.is_starter).length}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {lineup.filter((l) => !l.is_starter).map((l) => {
+                        const p = players.find((pl) => pl.id === l.player_id);
+                        return (
+                          <div key={l.player_id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-orange-400 bg-orange-50 text-sm font-medium text-text">
+                            <span>{p?.name || "?"}</span>
+                            <button type="button" onClick={() => setStarterStatus(l.player_id, true)}
+                              title="Přesunout do základu"
+                              className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-orange-100 text-orange-700">
+                              ST → ZS
+                            </button>
+                            <button type="button" onClick={() => toggleLineup(l.player_id, false)}
+                              className="text-red-400 hover:text-red-600"><X size={14} /></button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Scorers */}
+              {/* Scorers — each row = 1 goal, same player can appear multiple times */}
               <div>
                 <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-brand-red" /> Střelci
+                  <Target size={16} className="text-brand-red" /> Góly
+                  <span className="text-xs font-normal text-text-muted">(každý řádek = 1 gól, hráč může být vícekrát)</span>
                 </p>
                 {scorers.map((s, i) => (
                   <div key={i} className="flex gap-2 mb-2">
@@ -548,16 +604,14 @@ export default function AdminMatchesPage() {
                       <option value="">Vyber hráče</option>
                       {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
-                    <input type="number" min={1} value={s.goals} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], goals: parseInt(e.target.value) || 1 }; setScorers(u); }}
-                      className="w-16 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Góly" />
                     <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], minute: e.target.value }; setScorers(u); }}
-                      className="w-16 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
+                      className="w-20 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min." />
                     <button type="button" onClick={() => setScorers(scorers.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
                   </div>
                 ))}
                 <button type="button" onClick={() => setScorers([...scorers, { player_id: "", goals: 1, minute: "" }])}
                   className="text-sm text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
-                  <Plus size={14} /> Přidat střelce
+                  <Plus size={14} /> Přidat gól
                 </button>
               </div>
 
@@ -701,11 +755,27 @@ export default function AdminMatchesPage() {
                           <div>
                             <h4 className="text-xs font-bold text-text-muted uppercase mb-1">Střelci</h4>
                             <div className="flex flex-wrap gap-1.5">
-                              {m.match_scorers.map((s, i) => (
-                                <span key={i} className="text-xs bg-brand-red/10 text-brand-red px-2 py-1 rounded font-medium">
-                                  {s.players?.name || "?"} ({s.goals}{s.minute ? `, ${s.minute}'` : ""})
-                                </span>
-                              ))}
+                              {/* Group by player, show individual minutes */}
+                              {(() => {
+                                const grouped = new Map<string, { name: string; minutes: (number | null)[] }>();
+                                m.match_scorers!.forEach((s) => {
+                                  const key = s.player_id;
+                                  const existing = grouped.get(key);
+                                  if (existing) {
+                                    existing.minutes.push(s.minute);
+                                  } else {
+                                    grouped.set(key, { name: s.players?.name || "?", minutes: [s.minute] });
+                                  }
+                                });
+                                return [...grouped.values()].map((g, i) => {
+                                  const mins = g.minutes.filter((m): m is number => m != null).sort((a, b) => a - b);
+                                  return (
+                                    <span key={i} className="text-xs bg-brand-red/10 text-brand-red px-2 py-1 rounded font-medium">
+                                      {g.name} ({g.minutes.length}×{mins.length > 0 ? ` — ${mins.map((m) => `${m}'`).join(", ")}` : ""})
+                                    </span>
+                                  );
+                                });
+                              })()}
                             </div>
                           </div>
                         )}

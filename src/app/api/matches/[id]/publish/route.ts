@@ -77,22 +77,27 @@ export async function POST(
       .join(", ")}`;
   }
 
-  // Goals
+  // Goals — group by player, show individual minutes
   if (match.match_scorers && match.match_scorers.length > 0) {
-    content += `\n\n**Góly:** ${match.match_scorers
-      .map(
-        (s: {
-          players: { name: string } | null;
-          goals: number;
-          minute: number | null;
-        }) => {
-          let txt = s.players?.name || "?";
-          if (s.goals > 1) txt += ` ${s.goals}x`;
-          if (s.minute) txt += ` (${s.minute}')`;
-          return txt;
+    const goalMap = new Map<string, { name: string; minutes: (number | null)[] }>();
+    match.match_scorers.forEach(
+      (s: { player_id: string; players: { name: string } | null; goals: number; minute: number | null }) => {
+        const existing = goalMap.get(s.player_id);
+        if (existing) {
+          existing.minutes.push(s.minute);
+        } else {
+          goalMap.set(s.player_id, { name: s.players?.name || "?", minutes: [s.minute] });
         }
-      )
-      .join(", ")}`;
+      }
+    );
+    const goalTexts = [...goalMap.values()].map((g) => {
+      let txt = g.name;
+      if (g.minutes.length > 1) txt += ` ${g.minutes.length}×`;
+      const mins = g.minutes.filter((m): m is number => m != null).sort((a, b) => a - b);
+      if (mins.length > 0) txt += ` (${mins.map((m) => `${m}'`).join(", ")})`;
+      return txt;
+    });
+    content += `\n\n**Góly:** ${goalTexts.join(", ")}`;
   }
 
   // Cards
