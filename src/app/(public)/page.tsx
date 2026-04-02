@@ -63,9 +63,24 @@ export default async function HomePage() {
     article_images: a.article_images ?? [],
   }));
 
-  type CalEvent = { id: string; title: string; description: string | null; date: string; event_type: string };
+  type CalEvent = { id: string; title: string; description: string | null; date: string; event_type: string; articleSlug?: string | null };
   const pastEvent = (pastEventResult.data?.[0] ?? null) as CalEvent | null;
   const futureEvents = (futureEventsResult.data ?? []) as CalEvent[];
+
+  // Try to find an article for the past event (by searching title words)
+  if (pastEvent) {
+    const searchTerm = pastEvent.title.split(" ").slice(0, 3).join(" ");
+    const { data: matchingArticles } = await supabase
+      .from("articles")
+      .select("slug")
+      .eq("published", true)
+      .ilike("title", `%${searchTerm}%`)
+      .limit(1);
+    if (matchingArticles && matchingArticles.length > 0) {
+      pastEvent.articleSlug = matchingArticles[0].slug;
+    }
+  }
+
   // Build 3-card array: [past, next (highlighted), future]
   const heroEvents = [
     pastEvent,

@@ -24,6 +24,7 @@ interface HeroEvent {
   description: string | null;
   date: string;
   event_type: string;
+  articleSlug?: string | null;
 }
 
 interface NextMatch {
@@ -314,41 +315,45 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums }: 
                   const d = new Date(event.date);
                   const isHighlighted = idx === 1;
                   const isPast = idx === 0;
+                  const href = isPast && event.articleSlug
+                    ? `/aktuality/${event.articleSlug}`
+                    : "/plan-akci";
                   return (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className={`text-center rounded-2xl p-6 border transition-all duration-300 ${
-                        isHighlighted
-                          ? "bg-brand-red/10 border-brand-red/40 shadow-lg shadow-brand-red/10 scale-105 ring-2 ring-brand-red/20"
-                          : isPast
-                            ? "bg-surface-alt border-border-strong opacity-70"
-                            : "bg-surface-alt border-border-strong shadow-sm hover:shadow-lg hover:border-brand-red/40 hover:-translate-y-1"
-                      }`}
-                    >
-                      {isPast && (
-                        <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">Proběhlo</span>
-                      )}
-                      {isHighlighted && (
-                        <span className="text-[10px] font-bold text-brand-red uppercase tracking-wider">Příští akce</span>
-                      )}
-                      <div className={`w-12 h-12 mx-auto mb-3 mt-2 rounded-full flex items-center justify-center ${
-                        isHighlighted ? "bg-brand-red/20" : "bg-brand-red/10"
-                      }`}>
-                        <Calendar size={20} className="text-brand-red" />
-                      </div>
-                      <span className={`text-lg font-bold ${isHighlighted ? "text-brand-red" : "text-brand-red/80"}`}>
-                        {d.getDate()}.{d.getMonth() + 1}.
-                      </span>
-                      <h3 className="font-semibold text-text text-sm leading-snug mt-2 line-clamp-2">
-                        {event.title}
-                      </h3>
-                      {event.description && (
-                        <p className="text-xs text-text-muted mt-2 line-clamp-2">{event.description}</p>
-                      )}
-                    </motion.div>
+                    <Link key={event.id} href={href}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        className={`text-center rounded-2xl p-6 border transition-all duration-300 cursor-pointer h-full ${
+                          isHighlighted
+                            ? "bg-brand-red/10 border-brand-red/40 shadow-lg shadow-brand-red/10 scale-105 ring-2 ring-brand-red/20"
+                            : isPast
+                              ? "bg-surface-alt border-border-strong opacity-70 hover:opacity-90"
+                              : "bg-surface-alt border-border-strong shadow-sm hover:shadow-lg hover:border-brand-red/40 hover:-translate-y-1"
+                        }`}
+                      >
+                        {isPast && (
+                          <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">Proběhlo</span>
+                        )}
+                        {isHighlighted && (
+                          <span className="text-[10px] font-bold text-brand-red uppercase tracking-wider">Příští akce</span>
+                        )}
+                        <div className={`w-12 h-12 mx-auto mb-3 mt-2 rounded-full flex items-center justify-center ${
+                          isHighlighted ? "bg-brand-red/20" : "bg-brand-red/10"
+                        }`}>
+                          <Calendar size={20} className="text-brand-red" />
+                        </div>
+                        <span className={`text-lg font-bold ${isHighlighted ? "text-brand-red" : "text-brand-red/80"}`}>
+                          {d.getDate()}.{d.getMonth() + 1}.
+                        </span>
+                        <h3 className="font-semibold text-text text-sm leading-snug mt-2 line-clamp-2">
+                          {event.title}
+                        </h3>
+                        {event.description && (
+                          <p className="text-xs text-text-muted mt-2 line-clamp-2">{event.description}</p>
+                        )}
+                      </motion.div>
+                    </Link>
                   );
                 })}
               </div>

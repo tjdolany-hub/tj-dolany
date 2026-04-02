@@ -125,6 +125,7 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-muted">
+                  <th className="text-center px-2 py-3 font-semibold text-text-muted w-10" title="Domácí / Venkovní">D/V</th>
                   <th className="text-left px-4 py-3 font-semibold text-text-muted">Čas</th>
                   <th className="text-left px-4 py-3 font-semibold text-text-muted">Datum</th>
                   <th className="text-left px-4 py-3 font-semibold text-text-muted">Soupeř</th>
@@ -149,8 +150,17 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
                       onClick={clickable ? () => router.push(`/aktuality/${match.articles!.slug}`) : undefined}
                       className={`border-b border-border last:border-0 transition-colors ${
                         clickable ? "hover:bg-surface-muted cursor-pointer" : "hover:bg-surface-muted"
-                      }`}
+                      } ${match.is_home ? "border-l-3 border-l-brand-red" : "border-l-3 border-l-blue-400"}`}
                     >
+                      <td className="px-2 py-3 text-center">
+                        <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          match.is_home
+                            ? "bg-brand-red/10 text-brand-red"
+                            : "bg-blue-100 text-blue-600"
+                        }`}>
+                          {match.is_home ? "D" : "V"}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-text-muted whitespace-nowrap tabular-nums">
                         {time || "—"}
                       </td>
@@ -161,6 +171,9 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
                         {match.is_home ? "TJ Dolany" : match.opponent}
                         {" vs. "}
                         {match.is_home ? match.opponent : "TJ Dolany"}
+                        {clickable && (
+                          <span className="ml-2 text-[10px] text-brand-red font-semibold">▸ referát</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {played ? (
@@ -183,7 +196,7 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
                 })}
                 {filteredMatches.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-text-muted">
+                    <td colSpan={6} className="px-4 py-12 text-center text-text-muted">
                       Žádné zápasy pro {selectedSeason} – {selectedHalf === "podzim" ? "podzim" : "jaro"}
                     </td>
                   </tr>
