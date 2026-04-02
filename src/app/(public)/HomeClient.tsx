@@ -702,6 +702,16 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               <a href="https://www.dolany-na.cz/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">
                 <Image src="/sponsors/obec-dolany.png" alt="Obec Dolany" width={160} height={60} className="object-contain" />
               </a>
+              <a href="https://www.orelsoft.cz/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">
+                <Image src="/sponsors/orelsoft.png" alt="OrelSoft.cz" width={120} height={40} className="object-contain" />
+              </a>
+            </div>
+
+            {/* Poděkování */}
+            <div className="mt-10 flex justify-center">
+              <div className="rounded-xl border-2 border-brand-dark overflow-hidden max-w-3xl">
+                <Image src="/sponsors/podekovani.png" alt="Poděkování — Královéhradecký kraj, dotace na projekt Modernizací techniky za osvětou a zábavou" width={900} height={200} className="w-full h-auto" />
+              </div>
             </div>
           </div>
         </section>
