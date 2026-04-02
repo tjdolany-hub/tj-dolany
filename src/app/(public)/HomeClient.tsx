@@ -145,7 +145,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-12 md:py-16 flex flex-col items-center text-center">
+          <div className="py-16 md:py-20 flex flex-col items-center text-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
