@@ -16,11 +16,21 @@ const eventSchema = z.object({
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { searchParams } = new URL(req.url);
-  const month = parseInt(searchParams.get("month") || String(new Date().getMonth() + 1));
+  const monthParam = searchParams.get("month");
   const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
 
-  const startDate = new Date(year, month - 1, 1).toISOString();
-  const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+  let startDate: string;
+  let endDate: string;
+
+  if (monthParam) {
+    const month = parseInt(monthParam);
+    startDate = new Date(year, month - 1, 1).toISOString();
+    endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+  } else {
+    // No month specified — return entire year
+    startDate = new Date(year, 0, 1).toISOString();
+    endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
+  }
 
   const { data: events } = await supabase
     .from("calendar_events")

@@ -8,8 +8,6 @@ import {
   Save,
   X,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   Clock,
 } from "lucide-react";
 import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS } from "@/lib/utils";
@@ -37,6 +35,15 @@ interface ScheduleEntry {
   location: string | null;
 }
 
+interface MatchEvent {
+  id: string;
+  date: string;
+  opponent: string;
+  is_home: boolean;
+  competition: string | null;
+  venue: string | null;
+}
+
 // ─── Constants ───────────────────────────────────────────────
 
 const EVENT_TYPE_OPTIONS = [
@@ -47,20 +54,19 @@ const EVENT_TYPE_OPTIONS = [
 
 type EventTypeValue = (typeof EVENT_TYPE_OPTIONS)[number]["value"];
 
-const TYPE_BADGE_STYLES: Record<EventTypeValue, string> = {
+const TYPE_BADGE_STYLES: Record<string, string> = {
   akce: "bg-red-100 text-red-700",
   pronajem: "bg-yellow-100 text-yellow-700",
   volne: "bg-gray-100 text-gray-700",
+  zapas: "bg-green-100 text-green-700",
 };
 
-type FilterTab = "all" | EventTypeValue;
-
-const FILTER_TABS: { value: FilterTab; label: string }[] = [
-  { value: "all", label: "Vše" },
-  { value: "akce", label: "TJ Dolany" },
-  { value: "pronajem", label: "Soukromé" },
-  { value: "volne", label: "Ostatní" },
-];
+const LOCATION_OPTIONS = [
+  { value: "sokolovna", label: "Sokolovna" },
+  { value: "kantyna", label: "Kantýna" },
+  { value: "venkovni_cast", label: "Venkovní část" },
+  { value: "hriste", label: "Hřiště" },
+] as const;
 
 const MONTH_NAMES = [
   "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
@@ -69,12 +75,8 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
 
-const LOCATION_OPTIONS = [
-  { value: "sokolovna", label: "Sokolovna" },
-  { value: "kantyna", label: "Kantýna" },
-  { value: "venkovni_cast", label: "Venkovní část" },
-  { value: "hriste", label: "Hřiště" },
-] as const;
+type FilterType = "all" | EventTypeValue | "zapas";
+type FilterMonth = "all" | number;
 
 const DEFAULT_FORM = {
   title: "",
@@ -99,11 +101,18 @@ const DEFAULT_SCHEDULE_FORM = {
 };
 
 function getTypeLabel(value: string): string {
+  if (value === "zapas") return "Zápas";
   return EVENT_TYPE_OPTIONS.find((t) => t.value === value)?.label ?? value;
 }
 
 function getTypeBadgeStyle(value: string): string {
-  return TYPE_BADGE_STYLES[value as EventTypeValue] ?? "bg-gray-100 text-gray-700";
+  return TYPE_BADGE_STYLES[value] ?? "bg-gray-100 text-gray-700";
+}
+
+function formatLocation(loc: string | null): string {
+  if (!loc) return "—";
+  if (loc === "cely_areal") return "Celý areál";
+  return loc.split(",").map((v) => LOCATION_LABELS[v.trim()] || v.trim()).join(", ");
 }
 
 // ─── Main Component ──────────────────────────────────────────
@@ -113,15 +122,16 @@ export default function AdminPlanAkciPage() {
   const [activeTab, setActiveTab] = useState<"events" | "schedule">("events");
 
   // ── Events state ──
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [matches, setMatches] = useState<MatchEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState<FilterTab>("all");
+  const [filterYear, setFilterYear] = useState(now.getFullYear());
+  const [filterType, setFilterType] = useState<FilterType>("all");
+  const [filterMonth, setFilterMonth] = useState<FilterMonth>("all");
 
   // ── Schedule state ──
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
@@ -135,15 +145,22 @@ export default function AdminPlanAkciPage() {
 
   const loadEvents = useCallback(() => {
     setLoading(true);
-    fetch(`/api/calendar?month=${month}&year=${year}`)
-      .then((r) => r.json())
-      .then((data: CalendarEvent[]) => {
-        const filtered = data.filter((e) => !["zapas", "trenink"].includes(e.event_type));
-        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        setEvents(filtered);
-      })
-      .finally(() => setLoading(false));
-  }, [month, year]);
+    Promise.all([
+      fetch(`/api/calendar?year=${filterYear}`).then((r) => r.json()),
+      fetch(`/api/matches?season=`).then((r) => r.json()),
+    ]).then(([evts, mtchs]) => {
+      const filtered = (Array.isArray(evts) ? evts : []).filter(
+        (e: CalendarEvent) => !["zapas", "trenink"].includes(e.event_type)
+      );
+      filtered.sort((a: CalendarEvent, b: CalendarEvent) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setEvents(filtered);
+      setMatches(
+        (Array.isArray(mtchs) ? mtchs : [])
+          .filter((m: MatchEvent) => new Date(m.date).getFullYear() === filterYear)
+          .sort((a: MatchEvent, b: MatchEvent) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      );
+    }).finally(() => setLoading(false));
+  }, [filterYear]);
 
   useEffect(() => {
     loadEvents();
@@ -178,6 +195,7 @@ export default function AdminPlanAkciPage() {
     });
     setEditId(e.id);
     setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async (ev: React.FormEvent) => {
@@ -220,17 +238,25 @@ export default function AdminPlanAkciPage() {
     loadEvents();
   };
 
-  const prevMonth = () => {
-    if (month === 1) { setMonth(12); setYear((y) => y - 1); }
-    else setMonth((m) => m - 1);
-  };
+  // Merge events and matches for display
+  type DisplayItem = { type: "event"; data: CalendarEvent } | { type: "match"; data: MatchEvent };
+  const allItems: DisplayItem[] = [
+    ...events.map((e) => ({ type: "event" as const, data: e })),
+    ...matches.map((m) => ({ type: "match" as const, data: m })),
+  ].sort((a, b) => new Date(a.data.date).getTime() - new Date(b.data.date).getTime());
 
-  const nextMonth = () => {
-    if (month === 12) { setMonth(1); setYear((y) => y + 1); }
-    else setMonth((m) => m + 1);
-  };
+  // Apply filters
+  const filteredItems = allItems.filter((item) => {
+    const d = new Date(item.data.date);
+    if (filterMonth !== "all" && d.getMonth() !== filterMonth) return false;
+    if (filterType === "all") return true;
+    if (filterType === "zapas") return item.type === "match";
+    if (item.type === "match") return false;
+    return item.data.event_type === filterType;
+  });
 
-  const displayedEvents = filter === "all" ? events : events.filter((e) => e.event_type === filter);
+  // Find next event index
+  const nextIdx = filteredItems.findIndex((item) => new Date(item.data.date) >= now);
 
   // ── Schedule logic ──
 
@@ -303,9 +329,7 @@ export default function AdminPlanAkciPage() {
         <button
           onClick={() => setActiveTab("events")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            activeTab === "events"
-              ? "bg-brand-red text-white"
-              : "text-text-muted hover:text-text hover:bg-surface-muted"
+            activeTab === "events" ? "bg-brand-red text-white" : "text-text-muted hover:text-text hover:bg-surface-muted"
           }`}
         >
           <Calendar size={16} className="inline mr-2" />
@@ -314,9 +338,7 @@ export default function AdminPlanAkciPage() {
         <button
           onClick={() => setActiveTab("schedule")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            activeTab === "schedule"
-              ? "bg-brand-red text-white"
-              : "text-text-muted hover:text-text hover:bg-surface-muted"
+            activeTab === "schedule" ? "bg-brand-red text-white" : "text-text-muted hover:text-text hover:bg-surface-muted"
           }`}
         >
           <Clock size={16} className="inline mr-2" />
@@ -327,15 +349,17 @@ export default function AdminPlanAkciPage() {
       {/* ═══ EVENTS TAB ═══ */}
       {activeTab === "events" && (
         <>
+          {/* Top bar: year + add button */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <button onClick={prevMonth} className="p-2 rounded-lg border border-border hover:bg-surface-muted text-text">
-                <ChevronLeft size={18} />
-              </button>
-              <span className="font-semibold text-text">{MONTH_NAMES[month - 1]} {year}</span>
-              <button onClick={nextMonth} className="p-2 rounded-lg border border-border hover:bg-surface-muted text-text">
-                <ChevronRight size={18} />
-              </button>
+            <div className="flex gap-2">
+              {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
+                <button key={y} onClick={() => setFilterYear(y)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filterYear === y ? "bg-brand-red text-white" : "bg-surface border border-border text-text-muted hover:text-text"
+                  }`}>
+                  {y}
+                </button>
+              ))}
             </div>
             <button
               onClick={() => { resetForm(); setShowForm(true); }}
@@ -345,19 +369,35 @@ export default function AdminPlanAkciPage() {
             </button>
           </div>
 
-          {/* Filter tabs */}
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {FILTER_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setFilter(tab.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  filter === tab.value
-                    ? "bg-brand-red text-white"
-                    : "bg-surface border border-border text-text hover:bg-surface-muted"
-                }`}
-              >
-                {tab.label}
+          {/* Filters: type + month */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {([
+              { value: "all", label: "Vše" },
+              { value: "akce", label: "Akce TJ" },
+              { value: "pronajem", label: "Soukromé" },
+              { value: "volne", label: "Ostatní" },
+              { value: "zapas", label: "Zápasy" },
+            ] as { value: FilterType; label: string }[]).map((f) => (
+              <button key={f.value} onClick={() => setFilterType(f.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  filterType === f.value ? "bg-brand-yellow text-brand-dark" : "bg-surface border border-border text-text-muted"
+                }`}>
+                {f.label}
+              </button>
+            ))}
+            <span className="w-px bg-border mx-1" />
+            <button onClick={() => setFilterMonth("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                filterMonth === "all" ? "bg-brand-yellow text-brand-dark" : "bg-surface border border-border text-text-muted"
+              }`}>
+              Celý rok
+            </button>
+            {MONTH_NAMES.map((name, idx) => (
+              <button key={idx} onClick={() => setFilterMonth(idx)}
+                className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  filterMonth === idx ? "bg-brand-yellow text-brand-dark" : "bg-surface border border-border text-text-muted"
+                }`}>
+                {name.slice(0, 3)}
               </button>
             ))}
           </div>
@@ -465,14 +505,20 @@ export default function AdminPlanAkciPage() {
                   className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
               </div>
 
-              <button type="submit" disabled={saving}
-                className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
-                <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
-              </button>
+              <div className="flex gap-2">
+                <button type="submit" disabled={saving}
+                  className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
+                  <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
+                </button>
+                <button type="button" onClick={resetForm}
+                  className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
+                  <X size={16} /> Zrušit
+                </button>
+              </div>
             </form>
           )}
 
-          {/* Events table */}
+          {/* Chronological list */}
           {loading ? (
             <p className="text-text-muted">Načítám...</p>
           ) : (
@@ -489,27 +535,67 @@ export default function AdminPlanAkciPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayedEvents.map((e) => (
-                    <tr key={e.id} className="border-t border-border">
-                      <td className="p-3 text-text-muted whitespace-nowrap">{formatDateTimeCzech(e.date)}</td>
-                      <td className="p-3 text-text font-medium">{e.title}</td>
-                      <td className="p-3 hidden md:table-cell">
-                        <span className={`text-xs font-bold px-2 py-1 rounded ${getTypeBadgeStyle(e.event_type)}`}>
-                          {getTypeLabel(e.event_type)}
-                        </span>
-                      </td>
-                      <td className="p-3 text-text-muted hidden md:table-cell">{e.organizer || "—"}</td>
-                      <td className="p-3 text-text-muted hidden lg:table-cell">{LOCATION_LABELS[e.location || ""] || e.location || "—"}</td>
-                      <td className="p-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => startEdit(e)} className="text-blue-600 hover:text-blue-800 p-1"><Pencil size={16} /></button>
-                          <button onClick={() => deleteEvent(e.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {displayedEvents.length === 0 && (
-                    <tr><td colSpan={6} className="p-6 text-center text-text-muted">Žádné akce v tomto měsíci</td></tr>
+                  {filteredItems.map((item, idx) => {
+                    const isNext = idx === nextIdx;
+                    const d = new Date(item.data.date);
+                    const h = d.getHours();
+                    const m = d.getMinutes();
+                    const isAllDay = h === 0 && m === 0;
+                    const dateStr = isAllDay
+                      ? d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" })
+                      : formatDateTimeCzech(item.data.date);
+
+                    if (item.type === "match") {
+                      const match = item.data;
+                      const title = match.is_home
+                        ? `Dolany - ${match.opponent}`
+                        : `${match.opponent} - Dolany`;
+                      return (
+                        <tr key={`m-${match.id}`} className={`border-t border-border ${isNext ? "bg-brand-red/5 ring-1 ring-inset ring-brand-red/20" : ""}`}>
+                          <td className="p-3 text-text-muted whitespace-nowrap">
+                            {dateStr}
+                            {isNext && <span className="ml-2 text-[10px] font-bold text-brand-red bg-brand-red/10 px-1.5 py-0.5 rounded">další</span>}
+                          </td>
+                          <td className="p-3 text-text font-medium">{title}</td>
+                          <td className="p-3 hidden md:table-cell">
+                            <span className="text-xs font-bold px-2 py-1 rounded bg-green-100 text-green-700">Zápas</span>
+                          </td>
+                          <td className="p-3 text-text-muted hidden md:table-cell">{match.competition || "—"}</td>
+                          <td className="p-3 text-text-muted hidden lg:table-cell">{match.venue || "—"}</td>
+                          <td className="p-3 text-right text-text-muted text-xs">ze Zápasů</td>
+                        </tr>
+                      );
+                    }
+
+                    const event = item.data;
+                    return (
+                      <tr key={`e-${event.id}`} className={`border-t border-border ${isNext ? "bg-brand-red/5 ring-1 ring-inset ring-brand-red/20" : ""}`}>
+                        <td className="p-3 text-text-muted whitespace-nowrap">
+                          {dateStr}
+                          {isNext && <span className="ml-2 text-[10px] font-bold text-brand-red bg-brand-red/10 px-1.5 py-0.5 rounded">další</span>}
+                        </td>
+                        <td className="p-3 text-text font-medium">
+                          {event.title}
+                          {!event.is_public && <span className="ml-1 text-[10px] text-text-muted">(skrytá)</span>}
+                        </td>
+                        <td className="p-3 hidden md:table-cell">
+                          <span className={`text-xs font-bold px-2 py-1 rounded ${getTypeBadgeStyle(event.event_type)}`}>
+                            {getTypeLabel(event.event_type)}
+                          </span>
+                        </td>
+                        <td className="p-3 text-text-muted hidden md:table-cell">{event.organizer || "—"}</td>
+                        <td className="p-3 text-text-muted hidden lg:table-cell">{formatLocation(event.location)}</td>
+                        <td className="p-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => startEdit(event)} className="text-blue-600 hover:text-blue-800 p-1"><Pencil size={16} /></button>
+                            <button onClick={() => deleteEvent(event.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredItems.length === 0 && (
+                    <tr><td colSpan={6} className="p-6 text-center text-text-muted">Žádné akce pro vybraný filtr</td></tr>
                   )}
                 </tbody>
               </table>
@@ -522,7 +608,7 @@ export default function AdminPlanAkciPage() {
       {activeTab === "schedule" && (
         <>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-text">Pravidelné akce v sokolovně</h2>
+            <h2 className="text-xl font-bold text-text">Pravidelné akce v areálu</h2>
             <button
               onClick={() => { resetScheduleForm(); setShowScheduleForm(true); }}
               className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors"
@@ -566,10 +652,16 @@ export default function AdminPlanAkciPage() {
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
                 </div>
               </div>
-              <button type="submit" disabled={scheduleSaving}
-                className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
-                <Save size={16} /> {scheduleSaving ? "Ukládám..." : "Uložit"}
-              </button>
+              <div className="flex gap-2">
+                <button type="submit" disabled={scheduleSaving}
+                  className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
+                  <Save size={16} /> {scheduleSaving ? "Ukládám..." : "Uložit"}
+                </button>
+                <button type="button" onClick={resetScheduleForm}
+                  className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
+                  <X size={16} /> Zrušit
+                </button>
+              </div>
             </form>
           )}
 

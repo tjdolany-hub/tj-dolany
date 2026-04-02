@@ -18,21 +18,19 @@ export default async function PlanAkciPage() {
   const now = new Date().toISOString();
 
   const [{ data: upcoming }, { data: allEvents }, { data: schedule }] = await Promise.all([
-    // Next 5 public events (akce + volne + zapas, no pronajem)
+    // Next 5 upcoming TJ events only (akce + zapas, not volne/pronajem)
     supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type, location, organizer")
-      .in("event_type", ["akce", "volne", "zapas"])
+      .in("event_type", ["akce", "zapas"])
       .eq("is_public", true)
       .gte("date", now)
       .order("date", { ascending: true })
       .limit(5),
-    // All public events for calendar (akce + volne + zapas, no pronajem)
+    // All public events for calendar (all types including pronajem for admin visibility)
     supabase
       .from("calendar_events")
-      .select("id, title, description, date, event_type, location, organizer")
-      .in("event_type", ["akce", "volne", "zapas", "trenink"])
-      .eq("is_public", true)
+      .select("id, title, description, date, event_type, location, organizer, is_public")
       .order("date", { ascending: true }),
     // Weekly schedule
     supabase
