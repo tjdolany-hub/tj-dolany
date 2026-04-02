@@ -72,6 +72,10 @@ html { scroll-behavior: smooth; }
   box-shadow: 0 12px 40px -12px rgba(196, 30, 58, 0.3);
 }
 
+[data-theme="dark"] .footer-bg {
+  background: #161616;
+}
+
 .gradient-text {
   background: linear-gradient(135deg, var(--color-brand-yellow), var(--color-brand-red));
   -webkit-background-clip: text;

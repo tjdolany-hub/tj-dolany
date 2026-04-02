@@ -6,7 +6,7 @@ import { Mail, MapPin } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-brand-dark text-gray-400 mt-auto relative overflow-hidden">
+    <footer className="bg-brand-dark text-gray-400 mt-auto relative overflow-hidden footer-bg">
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-red/5 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-brand-yellow/5 rounded-full blur-3xl" />
 
