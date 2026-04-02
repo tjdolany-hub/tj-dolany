@@ -95,7 +95,6 @@ const DEFAULT_FORM = {
 };
 
 const SCHEDULE_LOCATION_OPTIONS = [
-  { value: "", label: "— Nevybráno —" },
   { value: "cely_areal", label: "Celý areál" },
   { value: "sokolovna", label: "Sokolovna" },
   { value: "kantyna", label: "Kantýna" },
@@ -108,7 +107,8 @@ const DEFAULT_SCHEDULE_FORM = {
   title: "",
   time_from: "",
   time_to: "",
-  location: "",
+  locationAll: true,
+  locations: [] as string[],
   valid_from: "",
   valid_to: "",
 };
@@ -292,12 +292,14 @@ export default function AdminPlanAkciPage() {
   };
 
   const startScheduleEdit = (s: ScheduleEntry) => {
+    const isAll = !s.location || s.location === "cely_areal";
     setScheduleForm({
       day_of_week: s.day_of_week,
       title: s.title,
       time_from: s.time_from,
       time_to: s.time_to || "",
-      location: s.location || "",
+      locationAll: isAll,
+      locations: isAll ? [] : s.location!.split(","),
       valid_from: s.valid_from || "",
       valid_to: s.valid_to || "",
     });
@@ -308,10 +310,13 @@ export default function AdminPlanAkciPage() {
   const handleScheduleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     setScheduleSaving(true);
+    const location = scheduleForm.locationAll ? "cely_areal" : scheduleForm.locations.join(",");
     const body = {
-      ...scheduleForm,
+      day_of_week: scheduleForm.day_of_week,
+      title: scheduleForm.title,
+      time_from: scheduleForm.time_from,
       time_to: scheduleForm.time_to || null,
-      location: scheduleForm.location || null,
+      location: location || null,
       valid_from: scheduleForm.valid_from || null,
       valid_to: scheduleForm.valid_to || null,
     };
@@ -665,10 +670,30 @@ export default function AdminPlanAkciPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Místo</label>
-                  <select value={scheduleForm.location} onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text">
-                    {SCHEDULE_LOCATION_OPTIONS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-                  </select>
+                  <label className="flex items-center gap-2 cursor-pointer mb-1.5">
+                    <input type="checkbox" checked={scheduleForm.locationAll}
+                      onChange={(e) => setScheduleForm({ ...scheduleForm, locationAll: e.target.checked, locations: [] })}
+                      className="w-4 h-4 accent-brand-red" />
+                    <span className="text-sm text-text font-medium">Celý areál</span>
+                  </label>
+                  {!scheduleForm.locationAll && (
+                    <div className="space-y-1 ml-1">
+                      {SCHEDULE_LOCATION_OPTIONS.filter((l) => l.value !== "cely_areal").map((l) => (
+                        <label key={l.value} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox"
+                            checked={scheduleForm.locations.includes(l.value)}
+                            onChange={(e) => {
+                              const locs = e.target.checked
+                                ? [...scheduleForm.locations, l.value]
+                                : scheduleForm.locations.filter((v) => v !== l.value);
+                              setScheduleForm({ ...scheduleForm, locations: locs });
+                            }}
+                            className="w-3.5 h-3.5 accent-brand-red" />
+                          <span className="text-sm text-text">{l.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

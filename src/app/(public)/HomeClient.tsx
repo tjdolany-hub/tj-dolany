@@ -225,10 +225,10 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 )}
               </div>
 
-              {/* Right — stacked rows */}
-              <div className="md:w-[70%] divide-y divide-white/10">
+              {/* Right — stacked rows, each 25% height */}
+              <div className="md:w-[70%] grid grid-rows-4 divide-y divide-white/10">
                 {/* Forma */}
-                <div className="flex items-center gap-4 px-5 py-3">
+                <div className="flex items-center gap-4 px-5">
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Forma</span>
                   <div className="flex gap-1.5">
                     {clubBanner.form.length > 0 ? clubBanner.form.map((r, i) => (
@@ -244,7 +244,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 </div>
 
                 {/* Poslední zápas */}
-                <div className="flex items-center gap-4 px-5 py-3">
+                <div className="flex items-center gap-4 px-5">
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Poslední zápas</span>
                   {clubBanner.lastMatch ? (
                     (() => {
@@ -272,7 +272,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 </div>
 
                 {/* Nejlepší střelec */}
-                <div className="flex items-center gap-4 px-5 py-3">
+                <div className="flex items-center gap-4 px-5">
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Nejlepší střelec</span>
                   {clubBanner.topScorer ? (
                     <div className="flex items-center gap-2">
@@ -285,7 +285,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 </div>
 
                 {/* Nejvíce karet */}
-                <div className="flex items-center gap-4 px-5 py-3">
+                <div className="flex items-center gap-4 px-5">
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Nejvíce karet</span>
                   {clubBanner.topCards ? (
                     <div className="flex items-center gap-2">
