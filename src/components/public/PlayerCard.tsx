@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { POSITION_COLORS, POSITION_LABELS } from "@/lib/utils";
+import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 
 interface PlayerCardProps {
   id: string;
@@ -70,27 +71,47 @@ export default function PlayerCard({
           )}
           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
-        <div className="p-2.5 text-center h-[88px] flex flex-col justify-center">
+        <div className="p-3 text-center h-[130px] flex flex-col justify-start">
           <h3 className="font-bold text-text text-sm tracking-tight leading-tight">
             {first_name || last_name ? `${first_name || ""} ${last_name || ""}`.trim() : name}
           </h3>
           {nickname && (
-            <p className="text-xs text-text-muted -mt-0.5">&quot;{nickname}&quot;</p>
+            <p className="text-xs text-text-muted">&quot;{nickname}&quot;</p>
           )}
           <div className="flex items-center justify-center gap-1.5 mt-1.5">
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${posColor}`}>
               {posLabel}
             </span>
-            {birth_date && (
-              <span className="text-[10px] text-text-muted">{calcAge(birth_date)} let</span>
-            )}
           </div>
-          {stats && (stats.matches > 0 || stats.goals > 0) && (
-            <div className="flex items-center justify-center gap-2 mt-1.5 text-[10px] text-text-muted">
-              <span>{stats.matches} záp.</span>
-              <span>{stats.goals} gólů</span>
-              {stats.yellows > 0 && <span className="text-yellow-600">{stats.yellows} ŽK</span>}
-              {stats.reds > 0 && <span className="text-red-600">{stats.reds} ČK</span>}
+          {birth_date && (
+            <p className="text-[11px] text-text-muted mt-1">{calcAge(birth_date)} let</p>
+          )}
+          {stats && (stats.matches > 0 || stats.goals > 0 || stats.yellows > 0 || stats.reds > 0) && (
+            <div className="flex items-center justify-center gap-3 mt-1.5 text-[11px] text-text-muted">
+              {stats.matches > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <JerseyIcon className="w-3.5 h-3.5 text-text-muted" />
+                  <span className="font-semibold">{stats.matches}</span>
+                </span>
+              )}
+              {stats.goals > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <BallIcon className="w-3.5 h-3.5 text-text-muted" />
+                  <span className="font-semibold">{stats.goals}</span>
+                </span>
+              )}
+              {stats.yellows > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <YellowCard />
+                  <span className="font-semibold">{stats.yellows}</span>
+                </span>
+              )}
+              {stats.reds > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <RedCard />
+                  <span className="font-semibold">{stats.reds}</span>
+                </span>
+              )}
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -17,13 +18,24 @@ interface Article {
   article_images: { url: string; alt: string | null }[];
 }
 
+const FILTER_OPTIONS = [
+  { value: "vse", label: "Vše" },
+  ...CATEGORIES,
+];
+
 export default function AktualityClient({ articles }: { articles: Article[] }) {
+  const [filter, setFilter] = useState("vse");
+
+  const filtered = filter === "vse"
+    ? articles
+    : articles.filter((a) => a.category === filter);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
+        className="text-center mb-8"
       >
         <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Novinky</p>
         <h1 className="text-4xl font-extrabold text-text tracking-tight">
@@ -31,9 +43,26 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
         </h1>
       </motion.div>
 
-      {articles.length > 0 ? (
+      {/* Category filters */}
+      <div className="flex flex-wrap justify-center gap-2 mb-10">
+        {FILTER_OPTIONS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              filter === f.value
+                ? "bg-brand-red text-white"
+                : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length > 0 ? (
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {articles.map((article) => (
+          {filtered.map((article) => (
             <StaggerItem key={article.id}>
               <Link
                 href={`/aktuality/${article.slug}`}
@@ -75,7 +104,7 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
         </StaggerContainer>
       ) : (
         <p className="text-center text-text-muted py-12 text-lg">
-          Zatím nemáme žádné aktuality.
+          Žádné aktuality v této kategorii.
         </p>
       )}
     </div>

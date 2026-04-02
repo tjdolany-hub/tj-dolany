@@ -1,5 +1,7 @@
 import Header from "@/components/public/Header";
 import Footer from "@/components/public/Footer";
+import PageNav from "@/components/public/PageNav";
+import PageNavSpacer from "@/components/public/PageNavSpacer";
 
 export default function PublicLayout({
   children,
@@ -9,7 +11,11 @@ export default function PublicLayout({
   return (
     <>
       <Header />
-      <main className="flex-1 pt-16">{children}</main>
+      <PageNav />
+      <main className="flex-1 pt-16">
+        <PageNavSpacer />
+        {children}
+      </main>
       <Footer />
     </>
   );
