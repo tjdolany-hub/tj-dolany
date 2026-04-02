@@ -187,7 +187,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── MATCH TICKER ── */}
       {nextMatch && (() => {
-        const tickerText = `Příští zápas: ${formatMatchDate(nextMatch.date)} — ${nextMatch.title}${nextMatch.location ? ` 📍 ${nextMatch.location}` : ""}`;
+        const tickerText = `Příští zápas: ${formatMatchDate(nextMatch.date)} — ${nextMatch.title}${nextMatch.location ? ` | Hřiště: ${nextMatch.location}` : ""}`;
         return (
           <div className="bg-brand-red text-white overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center">
@@ -219,10 +219,10 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 <h2 className="text-xl font-extrabold text-white tracking-tight">TJ Dolany</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Okresní přebor • Náchod</p>
                 {clubBanner.leaguePosition && (
-                  <div className="mt-3 text-center">
-                    <span className="text-3xl font-extrabold text-brand-yellow">{clubBanner.leaguePosition}.</span>
-                    <span className="block text-[10px] text-gray-400 uppercase tracking-wider">místo</span>
-                  </div>
+                  <Link href="/tym#tabulka" className="mt-3 text-center group">
+                    <span className="text-3xl font-extrabold text-brand-yellow group-hover:text-white transition-colors">{clubBanner.leaguePosition}.</span>
+                    <span className="block text-[10px] text-gray-400 uppercase tracking-wider group-hover:text-gray-300 transition-colors">místo</span>
+                  </Link>
                 )}
               </div>
 
@@ -273,24 +273,24 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 </div>
 
                 {/* Nejlepší střelec */}
-                <div className="flex items-center gap-4 px-5">
+                <Link href="/tym#statistiky" className="flex items-center gap-4 px-5 group">
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Nejlepší střelec</span>
                   {clubBanner.topScorer ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">{clubBanner.topScorer.name}</span>
+                      <span className="text-sm font-bold text-white group-hover:text-brand-red transition-colors">{clubBanner.topScorer.name}</span>
                       <span className="text-xs text-brand-yellow font-bold">{clubBanner.topScorer.goals} gólů</span>
                     </div>
                   ) : (
                     <span className="text-xs text-gray-500">—</span>
                   )}
-                </div>
+                </Link>
 
                 {/* Nejvíce karet */}
-                <div className="flex items-center gap-4 px-5">
+                <Link href="/tym#statistiky" className="flex items-center gap-4 px-5 group">
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Nejvíce karet</span>
                   {clubBanner.topCards ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">{clubBanner.topCards.name}</span>
+                      <span className="text-sm font-bold text-white group-hover:text-brand-red transition-colors">{clubBanner.topCards.name}</span>
                       <span className="flex items-center gap-1.5">
                         {clubBanner.topCards.yellows > 0 && (
                           <span className="flex items-center gap-0.5">
@@ -309,7 +309,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                   ) : (
                     <span className="text-xs text-gray-500">—</span>
                   )}
-                </div>
+                </Link>
               </div>
             </div>
           </div>
