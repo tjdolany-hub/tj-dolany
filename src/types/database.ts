@@ -113,6 +113,10 @@ export interface Database {
         Row: {
           id: string;
           name: string;
+          first_name: string | null;
+          last_name: string | null;
+          nickname: string | null;
+          preferred_foot: string | null;
           position: "brankar" | "obrance" | "zaloznik" | "utocnik";
           number: number | null;
           birth_date: string | null;
@@ -125,6 +129,10 @@ export interface Database {
         Insert: {
           id?: string;
           name: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          nickname?: string | null;
+          preferred_foot?: string | null;
           position: "brankar" | "obrance" | "zaloznik" | "utocnik";
           number?: number | null;
           birth_date?: string | null;
@@ -137,6 +145,10 @@ export interface Database {
         Update: {
           id?: string;
           name?: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          nickname?: string | null;
+          preferred_foot?: string | null;
           position?: "brankar" | "obrance" | "zaloznik" | "utocnik";
           number?: number | null;
           birth_date?: string | null;
@@ -157,6 +169,7 @@ export interface Database {
           end_date: string | null;
           event_type: "zapas" | "trenink" | "akce" | "pronajem" | "volne";
           location: string | null;
+          organizer: string | null;
           is_public: boolean;
           created_at: string;
         };
@@ -168,6 +181,7 @@ export interface Database {
           end_date?: string | null;
           event_type?: "zapas" | "trenink" | "akce" | "pronajem" | "volne";
           location?: string | null;
+          organizer?: string | null;
           is_public?: boolean;
           created_at?: string;
         };
@@ -179,6 +193,7 @@ export interface Database {
           end_date?: string | null;
           event_type?: "zapas" | "trenink" | "akce" | "pronajem" | "volne";
           location?: string | null;
+          organizer?: string | null;
           is_public?: boolean;
           created_at?: string;
         };
@@ -196,6 +211,9 @@ export interface Database {
           season: string | null;
           summary: string | null;
           article_id: string | null;
+          halftime_home: number | null;
+          halftime_away: number | null;
+          venue: string | null;
           created_at: string;
         };
         Insert: {
@@ -209,6 +227,9 @@ export interface Database {
           season?: string | null;
           summary?: string | null;
           article_id?: string | null;
+          halftime_home?: number | null;
+          halftime_away?: number | null;
+          venue?: string | null;
           created_at?: string;
         };
         Update: {
@@ -222,6 +243,9 @@ export interface Database {
           season?: string | null;
           summary?: string | null;
           article_id?: string | null;
+          halftime_home?: number | null;
+          halftime_away?: number | null;
+          venue?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -239,18 +263,21 @@ export interface Database {
           id: string;
           match_id: string;
           player_id: string;
+          is_starter: boolean;
           created_at: string;
         };
         Insert: {
           id?: string;
           match_id: string;
           player_id: string;
+          is_starter?: boolean;
           created_at?: string;
         };
         Update: {
           id?: string;
           match_id?: string;
           player_id?: string;
+          is_starter?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -276,6 +303,7 @@ export interface Database {
           match_id: string;
           player_id: string;
           goals: number;
+          minute: number | null;
           created_at: string;
         };
         Insert: {
@@ -283,6 +311,7 @@ export interface Database {
           match_id: string;
           player_id: string;
           goals?: number;
+          minute?: number | null;
           created_at?: string;
         };
         Update: {
@@ -290,6 +319,7 @@ export interface Database {
           match_id?: string;
           player_id?: string;
           goals?: number;
+          minute?: number | null;
           created_at?: string;
         };
         Relationships: [
@@ -433,6 +463,48 @@ export interface Database {
             columns: ["album_id"];
             isOneToOne: false;
             referencedRelation: "photo_albums";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      match_cards: {
+        Row: {
+          id: string;
+          match_id: string;
+          player_id: string;
+          card_type: "yellow" | "red";
+          minute: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          player_id: string;
+          card_type: "yellow" | "red";
+          minute?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          player_id?: string;
+          card_type?: "yellow" | "red";
+          minute?: number | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_cards_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "match_results";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_cards_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
             referencedColumns: ["id"];
           }
         ];

@@ -7,11 +7,9 @@ import {
   LayoutDashboard,
   FileText,
   Users,
-  Calendar,
   Trophy,
   Image as ImageIcon,
   CalendarDays,
-  Clock,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,11 +19,8 @@ const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/articles", label: "Články", icon: FileText },
   { href: "/admin/players", label: "Hráči", icon: Users },
-  { href: "/admin/calendar", label: "Kalendář", icon: Calendar },
-  { href: "/admin/matches", label: "Výsledky", icon: Trophy },
-  { href: "/admin/events", label: "Akce", icon: CalendarDays },
-  { href: "/admin/schedule", label: "Rozvrh", icon: Clock },
-  { href: "/admin/draws", label: "Losy", icon: CalendarDays },
+  { href: "/admin/events", label: "Plán akcí", icon: CalendarDays },
+  { href: "/admin/matches", label: "Zápasy", icon: Trophy },
   { href: "/admin/albums", label: "Fotoalba", icon: ImageIcon },
 ];
 

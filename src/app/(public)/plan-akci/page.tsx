@@ -21,7 +21,7 @@ export default async function PlanAkciPage() {
     // Next 5 public events (akce + volne, no pronajem)
     supabase
       .from("calendar_events")
-      .select("id, title, description, date, event_type, location")
+      .select("id, title, description, date, event_type, location, organizer")
       .in("event_type", ["akce", "volne"])
       .eq("is_public", true)
       .gte("date", now)
@@ -30,7 +30,7 @@ export default async function PlanAkciPage() {
     // All public events for calendar (akce + volne + zapas, no pronajem)
     supabase
       .from("calendar_events")
-      .select("id, title, description, date, event_type, location")
+      .select("id, title, description, date, event_type, location, organizer")
       .in("event_type", ["akce", "volne", "zapas", "trenink"])
       .eq("is_public", true)
       .order("date", { ascending: true }),

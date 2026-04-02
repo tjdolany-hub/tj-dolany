@@ -9,6 +9,7 @@ const eventSchema = z.object({
   end_date: z.string().nullable().optional(),
   event_type: z.enum(["zapas", "trenink", "akce", "pronajem", "volne"]),
   location: z.string().nullable().optional(),
+  organizer: z.string().nullable().optional(),
   is_public: z.boolean().default(true),
 });
 

@@ -81,3 +81,26 @@ export const EVENT_TYPE_COLORS: Record<string, string> = {
   pronajem: "bg-blue-500",
   volne: "bg-gray-200",
 };
+
+export const LOCATIONS = [
+  { value: "cely_areal", label: "Celý areál" },
+  { value: "sokolovna", label: "Sokolovna" },
+  { value: "kantyna", label: "Kantýna" },
+  { value: "venkovni_cast", label: "Venkovní část" },
+  { value: "hriste", label: "Hřiště" },
+] as const;
+
+export const LOCATION_LABELS: Record<string, string> = {
+  cely_areal: "Celý areál",
+  sokolovna: "Sokolovna",
+  kantyna: "Kantýna",
+  venkovni_cast: "Venkovní část",
+  hriste: "Hřiště",
+};
+
+export const ORGANIZERS = [
+  "TJ Dolany",
+  "Obec Dolany",
+  "DS Dolany",
+  "SDH Dolany",
+] as const;

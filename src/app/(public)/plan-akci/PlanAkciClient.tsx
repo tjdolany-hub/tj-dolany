@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, X, MapPin, Clock } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import { formatDateCzech } from "@/lib/utils";
+import { formatDateCzech, LOCATION_LABELS } from "@/lib/utils";
 
 interface CalEvent {
   id: string;
@@ -13,6 +13,7 @@ interface CalEvent {
   date: string;
   event_type: string;
   location: string | null;
+  organizer: string | null;
 }
 
 interface ScheduleEntry {
@@ -387,8 +388,11 @@ export default function PlanAkciClient({
                           </span>
                           {event.location && (
                             <span className="flex items-center gap-1">
-                              <MapPin size={12} /> {event.location}
+                              <MapPin size={12} /> {LOCATION_LABELS[event.location] || event.location}
                             </span>
+                          )}
+                          {event.organizer && (
+                            <span className="text-text-muted">Pořadatel: {event.organizer}</span>
                           )}
                         </div>
                         {event.description && (

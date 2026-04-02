@@ -4,6 +4,10 @@ import { z } from "zod";
 
 const playerSchema = z.object({
   name: z.string().min(1, "Jméno je povinné"),
+  first_name: z.string().nullable().optional(),
+  last_name: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  preferred_foot: z.string().nullable().optional(),
   position: z.enum(["brankar", "obrance", "zaloznik", "utocnik"]),
   number: z.number().nullable().optional(),
   photo: z.string().nullable().optional(),
