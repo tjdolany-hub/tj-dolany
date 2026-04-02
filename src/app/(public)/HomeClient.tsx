@@ -164,23 +164,26 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── MATCH TICKER ── */}
       {nextMatch && (
-        <div className="bg-brand-red text-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-center gap-3 py-2.5">
-              <span className="shrink-0 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                <span className="font-bold text-sm uppercase tracking-wide">Příští zápas</span>
+        <div className="bg-brand-red text-white overflow-hidden ticker-container">
+          <div className="py-2.5 whitespace-nowrap animate-ticker inline-flex items-center gap-8">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="inline-flex items-center gap-3">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                  <span className="font-bold text-sm uppercase tracking-wide">Příští zápas</span>
+                </span>
+                <span className="text-sm font-medium">
+                  {formatMatchDate(nextMatch.date)} — {nextMatch.title}
+                  {nextMatch.location && (
+                    <span className="text-white/70 ml-2">
+                      <MapPin size={12} className="inline -mt-0.5 mr-0.5" />
+                      {nextMatch.location}
+                    </span>
+                  )}
+                </span>
+                <span className="text-white/30 mx-4">●</span>
               </span>
-              <span className="shrink-0 text-sm font-medium">
-                {formatMatchDate(nextMatch.date)} — {nextMatch.title}
-                {nextMatch.location && (
-                  <span className="text-white/70 ml-2">
-                    <MapPin size={12} className="inline -mt-0.5 mr-0.5" />
-                    {nextMatch.location}
-                  </span>
-                )}
-              </span>
-            </div>
+            ))}
           </div>
         </div>
       )}
@@ -341,7 +344,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                         </div>
                       </div>
                     ) : (
-                      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-red/20 via-brand-dark to-brand-dark-light flex items-center justify-center">
+                      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-red/15 via-brand-dark to-brand-dark flex items-center justify-center">
                         <div className="text-center">
                           <div className="flex items-center gap-2 justify-center mb-3">
                             <span className="text-xs font-bold text-white bg-brand-red px-2.5 py-1 rounded-md uppercase tracking-wider">

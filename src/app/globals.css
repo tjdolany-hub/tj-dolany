@@ -6,15 +6,15 @@
   --color-brand-red-light: #E8475E;
   --color-brand-yellow: #F5C518;
   --color-brand-yellow-light: #FFF3C4;
-  --color-brand-dark: #0F172A;
-  --color-brand-dark-light: #1E293B;
+  --color-brand-dark: #111111;
+  --color-brand-dark-light: #1C1A18;
   --color-surface: #FFFFFF;
   --color-surface-muted: #F8FAFC;
   --color-surface-alt: #F1F5F9;
   --color-surface-glass: rgba(255, 255, 255, 0.7);
   --color-border: #E2E8F0;
   --color-border-strong: #CBD5E1;
-  --color-text: #0F172A;
+  --color-text: #111111;
   --color-text-muted: #64748B;
 
   --font-heading: "Inter", system-ui, sans-serif;
@@ -104,6 +104,17 @@ html { scroll-behavior: smooth; }
   50% { transform: translateY(-10px); }
 }
 .animate-float { animation: float 6s ease-in-out infinite; }
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+.animate-ticker {
+  animation: ticker-scroll 20s linear infinite;
+}
+.ticker-container:hover .animate-ticker {
+  animation-play-state: paused;
+}
 
 .prose h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.025em; color: var(--color-text); }
 .prose h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; margin-top: 2rem; color: var(--color-text); }
