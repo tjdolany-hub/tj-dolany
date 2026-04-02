@@ -512,6 +512,40 @@ export interface Database {
           }
         ];
       };
+      match_images: {
+        Row: {
+          id: string;
+          match_id: string;
+          url: string;
+          alt: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          url: string;
+          alt?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          url?: string;
+          alt?: string | null;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_images_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "match_results";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       weekly_schedule: {
         Row: {
           id: string;

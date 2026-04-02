@@ -21,7 +21,7 @@ export async function POST(
   const { data: match, error } = await admin
     .from("match_results")
     .select(
-      "*, match_lineups(player_id, is_starter, players(name)), match_scorers(player_id, goals, minute, players(name)), match_cards(player_id, card_type, minute, players(name))"
+      "*, match_lineups(player_id, is_starter, players(name)), match_scorers(player_id, goals, minute, players(name)), match_cards(player_id, card_type, minute, players(name)), match_images(url, alt, sort_order)"
     )
     .eq("id", id)
     .single();
@@ -138,6 +138,22 @@ export async function POST(
     content += `\n\n${match.summary}`;
   }
 
+  // Helper: sync match images to article_images
+  const syncImages = async (articleId: string) => {
+    const matchImages = (match.match_images as { url: string; alt: string | null; sort_order: number }[] | null) ?? [];
+    if (matchImages.length === 0) return;
+    // Remove old article images, replace with match images
+    await admin.from("article_images").delete().eq("article_id", articleId);
+    const rows = matchImages
+      .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+      .map((img: { url: string; alt: string | null }) => ({
+        article_id: articleId,
+        url: img.url,
+        alt: img.alt,
+      }));
+    await admin.from("article_images").insert(rows);
+  };
+
   // Create or update article
   if (match.article_id) {
     // Update existing
@@ -149,6 +165,7 @@ export async function POST(
     if (updateErr) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
+    await syncImages(match.article_id);
     return NextResponse.json({ article_id: match.article_id, updated: true });
   } else {
     // Create new
@@ -175,6 +192,8 @@ export async function POST(
       .from("match_results")
       .update({ article_id: article.id })
       .eq("id", id);
+
+    await syncImages(article.id);
 
     return NextResponse.json({
       article_id: article.id,

@@ -18,6 +18,7 @@ const updateSchema = z.object({
   lineup: z.array(z.object({ player_id: z.string(), is_starter: z.boolean().default(true) })).optional(),
   scorers: z.array(z.object({ player_id: z.string(), goals: z.number().default(1), minute: z.number().nullable().optional() })).optional(),
   cards: z.array(z.object({ player_id: z.string(), card_type: z.enum(["yellow", "red"]), minute: z.number().nullable().optional() })).optional(),
+  images: z.array(z.object({ url: z.string(), alt: z.string().nullable().optional() })).optional(),
 });
 
 export async function GET(
@@ -29,7 +30,7 @@ export async function GET(
 
   const { data: match, error } = await supabase
     .from("match_results")
-    .select("*, match_lineups(player_id, is_starter, players(id, name)), match_scorers(player_id, goals, minute, players(id, name)), match_cards(player_id, card_type, minute, players(id, name))")
+    .select("*, match_lineups(player_id, is_starter, players(id, name)), match_scorers(player_id, goals, minute, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order)")
     .eq("id", id)
     .single();
 
@@ -57,7 +58,7 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const { lineup, scorers, cards, ...data } = parsed.data;
+  const { lineup, scorers, cards, images, ...data } = parsed.data;
 
   const admin = await createServiceClient();
 
@@ -127,10 +128,23 @@ export async function PUT(
     }
   }
 
+  if (images !== undefined) {
+    await admin.from("match_images").delete().eq("match_id", id);
+    if (images.length > 0) {
+      const imageRows = images.map((img, i) => ({
+        match_id: id,
+        url: img.url,
+        alt: img.alt ?? null,
+        sort_order: i,
+      }));
+      await admin.from("match_images").insert(imageRows);
+    }
+  }
+
   // Return updated match with relations
   const { data: updated } = await admin
     .from("match_results")
-    .select("*, match_lineups(player_id, is_starter, players(id, name)), match_scorers(player_id, goals, minute, players(id, name)), match_cards(player_id, card_type, minute, players(id, name))")
+    .select("*, match_lineups(player_id, is_starter, players(id, name)), match_scorers(player_id, goals, minute, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order)")
     .eq("id", id)
     .single();
 

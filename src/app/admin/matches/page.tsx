@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Users, Target, ChevronDown, Save, X,
-  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle,
+  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera,
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 
@@ -55,6 +55,7 @@ interface Match {
   match_lineups?: LineupEntry[];
   match_scorers?: ScorerEntry[];
   match_cards?: CardEntry[];
+  match_images?: { url: string; alt: string | null }[];
 }
 
 interface Draw {
@@ -102,6 +103,7 @@ export default function AdminMatchesPage() {
   const [lineup, setLineup] = useState<{ player_id: string; is_starter: boolean }[]>([]);
   const [scorers, setScorers] = useState<{ player_id: string; goals: number; minute: string }[]>([]);
   const [cards, setCards] = useState<{ player_id: string; card_type: "yellow" | "red"; minute: string }[]>([]);
+  const [matchImages, setMatchImages] = useState<{ url: string; alt?: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -149,6 +151,7 @@ export default function AdminMatchesPage() {
     setLineup([]);
     setScorers([]);
     setCards([]);
+    setMatchImages([]);
     setEditId(null);
     setShowForm(false);
   };
@@ -186,6 +189,7 @@ export default function AdminMatchesPage() {
     });
     setScorers(expandedScorers);
     setCards(m.match_cards?.map((c) => ({ player_id: c.player_id, card_type: c.card_type, minute: c.minute?.toString() ?? "" })) || []);
+    setMatchImages(m.match_images?.map((img) => ({ url: img.url, alt: img.alt ?? undefined })) || []);
     setEditId(m.id);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -224,6 +228,7 @@ export default function AdminMatchesPage() {
         card_type: c.card_type,
         minute: c.minute ? parseInt(c.minute) : null,
       })),
+      images: matchImages.map((img) => ({ url: img.url, alt: img.alt || null })),
     };
 
     const url = editId ? `/api/matches/${editId}` : "/api/matches";
@@ -280,6 +285,7 @@ export default function AdminMatchesPage() {
   };
 
   const getResult = (m: Match) => {
+    if (!isMatchPlayed(m)) return { label: "?", color: "bg-gray-400" };
     const ourScore = m.is_home ? m.score_home : m.score_away;
     const theirScore = m.is_home ? m.score_away : m.score_home;
     if (ourScore > theirScore) return { label: "V", color: "bg-green-500" };
@@ -287,11 +293,13 @@ export default function AdminMatchesPage() {
     return { label: "R", color: "bg-yellow-500" };
   };
 
-  // Filter matches by half
-  const filteredMatches = half === "all" ? matches : matches.filter((m) => {
+  // Filter matches by half, sort ascending (oldest first)
+  const filteredMatches = (half === "all" ? matches : matches.filter((m) => {
     const month = new Date(m.date).getMonth();
     return half === "podzim" ? month >= 7 : month < 7;
-  });
+  })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const isMatchPlayed = (m: Match) => new Date(m.date) <= new Date();
 
   // ── Draw form logic ──
 
@@ -654,6 +662,15 @@ export default function AdminMatchesPage() {
                   className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
               </div>
 
+              {/* Photos */}
+              <div>
+                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
+                  <Camera size={16} className="text-brand-red" /> Fotogalerie
+                  <span className="text-xs font-normal text-text-muted">(automaticky převedeno na WebP)</span>
+                </p>
+                <ImageUploader images={matchImages} onChange={setMatchImages} folder="matches" multiple={true} />
+              </div>
+
               <button type="submit" disabled={saving}
                 className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50">
                 <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
@@ -667,11 +684,12 @@ export default function AdminMatchesPage() {
           ) : (
             <div className="space-y-2">
               {filteredMatches.map((m) => {
+                const played = isMatchPlayed(m);
                 const result = getResult(m);
                 const d = new Date(m.date);
                 const isExpanded = expandedMatch === m.id;
                 return (
-                  <div key={m.id} className="bg-surface rounded-xl border border-border overflow-hidden">
+                  <div key={m.id} className={`bg-surface rounded-xl border overflow-hidden ${!played ? "border-border border-dashed opacity-80" : "border-border"}`}>
                     <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-muted transition-colors"
                       onClick={() => setExpandedMatch(isExpanded ? null : m.id)}>
                       <span className={`${result.color} text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0`}>
@@ -682,12 +700,16 @@ export default function AdminMatchesPage() {
                           <span className="font-semibold text-text text-sm">
                             {m.is_home ? `Dolany - ${m.opponent}` : `${m.opponent} - Dolany`}
                           </span>
-                          <span className="font-bold text-text">
-                            {m.score_home}:{m.score_away}
-                            {m.halftime_home != null && m.halftime_away != null && (
-                              <span className="text-text-muted font-normal text-xs ml-1">({m.halftime_home}:{m.halftime_away})</span>
-                            )}
-                          </span>
+                          {played ? (
+                            <span className="font-bold text-text">
+                              {m.score_home}:{m.score_away}
+                              {m.halftime_home != null && m.halftime_away != null && (
+                                <span className="text-text-muted font-normal text-xs ml-1">({m.halftime_home}:{m.halftime_away})</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-text-muted italic">dosud nehráno</span>
+                          )}
                         </div>
                         <span className="text-xs text-text-muted">
                           {d.toLocaleDateString("cs-CZ")} {d.getHours() > 0 && `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`} • {m.competition} {m.venue && `• ${m.venue}`}
