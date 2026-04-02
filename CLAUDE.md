@@ -15,75 +15,94 @@ npm run lint         # ESLint
 npx tsc --noEmit     # Type-check without emitting
 ```
 
+No test framework is configured.
+
 ## Tech Stack
 
 - **Next.js 16** (App Router), React 19, TypeScript strict
-- **Supabase** — database, auth, storage (hosted instance `qntvgaruysxgivospeoi`)
+- **Supabase** — database (PostgreSQL), auth, storage (hosted instance `qntvgaruysxgivospeoi`)
 - **Tailwind CSS v4** — uses `@theme` directive in `globals.css` (not tailwind.config)
 - **Zod** — server-side validation on all API routes
+- **Sharp** — server-side image optimization (WebP, resize)
 - **Framer Motion** — animations, **Lucide React** — icons, **Marked** — Markdown rendering
 
 ## Architecture
 
 ### Routing Layout
 
-- `src/app/(public)/` — public pages with Header/Footer layout (aktuality, tym, plan-akci, historie, o-nas)
-- `src/app/admin/` — admin panel with sidebar, protected by Supabase Auth (redirects to `/login` if unauthenticated)
+- `src/app/(public)/` — public pages with Header/Footer layout (aktuality, tym, plan-akci, galerie, historie, o-nas)
+- `src/app/admin/` — admin panel with sidebar, protected by Supabase Auth + middleware redirect to `/login`
 - `src/app/api/` — REST endpoints; all mutations require authenticated session
 - `src/app/login/` — auth page
 
 ### Client/Server Component Pattern
 
-Server pages (`page.tsx`) fetch data from Supabase, then pass it to client components (`*Client.tsx`) that live alongside them. Example: `tym/page.tsx` → `tym/TymClient.tsx`.
+Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data to client components (`*Client.tsx`) that live alongside them. Example: `tym/page.tsx` → `tym/TymClient.tsx`. Public pages use `revalidate = 60` for ISR.
 
 ### Supabase Clients
 
-- `src/lib/supabase/server.ts` exports two factories:
-  - `createClient()` — anon key, cookie-based auth (for server components and API routes reading user data)
-  - `createServiceClient()` — service role key (for admin write operations that bypass RLS)
-- `src/lib/supabase/client.ts` — browser client for client components
+`src/lib/supabase/server.ts` exports two factories:
+- `createClient()` — anon key, cookie-based auth (server components & API routes)
+- `createServiceClient()` — service role key (admin writes that bypass RLS)
+
+`src/lib/supabase/client.ts` — browser client for client components.
+
+### Middleware
+
+`src/middleware.ts` refreshes Supabase auth session on every request and redirects unauthenticated users away from `/admin/*` to `/login`.
 
 ### Admin Pages (unified)
 
-- **Plán akcí** (`/admin/events`) — merged calendar events + weekly schedule into one page with tabs
-- **Zápasy** (`/admin/matches`) — merged match results + season draws; includes lineup, scorers, cards, publish-to-article flow
+- **Plán akcí** (`/admin/events`) — calendar events + weekly schedule in one page with tabs
+- **Zápasy** (`/admin/matches`) — match results + season draws + league standings; includes lineup (ZS/N), scorers (1 row = 1 goal), cards, photo gallery, publish-to-article flow
 - **Hráči** (`/admin/players`) — player management with stats computed from match data
+- **Články** (`/admin/articles`) — article CRUD with markdown editor and image upload
 
 ### API Route Pattern
 
-Each resource has `src/app/api/{resource}/route.ts` (GET list, POST create) and `src/app/api/{resource}/[id]/route.ts` (GET one, PUT update, DELETE). All mutations validate with Zod schemas, use `createServiceClient()`, and check auth.
+Each resource has `src/app/api/{resource}/route.ts` (GET list, POST create) and `src/app/api/{resource}/[id]/route.ts` (GET one, PUT update, DELETE). All mutations validate with Zod schemas, use `createServiceClient()`, and check auth via `supabase.auth.getUser()`.
 
 ### Database Types
 
-Manually maintained in `src/types/database.ts` (not auto-generated). Must be updated when DB schema changes.
+Manually maintained in `src/types/database.ts` (not auto-generated from Supabase CLI). Must be updated when DB schema changes.
 
 ### Key Tables
 
-`articles`, `players`, `calendar_events`, `weekly_schedule`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `season_draws`, `photo_albums`, `photos`, `profiles`
+`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `future_events`, `profiles`
 
 ### Migrations
 
-SQL migrations live in `supabase/migrations/`. Run them via Supabase Dashboard SQL Editor or `supabase db push` (requires `supabase link` first).
+SQL migrations in `supabase/migrations/` (001–007). Run via Supabase Dashboard SQL Editor. Schema is SQL-first, not ORM-generated.
+
+### Image Upload
+
+`src/app/api/upload/route.ts` accepts images, validates MIME type, resizes via Sharp to WebP (max 1920px, quality 80), uploads to Supabase Storage.
+
+### URL Redirects
+
+Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna` → `/plan-akci`, `/budoucnost` → `/plan-akci`, `/akce` → `/plan-akci`.
 
 ## Design System
 
-- Brand colors: `brand-red` (#C41E3A), `brand-yellow` (#F5C518), `brand-dark` (#0F172A)
-- Dark mode: `data-theme="dark"` attribute on `<html>`, CSS variable overrides in `globals.css`
+- Brand colors: `brand-red` (#C41E3A), `brand-yellow` (#F5C518), `brand-dark` (#111111 warm black, not navy)
+- Dark mode: `data-theme="dark"` attribute on `<html>`, CSS variable overrides in `globals.css` — do NOT use Tailwind `dark:` prefix, it won't work with this setup
 - Font: Inter (heading + body)
-- Shared constants in `src/lib/utils.ts`: positions, event types, locations, organizers, formatters
+- Custom CSS classes: `.glass`, `.card-hover`, `.gradient-text`, `.gradient-border`, `.ticker-char`
+- Shared constants in `src/lib/utils.ts`: positions, event types, locations, organizers, date formatters
 
 ## Czech Locale Conventions
 
 - Dates formatted as "15. března 2025", calendar weeks start Monday
 - Slug generation strips Czech diacritics to ASCII (`slugify()` in utils)
 - Football seasons: "podzim" (Aug-Dec) / "jaro" (Jan-Jul), format "2025/2026"
+- Season calculation: month >= 7 (August+) → year is season start; else previous year
 - Position values: `brankar`, `obrance`, `zaloznik`, `utocnik`
 - Event types: `zapas`, `trenink`, `akce`, `pronajem`, `volne`
-- Locations: `cely_areal`, `sokolovna`, `kantyna`, `venkovni_cast`, `hriste`
 
 ## Environment Variables
 
 Required in `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon/public key
-- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-only, never expose to client)
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-only)
+- `NEXT_PUBLIC_SITE_URL` — Production URL (https://tjdolany.net)

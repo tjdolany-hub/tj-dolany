@@ -516,6 +516,7 @@ export interface Database {
         Row: {
           id: string;
           season: string;
+          variant: "celkem" | "doma" | "venku";
           position: number;
           team_name: string;
           matches_played: number;
@@ -531,6 +532,7 @@ export interface Database {
         Insert: {
           id?: string;
           season: string;
+          variant?: "celkem" | "doma" | "venku";
           position: number;
           team_name: string;
           matches_played?: number;
@@ -545,6 +547,7 @@ export interface Database {
         Update: {
           id?: string;
           season?: string;
+          variant?: "celkem" | "doma" | "venku";
           position?: number;
           team_name?: string;
           matches_played?: number;

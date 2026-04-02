@@ -78,6 +78,57 @@ export default async function TymPage() {
     .eq("season", currentSeason)
     .order("position", { ascending: true });
 
+  // Build all-time stats by season+half for the statistics tab
+  type StatRow = { player_id: string; match_id: string };
+  type ScorerRow = StatRow & { goals: number };
+  type CardRow = StatRow & { card_type: string };
+
+  // Attach season + half to each match
+  const matchMeta: Record<string, { season: string; half: "podzim" | "jaro" }> = {};
+  for (const m of matches ?? []) {
+    const d = new Date(m.date);
+    const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
+    const season = m.season || `${y}/${y + 1}`;
+    const half = d.getMonth() >= 7 ? "podzim" as const : "jaro" as const;
+    matchMeta[m.id] = { season, half };
+  }
+
+  // Build serializable stats entries
+  type StatsEntryOut = { player_id: string; season: string; half: "podzim" | "jaro"; type: "lineup" | "goal" | "card"; goals: number; card_type: string | null };
+  const statsEntries: StatsEntryOut[] = (lineups ?? []).map((l: StatRow) => ({
+    player_id: l.player_id,
+    season: matchMeta[l.match_id]?.season || "",
+    half: matchMeta[l.match_id]?.half || ("podzim" as const),
+    type: "lineup" as const,
+    goals: 0,
+    card_type: null,
+  }));
+
+  for (const s of (scorers ?? []) as ScorerRow[]) {
+    statsEntries.push({
+      player_id: s.player_id,
+      season: matchMeta[s.match_id]?.season || "",
+      half: matchMeta[s.match_id]?.half || "podzim",
+      type: "goal" as const,
+      goals: s.goals,
+      card_type: null,
+    });
+  }
+
+  for (const c of (cards ?? []) as CardRow[]) {
+    statsEntries.push({
+      player_id: c.player_id,
+      season: matchMeta[c.match_id]?.season || "",
+      half: matchMeta[c.match_id]?.half || "podzim",
+      type: "card" as const,
+      goals: 0,
+      card_type: c.card_type,
+    });
+  }
+
+  // Available seasons
+  const availableSeasons = [...new Set(Object.values(matchMeta).map((m) => m.season))].sort().reverse();
+
   return (
     <TymClient
       players={players ?? []}
@@ -85,6 +136,8 @@ export default async function TymPage() {
       matches={matches ?? []}
       playerStats={playerStats}
       standings={leagueStandings ?? []}
+      statsEntries={statsEntries}
+      availableSeasons={availableSeasons}
     />
   );
 }

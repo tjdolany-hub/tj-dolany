@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PlayerCard from "@/components/public/PlayerCard";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
+import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 import { formatDateShort, POSITION_LABELS } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -221,6 +222,208 @@ type LeagueStanding = {
   goals_against: number;
   points: number;
   is_our_team: boolean;
+  variant?: "celkem" | "doma" | "venku";
+};
+
+/** Full player statistics with season/half filters */
+function PlayerStatistics({ players, entries, seasons }: { players: { id: string; name: string }[]; entries: StatsEntry[]; seasons: string[] }) {
+  const [filterSeason, setFilterSeason] = useState<string>("all");
+  const [filterHalf, setFilterHalf] = useState<"all" | "podzim" | "jaro">("all");
+
+  const stats = useMemo(() => {
+    const filtered = entries.filter((e) => {
+      if (filterSeason !== "all" && e.season !== filterSeason) return false;
+      if (filterHalf !== "all" && e.half !== filterHalf) return false;
+      return true;
+    });
+
+    const map = new Map<string, { name: string; matches: number; goals: number; yellows: number; reds: number }>();
+
+    for (const e of filtered) {
+      if (!map.has(e.player_id)) {
+        const p = players.find((pl) => pl.id === e.player_id);
+        map.set(e.player_id, { name: p?.name || "?", matches: 0, goals: 0, yellows: 0, reds: 0 });
+      }
+      const s = map.get(e.player_id)!;
+      if (e.type === "lineup") s.matches++;
+      else if (e.type === "goal") s.goals += e.goals;
+      else if (e.type === "card") {
+        if (e.card_type === "yellow") s.yellows++;
+        else s.reds++;
+      }
+    }
+
+    return [...map.values()].sort((a, b) => b.matches - a.matches || b.goals - a.goals);
+  }, [entries, players, filterSeason, filterHalf]);
+
+  return (
+    <section>
+      <h2 className="text-3xl font-bold text-text tracking-tight mb-6 text-center">
+        Statistiky hráčů
+      </h2>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+        <div className="flex gap-1 bg-surface-muted rounded-lg p-1">
+          <button onClick={() => setFilterSeason("all")}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${filterSeason === "all" ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
+            Celkově
+          </button>
+          {seasons.map((s) => (
+            <button key={s} onClick={() => setFilterSeason(s)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${filterSeason === s ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
+              {s}
+            </button>
+          ))}
+        </div>
+        {filterSeason !== "all" && (
+          <div className="flex gap-1 bg-surface-muted rounded-lg p-1">
+            <button onClick={() => setFilterHalf("all")}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${filterHalf === "all" ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
+              Celá sezóna
+            </button>
+            <button onClick={() => setFilterHalf("podzim")}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${filterHalf === "podzim" ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
+              Podzim
+            </button>
+            <button onClick={() => setFilterHalf("jaro")}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${filterHalf === "jaro" ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
+              Jaro
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-surface rounded-xl border border-border overflow-hidden max-w-4xl mx-auto">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-surface-muted">
+                <th className="px-3 py-3 text-center font-semibold text-text-muted w-10">#</th>
+                <th className="px-4 py-3 text-left font-semibold text-text-muted">Hráč</th>
+                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Zápasy">
+                  <JerseyIcon className="w-4 h-4 mx-auto text-text-muted" />
+                </th>
+                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Góly">
+                  <BallIcon className="w-4 h-4 mx-auto text-text-muted" />
+                </th>
+                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Žluté karty">
+                  <YellowCard className="w-3 h-4 mx-auto" />
+                </th>
+                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Červené karty">
+                  <RedCard className="w-3 h-4 mx-auto" />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-text-muted">Žádné záznamy pro vybraný filtr</td></tr>
+              ) : stats.map((s, i) => (
+                <tr key={i} className="border-b border-border last:border-0 hover:bg-surface-muted transition-colors">
+                  <td className="px-3 py-2.5 text-center font-bold text-text-muted text-xs">{i + 1}.</td>
+                  <td className="px-4 py-2.5 font-medium text-text">{s.name}</td>
+                  <td className="px-3 py-2.5 text-center text-text-muted font-semibold">{s.matches}</td>
+                  <td className="px-3 py-2.5 text-center text-text-muted font-semibold">{s.goals || "–"}</td>
+                  <td className="px-3 py-2.5 text-center text-text-muted font-semibold">{s.yellows || "–"}</td>
+                  <td className="px-3 py-2.5 text-center text-text-muted font-semibold">{s.reds || "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type StandingsVariant = "celkem" | "doma" | "venku";
+const VARIANT_LABELS: Record<StandingsVariant, string> = { celkem: "Celkem", doma: "Doma", venku: "Venku" };
+
+function LeagueTable({ standings }: { standings: LeagueStanding[] }) {
+  const [variant, setVariant] = useState<StandingsVariant>("celkem");
+
+  const grouped = useMemo(() => {
+    const g: Record<StandingsVariant, LeagueStanding[]> = { celkem: [], doma: [], venku: [] };
+    for (const s of standings) {
+      const v = s.variant || "celkem";
+      g[v].push(s);
+    }
+    // Sort each by position
+    for (const v of Object.keys(g) as StandingsVariant[]) {
+      g[v].sort((a, b) => a.position - b.position);
+    }
+    return g;
+  }, [standings]);
+
+  const availableVariants = (["celkem", "doma", "venku"] as const).filter((v) => grouped[v].length > 0);
+  const rows = grouped[variant].length > 0 ? grouped[variant] : grouped.celkem;
+
+  if (rows.length === 0) return null;
+
+  return (
+    <section>
+      <h2 className="text-3xl font-bold text-text tracking-tight mb-6 text-center">
+        Tabulka soutěže
+      </h2>
+
+      {availableVariants.length > 1 && (
+        <div className="flex justify-center gap-1 mb-4 bg-surface-muted rounded-lg p-1 w-fit mx-auto">
+          {availableVariants.map((v) => (
+            <button key={v} onClick={() => setVariant(v)}
+              className={`px-5 py-1.5 rounded-md text-sm font-semibold transition-colors ${variant === v ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
+              {VARIANT_LABELS[v]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-surface rounded-xl border border-border overflow-hidden max-w-4xl mx-auto">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-surface-muted">
+                <th className="px-3 py-3 text-center font-semibold text-text-muted w-10">#</th>
+                <th className="px-4 py-3 text-left font-semibold text-text-muted">Tým</th>
+                <th className="px-2 py-3 text-center font-semibold text-text-muted">Z</th>
+                <th className="px-2 py-3 text-center font-semibold text-text-muted">V</th>
+                <th className="px-2 py-3 text-center font-semibold text-text-muted">R</th>
+                <th className="px-2 py-3 text-center font-semibold text-text-muted">P</th>
+                <th className="px-2 py-3 text-center font-semibold text-text-muted">Skóre</th>
+                <th className="px-3 py-3 text-center font-bold text-text-muted">B</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((s) => (
+                <tr key={s.position} className={`border-b border-border last:border-0 transition-colors ${
+                  s.is_our_team ? "bg-brand-red/10 font-bold" : "hover:bg-surface-muted"
+                }`}>
+                  <td className="px-3 py-2.5 text-center font-bold text-text">{s.position}.</td>
+                  <td className={`px-4 py-2.5 ${s.is_our_team ? "text-brand-red font-bold" : "text-text"}`}>
+                    {s.team_name}
+                  </td>
+                  <td className="px-2 py-2.5 text-center text-text-muted">{s.matches_played}</td>
+                  <td className="px-2 py-2.5 text-center text-text-muted">{s.wins}</td>
+                  <td className="px-2 py-2.5 text-center text-text-muted">{s.draws}</td>
+                  <td className="px-2 py-2.5 text-center text-text-muted">{s.losses}</td>
+                  <td className="px-2 py-2.5 text-center text-text-muted">{s.goals_for}:{s.goals_against}</td>
+                  <td className={`px-3 py-2.5 text-center font-bold ${s.is_our_team ? "text-brand-red" : "text-text"}`}>{s.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type StatsEntry = {
+  player_id: string;
+  season: string;
+  half: "podzim" | "jaro";
+  type: "lineup" | "goal" | "card";
+  goals: number;
+  card_type: string | null;
 };
 
 export default function TymClient({
@@ -229,12 +432,16 @@ export default function TymClient({
   matches,
   playerStats,
   standings,
+  statsEntries,
+  availableSeasons,
 }: {
   players: Player[];
   draws: Draw[];
   matches: MatchResult[];
   playerStats?: PlayerStats;
   standings?: LeagueStanding[];
+  statsEntries?: StatsEntry[];
+  availableSeasons?: string[];
 }) {
   const grouped = POSITION_ORDER.map((pos) => ({
     position: pos,
@@ -314,47 +521,14 @@ export default function TymClient({
       {/* League table */}
       {standings && standings.length > 0 && (
         <AnimatedSection className="mb-16">
-          <section>
-            <h2 className="text-3xl font-bold text-text tracking-tight mb-6 text-center">
-              Tabulka soutěže
-            </h2>
-            <div className="bg-surface rounded-xl border border-border overflow-hidden max-w-4xl mx-auto">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-surface-muted">
-                      <th className="px-3 py-3 text-center font-semibold text-text-muted w-10">#</th>
-                      <th className="px-4 py-3 text-left font-semibold text-text-muted">Tým</th>
-                      <th className="px-2 py-3 text-center font-semibold text-text-muted">Z</th>
-                      <th className="px-2 py-3 text-center font-semibold text-text-muted">V</th>
-                      <th className="px-2 py-3 text-center font-semibold text-text-muted">R</th>
-                      <th className="px-2 py-3 text-center font-semibold text-text-muted">P</th>
-                      <th className="px-2 py-3 text-center font-semibold text-text-muted">Skóre</th>
-                      <th className="px-3 py-3 text-center font-bold text-text-muted">B</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standings.map((s) => (
-                      <tr key={s.position} className={`border-b border-border last:border-0 transition-colors ${
-                        s.is_our_team ? "bg-brand-red/10 font-bold" : "hover:bg-surface-muted"
-                      }`}>
-                        <td className="px-3 py-2.5 text-center font-bold text-text">{s.position}.</td>
-                        <td className={`px-4 py-2.5 ${s.is_our_team ? "text-brand-red font-bold" : "text-text"}`}>
-                          {s.team_name}
-                        </td>
-                        <td className="px-2 py-2.5 text-center text-text-muted">{s.matches_played}</td>
-                        <td className="px-2 py-2.5 text-center text-text-muted">{s.wins}</td>
-                        <td className="px-2 py-2.5 text-center text-text-muted">{s.draws}</td>
-                        <td className="px-2 py-2.5 text-center text-text-muted">{s.losses}</td>
-                        <td className="px-2 py-2.5 text-center text-text-muted">{s.goals_for}:{s.goals_against}</td>
-                        <td className={`px-3 py-2.5 text-center font-bold ${s.is_our_team ? "text-brand-red" : "text-text"}`}>{s.points}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
+          <LeagueTable standings={standings} />
+        </AnimatedSection>
+      )}
+
+      {/* Player statistics */}
+      {statsEntries && statsEntries.length > 0 && availableSeasons && availableSeasons.length > 0 && (
+        <AnimatedSection className="mb-16">
+          <PlayerStatistics players={players} entries={statsEntries} seasons={availableSeasons} />
         </AnimatedSection>
       )}
 

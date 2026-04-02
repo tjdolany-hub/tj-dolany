@@ -110,12 +110,24 @@ export default async function HomePage() {
     .from("match_cards")
     .select("player_id, card_type, players(name)");
 
-  // League position
+  // League position (for banner)
   const { data: standings } = await supabase
     .from("league_standings")
     .select("position, team_name, points")
     .eq("is_our_team", true)
+    .eq("variant", "celkem")
     .limit(1);
+
+  // Full league standings (for table section)
+  const { data: allStandings } = await supabase
+    .from("league_standings")
+    .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
+    .order("position", { ascending: true });
+
+  // All lineups for top appearances
+  const { data: allLineups } = await supabase
+    .from("match_lineups")
+    .select("player_id, players(name)");
 
   // Compute top scorer
   const scorerMap = new Map<string, { name: string; goals: number }>();
@@ -163,6 +175,18 @@ export default async function HomePage() {
     leaguePosition: standings?.[0]?.position ?? null,
   };
 
+  // Top 5 scorers
+  const top5Scorers = [...scorerMap.values()].sort((a, b) => b.goals - a.goals).slice(0, 5);
+
+  // Top 5 appearances
+  const appearanceMap = new Map<string, { name: string; count: number }>();
+  (allLineups ?? []).forEach((l: { player_id: string; players: { name: string } | null }) => {
+    const existing = appearanceMap.get(l.player_id);
+    if (existing) existing.count++;
+    else appearanceMap.set(l.player_id, { name: l.players?.name || "?", count: 1 });
+  });
+  const top5Appearances = [...appearanceMap.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+
   const albums = (albumsResult.data ?? []) as unknown as {
     id: string;
     title: string;
@@ -178,6 +202,9 @@ export default async function HomePage() {
       nextMatch={nextMatch}
       albums={albums}
       clubBanner={clubBanner}
+      leagueStandings={(allStandings ?? []) as { position: number; team_name: string; matches_played: number; wins: number; draws: number; losses: number; goals_for: number; goals_against: number; points: number; is_our_team: boolean; variant: string }[]}
+      top5Scorers={top5Scorers}
+      top5Appearances={top5Appearances}
     />
   );
 }

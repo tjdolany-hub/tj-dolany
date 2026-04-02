@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
+const variantEnum = z.enum(["celkem", "doma", "venku"]);
+
 const standingSchema = z.object({
   season: z.string(),
+  variant: variantEnum.default("celkem"),
   position: z.number(),
   team_name: z.string().min(1),
   matches_played: z.number().default(0),
@@ -18,23 +21,30 @@ const standingSchema = z.object({
 
 const bulkSchema = z.object({
   season: z.string(),
+  variant: variantEnum.default("celkem"),
   standings: z.array(standingSchema),
 });
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const season = req.nextUrl.searchParams.get("season") || "2025/2026";
+  const variant = req.nextUrl.searchParams.get("variant");
 
-  const { data } = await supabase
+  let query = supabase
     .from("league_standings")
     .select("*")
-    .eq("season", season)
-    .order("position", { ascending: true });
+    .eq("season", season);
+
+  if (variant && ["celkem", "doma", "venku"].includes(variant)) {
+    query = query.eq("variant", variant as "celkem" | "doma" | "venku");
+  }
+
+  const { data } = await query.order("position", { ascending: true });
 
   return NextResponse.json(data ?? []);
 }
 
-// Bulk replace all standings for a season
+// Bulk replace standings for a season+variant
 export async function PUT(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -46,16 +56,18 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
+  const { season, variant, standings } = parsed.data;
   const admin = await createServiceClient();
 
-  // Delete existing standings for this season
-  await admin.from("league_standings").delete().eq("season", parsed.data.season);
+  // Delete existing standings for this season+variant
+  await admin.from("league_standings").delete().eq("season", season).eq("variant", variant);
 
   // Insert new standings
-  if (parsed.data.standings.length > 0) {
+  if (standings.length > 0) {
     const { error } = await admin.from("league_standings").insert(
-      parsed.data.standings.map((s) => ({
-        season: parsed.data.season,
+      standings.map((s) => ({
+        season,
+        variant,
         position: s.position,
         team_name: s.team_name,
         matches_played: s.matches_played,

@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, ImageIcon, Camera } from "lucide-react";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
+import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 
 interface SerializedArticle {
   id: string;
@@ -55,12 +57,29 @@ interface ClubBanner {
   leaguePosition: number | null;
 }
 
+interface LeagueStandingRow {
+  position: number;
+  team_name: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals_for: number;
+  goals_against: number;
+  points: number;
+  is_our_team: boolean;
+  variant: string;
+}
+
 interface HomeClientProps {
   articles: SerializedArticle[];
   heroEvents: (HeroEvent | null)[];
   nextMatch: NextMatch | null;
   albums: SerializedAlbum[];
   clubBanner: ClubBanner;
+  leagueStandings: LeagueStandingRow[];
+  top5Scorers: { name: string; goals: number }[];
+  top5Appearances: { name: string; count: number }[];
 }
 
 function formatMatchDate(dateStr: string): string {
@@ -72,9 +91,10 @@ function formatMatchDate(dateStr: string): string {
   return `${day} ${date} — ${time}`;
 }
 
-export default function HomeClient({ articles, heroEvents, nextMatch, albums, clubBanner }: HomeClientProps) {
+export default function HomeClient({ articles, heroEvents, nextMatch, albums, clubBanner, leagueStandings, top5Scorers, top5Appearances }: HomeClientProps) {
   const featured = articles[0];
   const sidebar = articles.slice(1, 5);
+  const [tableVariant, setTableVariant] = useState<"celkem" | "doma" | "venku">("celkem");
 
   return (
     <>
@@ -414,6 +434,135 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           </div>
         </section>
       </AnimatedSection>
+
+      {/* ── LEAGUE TABLE + STATS ── */}
+      {leagueStandings.length > 0 && (
+        <AnimatedSection>
+          <section className="bg-surface">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1 h-6 bg-brand-red rounded-full" />
+                    <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Soutěž</p>
+                  </div>
+                  <h2 className="text-2xl font-bold text-text tracking-tight">Tabulka a statistiky</h2>
+                </div>
+                <Link href="/tym" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
+                  Kompletní statistiky <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Left — League table (3/5) */}
+                <div className="lg:col-span-3">
+                  <div className="bg-surface-alt rounded-xl border border-border overflow-hidden">
+                    {/* Variant tabs */}
+                    <div className="flex border-b border-border">
+                      {(["celkem", "doma", "venku"] as const).map((v) => {
+                        const hasData = leagueStandings.some((s) => s.variant === v);
+                        if (!hasData) return null;
+                        return (
+                          <button key={v} onClick={() => setTableVariant(v)}
+                            className={`flex-1 px-4 py-2.5 text-sm font-semibold transition-colors ${tableVariant === v ? "bg-brand-red text-white" : "text-text-muted hover:text-text hover:bg-surface-muted"}`}>
+                            {v === "celkem" ? "Celkem" : v === "doma" ? "Doma" : "Venku"}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border bg-surface-muted">
+                            <th className="px-2 py-2.5 text-center font-semibold text-text-muted w-8">#</th>
+                            <th className="px-3 py-2.5 text-left font-semibold text-text-muted">Tým</th>
+                            <th className="px-1.5 py-2.5 text-center font-semibold text-text-muted">Z</th>
+                            <th className="px-1.5 py-2.5 text-center font-semibold text-text-muted">V</th>
+                            <th className="px-1.5 py-2.5 text-center font-semibold text-text-muted">R</th>
+                            <th className="px-1.5 py-2.5 text-center font-semibold text-text-muted">P</th>
+                            <th className="px-1.5 py-2.5 text-center font-semibold text-text-muted">Skóre</th>
+                            <th className="px-2 py-2.5 text-center font-bold text-text-muted">B</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {leagueStandings
+                            .filter((s) => s.variant === tableVariant)
+                            .sort((a, b) => a.position - b.position)
+                            .map((s) => (
+                            <tr key={s.position} className={`border-b border-border last:border-0 transition-colors ${
+                              s.is_our_team ? "bg-brand-red/10 font-bold" : "hover:bg-surface-muted"
+                            }`}>
+                              <td className="px-2 py-2 text-center font-bold text-text text-xs">{s.position}.</td>
+                              <td className={`px-3 py-2 text-xs ${s.is_our_team ? "text-brand-red font-bold" : "text-text"}`}>{s.team_name}</td>
+                              <td className="px-1.5 py-2 text-center text-text-muted text-xs">{s.matches_played}</td>
+                              <td className="px-1.5 py-2 text-center text-text-muted text-xs">{s.wins}</td>
+                              <td className="px-1.5 py-2 text-center text-text-muted text-xs">{s.draws}</td>
+                              <td className="px-1.5 py-2 text-center text-text-muted text-xs">{s.losses}</td>
+                              <td className="px-1.5 py-2 text-center text-text-muted text-xs">{s.goals_for}:{s.goals_against}</td>
+                              <td className={`px-2 py-2 text-center font-bold text-xs ${s.is_our_team ? "text-brand-red" : "text-text"}`}>{s.points}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right — Top lists (2/5) */}
+                <div className="lg:col-span-2 space-y-4">
+                  {/* Top 5 scorers */}
+                  {top5Scorers.length > 0 && (
+                    <div className="bg-surface-alt rounded-xl border border-border p-4">
+                      <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <BallIcon className="w-4 h-4 text-brand-red" /> Nejlepší střelci
+                      </h3>
+                      <div className="space-y-2">
+                        {top5Scorers.map((s, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <span className={`w-5 text-xs font-bold text-right ${i === 0 ? "text-brand-yellow" : "text-text-muted"}`}>{i + 1}.</span>
+                            <span className={`flex-1 text-sm ${i === 0 ? "font-bold text-text" : "text-text"}`}>{s.name}</span>
+                            <span className="flex items-center gap-1">
+                              <BallIcon className="w-3.5 h-3.5 text-text-muted" />
+                              <span className={`text-sm font-bold ${i === 0 ? "text-brand-red" : "text-text"}`}>{s.goals}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top 5 appearances */}
+                  {top5Appearances.length > 0 && (
+                    <div className="bg-surface-alt rounded-xl border border-border p-4">
+                      <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <JerseyIcon className="w-4 h-4 text-brand-red" /> Nejvíce zápasů
+                      </h3>
+                      <div className="space-y-2">
+                        {top5Appearances.map((p, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <span className={`w-5 text-xs font-bold text-right ${i === 0 ? "text-brand-yellow" : "text-text-muted"}`}>{i + 1}.</span>
+                            <span className={`flex-1 text-sm ${i === 0 ? "font-bold text-text" : "text-text"}`}>{p.name}</span>
+                            <span className="flex items-center gap-1">
+                              <JerseyIcon className="w-3.5 h-3.5 text-text-muted" />
+                              <span className={`text-sm font-bold ${i === 0 ? "text-brand-red" : "text-text"}`}>{p.count}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-center mt-6 sm:hidden">
+                <Link href="/tym" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors inline-flex items-center gap-1">
+                  Kompletní statistiky <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </section>
+        </AnimatedSection>
+      )}
 
       {/* ── section divider ── */}
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
