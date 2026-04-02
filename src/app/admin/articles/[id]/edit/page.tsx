@@ -17,6 +17,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
     summary: "",
     category: "aktuality",
     published: false,
+    created_at: "",
   });
   const [images, setImages] = useState<{ url: string; alt?: string }[]>([]);
 
@@ -30,6 +31,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
           summary: data.summary || "",
           category: data.category,
           published: data.published,
+          created_at: data.created_at ? data.created_at.slice(0, 10) : "",
         });
         setImages(
           (data.article_images || []).map((img: { url: string; alt: string | null }) => ({
@@ -73,7 +75,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red"
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-semibold text-text mb-1">Kategorie</label>
             <select
@@ -85,6 +87,15 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-text mb-1">Datum</label>
+            <input
+              type="date"
+              value={form.created_at}
+              onChange={(e) => setForm({ ...form, created_at: e.target.value })}
+              className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red"
+            />
           </div>
           <div>
             <label className="block text-sm font-semibold text-text mb-1">Shrnutí</label>

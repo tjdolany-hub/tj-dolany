@@ -33,6 +33,8 @@ interface ScheduleEntry {
   time_from: string;
   time_to: string | null;
   location: string | null;
+  valid_from: string | null;
+  valid_to: string | null;
 }
 
 interface MatchEvent {
@@ -92,12 +94,23 @@ const DEFAULT_FORM = {
   is_public: true,
 };
 
+const SCHEDULE_LOCATION_OPTIONS = [
+  { value: "", label: "— Nevybráno —" },
+  { value: "cely_areal", label: "Celý areál" },
+  { value: "sokolovna", label: "Sokolovna" },
+  { value: "kantyna", label: "Kantýna" },
+  { value: "venkovni_cast", label: "Venkovní část" },
+  { value: "hriste", label: "Hřiště" },
+] as const;
+
 const DEFAULT_SCHEDULE_FORM = {
   day_of_week: 1,
   title: "",
   time_from: "",
   time_to: "",
   location: "",
+  valid_from: "",
+  valid_to: "",
 };
 
 function getTypeLabel(value: string): string {
@@ -285,6 +298,8 @@ export default function AdminPlanAkciPage() {
       time_from: s.time_from,
       time_to: s.time_to || "",
       location: s.location || "",
+      valid_from: s.valid_from || "",
+      valid_to: s.valid_to || "",
     });
     setScheduleEditId(s.id);
     setShowScheduleForm(true);
@@ -297,6 +312,8 @@ export default function AdminPlanAkciPage() {
       ...scheduleForm,
       time_to: scheduleForm.time_to || null,
       location: scheduleForm.location || null,
+      valid_from: scheduleForm.valid_from || null,
+      valid_to: scheduleForm.valid_to || null,
     };
     const url = scheduleEditId ? `/api/schedule/${scheduleEditId}` : "/api/schedule";
     const method = scheduleEditId ? "PUT" : "POST";
@@ -623,7 +640,7 @@ export default function AdminPlanAkciPage() {
                 <h2 className="text-lg font-bold text-text">{scheduleEditId ? "Upravit" : "Nový záznam"}</h2>
                 <button type="button" onClick={resetScheduleForm} className="text-text-muted hover:text-text"><X size={20} /></button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Den</label>
                   <select value={scheduleForm.day_of_week} onChange={(e) => setScheduleForm({ ...scheduleForm, day_of_week: parseInt(e.target.value) })}
@@ -648,8 +665,24 @@ export default function AdminPlanAkciPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Místo</label>
-                  <input type="text" value={scheduleForm.location} onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value })}
+                  <select value={scheduleForm.location} onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text">
+                    {SCHEDULE_LOCATION_OPTIONS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Platnost od</label>
+                  <input type="date" value={scheduleForm.valid_from} onChange={(e) => setScheduleForm({ ...scheduleForm, valid_from: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
+                  <p className="text-xs text-text-muted mt-1">Ponechte prázdné = platí odjakživa</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Platnost do</label>
+                  <input type="date" value={scheduleForm.valid_to} onChange={(e) => setScheduleForm({ ...scheduleForm, valid_to: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
+                  <p className="text-xs text-text-muted mt-1">Ponechte prázdné = platí navždy</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -676,6 +709,7 @@ export default function AdminPlanAkciPage() {
                     <th className="text-left p-3 font-semibold text-text">Název</th>
                     <th className="text-left p-3 font-semibold text-text">Čas</th>
                     <th className="text-left p-3 font-semibold text-text hidden md:table-cell">Místo</th>
+                    <th className="text-left p-3 font-semibold text-text hidden lg:table-cell">Platnost</th>
                     <th className="text-right p-3 font-semibold text-text">Akce</th>
                   </tr>
                 </thead>
@@ -685,7 +719,14 @@ export default function AdminPlanAkciPage() {
                       <td className="p-3 text-text font-medium">{DAY_NAMES[s.day_of_week]}</td>
                       <td className="p-3 text-text">{s.title}</td>
                       <td className="p-3 text-text-muted">{s.time_from}{s.time_to ? ` – ${s.time_to}` : ""}</td>
-                      <td className="p-3 text-text-muted hidden md:table-cell">{s.location || "—"}</td>
+                      <td className="p-3 text-text-muted hidden md:table-cell">{formatLocation(s.location)}</td>
+                      <td className="p-3 text-text-muted text-xs hidden lg:table-cell">
+                        {s.valid_from || s.valid_to ? (
+                          <span>{s.valid_from || "∞"} → {s.valid_to || "∞"}</span>
+                        ) : (
+                          <span>Vždy</span>
+                        )}
+                      </td>
                       <td className="p-3 text-right">
                         <div className="flex justify-end gap-2">
                           <button onClick={() => startScheduleEdit(s)} className="text-blue-600 hover:text-blue-800 p-1"><Pencil size={16} /></button>
@@ -695,7 +736,7 @@ export default function AdminPlanAkciPage() {
                     </tr>
                   ))}
                   {scheduleEntries.length === 0 && (
-                    <tr><td colSpan={5} className="p-6 text-center text-text-muted">Žádné pravidelné akce</td></tr>
+                    <tr><td colSpan={6} className="p-6 text-center text-text-muted">Žádné pravidelné akce</td></tr>
                   )}
                 </tbody>
               </table>

@@ -5,11 +5,11 @@ import PlanAkciClient from "./PlanAkciClient";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Plán akcí",
-  description: "Kalendář akcí a plánované události TJ Dolany.",
+  title: "Plán akcí a zápasů",
+  description: "Kalendář akcí, zápasů a plánované události TJ Dolany.",
   openGraph: {
-    title: "Plán akcí | TJ Dolany",
-    description: "Kalendář akcí a plánované události TJ Dolany.",
+    title: "Plán akcí a zápasů | TJ Dolany",
+    description: "Kalendář akcí, zápasů a plánované události TJ Dolany.",
   },
 };
 

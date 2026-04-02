@@ -10,6 +10,7 @@ const updateSchema = z.object({
   summary: z.string().optional(),
   category: z.enum(["aktuality", "fotbal", "sokolovna", "oznameni"]).optional(),
   published: z.boolean().optional(),
+  created_at: z.string().optional(),
   images: z
     .array(z.object({ url: z.string(), alt: z.string().optional() }))
     .optional(),
@@ -52,11 +53,14 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const { images, ...data } = parsed.data;
+  const { images, created_at, ...data } = parsed.data;
 
   const updateData = { ...data } as Database["public"]["Tables"]["articles"]["Update"];
   if (data.title) {
     updateData.slug = slugify(data.title);
+  }
+  if (created_at) {
+    updateData.created_at = new Date(`${created_at}T12:00:00`).toISOString();
   }
 
   const admin = await createServiceClient();

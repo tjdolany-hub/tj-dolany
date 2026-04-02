@@ -8,6 +8,8 @@ const scheduleUpdateSchema = z.object({
   time_from: z.string().min(1, "Čas od je povinný").optional(),
   time_to: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
+  valid_from: z.string().nullable().optional(),
+  valid_to: z.string().nullable().optional(),
 });
 
 export async function PUT(

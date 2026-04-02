@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
+import type { Database } from "@/types/database";
 
 const articleSchema = z.object({
   title: z.string().min(1, "Titulek je povinný"),
@@ -9,6 +10,7 @@ const articleSchema = z.object({
   summary: z.string().optional(),
   category: z.enum(["aktuality", "fotbal", "sokolovna", "oznameni"]),
   published: z.boolean().default(false),
+  created_at: z.string().optional(),
   images: z
     .array(z.object({ url: z.string(), alt: z.string().optional() }))
     .optional(),
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const { images, ...data } = parsed.data;
+  const { images, created_at, ...data } = parsed.data;
   const slug = slugify(data.title);
 
   // Check slug uniqueness
@@ -74,9 +76,13 @@ export async function POST(req: NextRequest) {
   const finalSlug = existing && existing.length > 0 ? `${slug}-${Date.now()}` : slug;
 
   const admin = await createServiceClient();
+  const insertData: Database["public"]["Tables"]["articles"]["Insert"] = { ...data, slug: finalSlug, author_id: user.id };
+  if (created_at) {
+    insertData.created_at = new Date(`${created_at}T12:00:00`).toISOString();
+  }
   const { data: article, error } = await admin
     .from("articles")
-    .insert({ ...data, slug: finalSlug, author_id: user.id })
+    .insert(insertData)
     .select()
     .single();
 

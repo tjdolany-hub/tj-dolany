@@ -603,6 +603,8 @@ export interface Database {
           time_from: string;
           time_to: string | null;
           location: string | null;
+          valid_from: string | null;
+          valid_to: string | null;
           created_at: string;
         };
         Insert: {
@@ -612,6 +614,8 @@ export interface Database {
           time_from: string;
           time_to?: string | null;
           location?: string | null;
+          valid_from?: string | null;
+          valid_to?: string | null;
           created_at?: string;
         };
         Update: {
@@ -621,6 +625,8 @@ export interface Database {
           time_from?: string;
           time_to?: string | null;
           location?: string | null;
+          valid_from?: string | null;
+          valid_to?: string | null;
           created_at?: string;
         };
         Relationships: [];

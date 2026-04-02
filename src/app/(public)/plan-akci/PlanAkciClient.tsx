@@ -24,6 +24,8 @@ interface ScheduleEntry {
   time_from: string;
   time_to: string | null;
   location: string | null;
+  valid_from: string | null;
+  valid_to: string | null;
 }
 
 // ── Constants ──
@@ -143,14 +145,6 @@ export default function PlanAkciClient({
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [calFilter, setCalFilter] = useState<CalendarFilter>("all");
 
-  // Group schedule by day
-  const scheduleByDay = DAY_NAMES.map((name, idx) => ({
-    name,
-    entries: schedule
-      .filter((s) => s.day_of_week === idx)
-      .sort((a, b) => a.time_from.localeCompare(b.time_from)),
-  }));
-
   // Find the next upcoming event date
   const nextEventDate = upcoming.length > 0 ? new Date(upcoming[0].date) : null;
 
@@ -159,6 +153,35 @@ export default function PlanAkciClient({
   const lastDay = new Date(calYear, calMonth + 1, 0);
   const startPad = (firstDay.getDay() + 6) % 7;
   const totalDays = lastDay.getDate();
+
+  // Generate virtual calendar events from weekly schedule
+  function getScheduleEventsForMonth(month: number, year: number): CalEvent[] {
+    const virtual: CalEvent[] = [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dow = date.getDay();
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      for (const s of schedule) {
+        if (s.day_of_week !== dow) continue;
+        // Check valid_from / valid_to
+        if (s.valid_from && dateStr < s.valid_from) continue;
+        if (s.valid_to && dateStr > s.valid_to) continue;
+        virtual.push({
+          id: `sched-${s.id}-${dateStr}`,
+          title: s.title,
+          description: null,
+          date: `${dateStr}T${s.time_from}`,
+          event_type: "trenink",
+          location: s.location,
+          organizer: null,
+        });
+      }
+    }
+    return virtual;
+  }
+
+  const scheduleVirtualEvents = getScheduleEventsForMonth(calMonth, calYear);
 
   // Filter events for calendar
   const filteredCalEvents = allEvents.filter((e) => {
@@ -169,27 +192,44 @@ export default function PlanAkciClient({
     return true;
   });
 
-  const eventsForMonth = filteredCalEvents.filter((e) => {
-    const d = new Date(e.date);
-    return d.getMonth() === calMonth && d.getFullYear() === calYear;
-  });
+  // Merge real events + schedule virtual events for the current month
+  const allMonthEvents = [
+    ...filteredCalEvents.filter((e) => {
+      const d = new Date(e.date);
+      return d.getMonth() === calMonth && d.getFullYear() === calYear;
+    }),
+    ...(calFilter === "all" || calFilter === "akce" ? scheduleVirtualEvents : []),
+  ];
 
   const eventsByDay: Record<number, CalEvent[]> = {};
-  for (const e of eventsForMonth) {
+  for (const e of allMonthEvents) {
     const day = new Date(e.date).getDate();
     if (!eventsByDay[day]) eventsByDay[day] = [];
     eventsByDay[day].push(e);
   }
+  // Sort events within each day by time
+  for (const day in eventsByDay) {
+    eventsByDay[day].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
 
   const selectedEvents = selectedDay
-    ? filteredCalEvents.filter((e) => {
-        const d = new Date(e.date);
-        return (
-          d.getDate() === selectedDay.getDate() &&
-          d.getMonth() === selectedDay.getMonth() &&
-          d.getFullYear() === selectedDay.getFullYear()
-        );
-      })
+    ? (() => {
+        const dayScheduleEvents = getScheduleEventsForMonth(selectedDay.getMonth(), selectedDay.getFullYear())
+          .filter((e) => new Date(e.date).getDate() === selectedDay.getDate());
+        const dayRealEvents = filteredCalEvents.filter((e) => {
+          const d = new Date(e.date);
+          return (
+            d.getDate() === selectedDay.getDate() &&
+            d.getMonth() === selectedDay.getMonth() &&
+            d.getFullYear() === selectedDay.getFullYear()
+          );
+        });
+        const merged = [
+          ...dayRealEvents,
+          ...(calFilter === "all" || calFilter === "akce" ? dayScheduleEvents : []),
+        ];
+        return merged.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      })()
     : [];
 
   function prevMonth() {
@@ -212,9 +252,9 @@ export default function PlanAkciClient({
         className="text-center mb-12"
       >
         <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">
-          Kalendář akcí
+          Kalendář akcí a zápasů
         </p>
-        <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí</h1>
+        <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí a zápasů TJ Dolany</h1>
       </motion.div>
 
       {/* ═══ UPCOMING EVENTS (TJ Dolany only) ═══ */}
@@ -278,60 +318,11 @@ export default function PlanAkciClient({
 
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent mb-12" />
 
-      {/* ═══ WEEKLY SCHEDULE ═══ */}
-      {schedule.length > 0 && (
-        <AnimatedSection className="mb-16">
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-8 flex items-center gap-3">
-            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
-            Pravidelné akce v areálu
-          </h2>
-          <div className="bg-surface rounded-xl border border-border-strong overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-border">
-              {scheduleByDay.map(({ name, entries }, idx) => (
-                <div key={idx} className="min-h-[80px]">
-                  <div className="bg-surface-alt px-3 py-2 border-b border-border">
-                    <span className="text-xs font-bold text-text uppercase tracking-wider">
-                      {name}
-                    </span>
-                  </div>
-                  <div className="px-3 py-2 space-y-2">
-                    {entries.length > 0 ? (
-                      entries.map((entry) => {
-                        const locBadges = formatLocationBadges(entry.location);
-                        return (
-                          <div key={entry.id} className="text-xs">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-semibold text-brand-red">
-                                {entry.time_from}
-                                {entry.time_to ? `–${entry.time_to}` : ""}
-                              </span>
-                              {locBadges && locBadges.map((b) => (
-                                <span key={b.value} className={`w-2.5 h-1.5 rounded-sm ${b.color}`} title={b.label} />
-                              ))}
-                            </div>
-                            <p className="text-text leading-tight mt-0.5">{entry.title}</p>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <p className="text-xs text-text-muted italic">—</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <LocationLegend />
-        </AnimatedSection>
-      )}
-
-      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent mb-12" />
-
-      {/* ═══ CALENDAR — single month with arrows ═══ */}
+      {/* ═══ CALENDAR — Kalendář Areálu TJ Dolany ═══ */}
       <AnimatedSection>
         <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
-          Kalendář
+          Kalendář Areálu TJ Dolany
         </h2>
 
         {/* Filters */}

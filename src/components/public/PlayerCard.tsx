@@ -70,7 +70,7 @@ export default function PlayerCard({
           )}
           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
-        <div className="p-2.5 text-center">
+        <div className="p-2.5 text-center h-[88px] flex flex-col justify-center">
           <h3 className="font-bold text-text text-sm tracking-tight leading-tight">
             {first_name || last_name ? `${first_name || ""} ${last_name || ""}`.trim() : name}
           </h3>

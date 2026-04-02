@@ -21,7 +21,7 @@ export default async function HomePage() {
     supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type")
-      .in("event_type", ["akce", "volne"])
+      .eq("event_type", "akce")
       .eq("is_public", true)
       .lt("date", now)
       .order("date", { ascending: false })
@@ -29,7 +29,7 @@ export default async function HomePage() {
     supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type")
-      .in("event_type", ["akce", "volne"])
+      .eq("event_type", "akce")
       .eq("is_public", true)
       .gte("date", now)
       .order("date", { ascending: true })
