@@ -18,7 +18,7 @@ type MatchResult = Database["public"]["Tables"]["match_results"]["Row"] & {
 
 type PlayerStats = Record<string, { matches: number; goals: number; yellows: number; reds: number }>;
 
-const POSITION_ORDER = ["brankar", "obrance", "zaloznik", "utocnik"];
+const POSITION_ORDER = ["brankar", "obrance", "zaloznik", "utocnik", "trener"];
 
 /** Determine football season (Aug–Jun) for a given date: "2025/2026" */
 function getSeasonForDate(d: Date): string {
@@ -150,14 +150,14 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
                       key={match.id}
                       onClick={clickable ? () => router.push(`/aktuality/${match.articles!.slug}`) : undefined}
                       className={`border-b border-border last:border-0 transition-colors ${
-                        clickable ? "hover:bg-surface-muted cursor-pointer" : "hover:bg-surface-muted"
-                      } ${match.is_home ? "border-l-3 border-l-brand-red" : "border-l-3 border-l-blue-400"}`}
+                        clickable ? "cursor-pointer" : ""
+                      } ${match.is_home ? "bg-brand-red/5 hover:bg-brand-red/10" : "hover:bg-surface-muted"}`}
                     >
                       <td className="px-2 py-3 text-center">
                         <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
                           match.is_home
-                            ? "bg-brand-red/10 text-brand-red"
-                            : "bg-blue-100 text-blue-600"
+                            ? "bg-brand-red/15 text-brand-red"
+                            : "bg-surface-muted text-text-muted"
                         }`}>
                           {match.is_home ? "D" : "V"}
                         </span>
@@ -474,6 +474,7 @@ export default function TymClient({
     obrance: "Obránci",
     zaloznik: "Záložníci",
     utocnik: "Útočníci",
+    trener: "Realizační tým",
   };
 
   return (

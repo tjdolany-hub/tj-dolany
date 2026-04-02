@@ -8,14 +8,16 @@ export default async function HomePage() {
 
   const now = new Date().toISOString();
 
-  const [articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult] = await Promise.all([
+  const [
+    articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult,
+    recentMatchesResult, allScorersResult, allCardsResult, standingsResult, allStandingsResult, allLineupsResult,
+  ] = await Promise.all([
     supabase
       .from("articles")
       .select("id, title, slug, summary, category, created_at, updated_at, article_images(url, alt)")
       .eq("published", true)
       .order("created_at", { ascending: false })
       .limit(5),
-    // Last past TJ event (akce/volne only)
     supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type")
@@ -24,7 +26,6 @@ export default async function HomePage() {
       .lt("date", now)
       .order("date", { ascending: false })
       .limit(1),
-    // Next 2 future TJ events (akce/volne only)
     supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type")
@@ -47,6 +48,26 @@ export default async function HomePage() {
       .eq("published", true)
       .order("event_date", { ascending: false })
       .limit(4),
+    // Club banner + stats data (was sequential before)
+    supabase
+      .from("match_results")
+      .select("id, date, opponent, score_home, score_away, is_home, competition, season, article_id, articles(slug)")
+      .lt("date", now)
+      .order("date", { ascending: false })
+      .limit(5),
+    supabase.from("match_scorers").select("player_id, goals, players(name)"),
+    supabase.from("match_cards").select("player_id, card_type, players(name)"),
+    supabase
+      .from("league_standings")
+      .select("position, team_name, points")
+      .eq("is_our_team", true)
+      .eq("variant", "celkem")
+      .limit(1),
+    supabase
+      .from("league_standings")
+      .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
+      .order("position", { ascending: true }),
+    supabase.from("match_lineups").select("player_id, players(name)"),
   ]);
 
   const articles = ((articlesResult.data ?? []) as unknown as {
@@ -93,41 +114,13 @@ export default async function HomePage() {
     ? matchData[0] as unknown as { title: string; date: string; location: string | null }
     : null;
 
-  // ── Club banner data ──
-  // Last 5 played matches (for form: V/R/P)
-  const { data: recentMatches } = await supabase
-    .from("match_results")
-    .select("id, date, opponent, score_home, score_away, is_home, competition, season, article_id, articles(slug)")
-    .lt("date", now)
-    .order("date", { ascending: false })
-    .limit(5);
-
-  // All scorers + cards for current season for top scorer / most cards
-  const { data: allScorers } = await supabase
-    .from("match_scorers")
-    .select("player_id, goals, players(name)");
-  const { data: allCards } = await supabase
-    .from("match_cards")
-    .select("player_id, card_type, players(name)");
-
-  // League position (for banner)
-  const { data: standings } = await supabase
-    .from("league_standings")
-    .select("position, team_name, points")
-    .eq("is_our_team", true)
-    .eq("variant", "celkem")
-    .limit(1);
-
-  // Full league standings (for table section)
-  const { data: allStandings } = await supabase
-    .from("league_standings")
-    .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
-    .order("position", { ascending: true });
-
-  // All lineups for top appearances
-  const { data: allLineups } = await supabase
-    .from("match_lineups")
-    .select("player_id, players(name)");
+  // ── Club banner data (from parallel queries above) ──
+  const recentMatches = recentMatchesResult.data;
+  const allScorers = allScorersResult.data;
+  const allCards = allCardsResult.data;
+  const standings = standingsResult.data;
+  const allStandings = allStandingsResult.data;
+  const allLineups = allLineupsResult.data;
 
   // Compute top scorer
   const scorerMap = new Map<string, { name: string; goals: number }>();
@@ -175,17 +168,17 @@ export default async function HomePage() {
     leaguePosition: standings?.[0]?.position ?? null,
   };
 
-  // Top 5 scorers
-  const top5Scorers = [...scorerMap.values()].sort((a, b) => b.goals - a.goals).slice(0, 5);
+  // Top 6 scorers
+  const top5Scorers = [...scorerMap.values()].sort((a, b) => b.goals - a.goals).slice(0, 6);
 
-  // Top 5 appearances
+  // Top 6 appearances
   const appearanceMap = new Map<string, { name: string; count: number }>();
   (allLineups ?? []).forEach((l: { player_id: string; players: { name: string } | null }) => {
     const existing = appearanceMap.get(l.player_id);
     if (existing) existing.count++;
     else appearanceMap.set(l.player_id, { name: l.players?.name || "?", count: 1 });
   });
-  const top5Appearances = [...appearanceMap.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+  const top5Appearances = [...appearanceMap.values()].sort((a, b) => b.count - a.count).slice(0, 6);
 
   const albums = (albumsResult.data ?? []) as unknown as {
     id: string;

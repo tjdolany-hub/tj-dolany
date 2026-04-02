@@ -126,21 +126,17 @@ export default function AdminMatchesPage() {
   const [standingsLoading, setStandingsLoading] = useState(false);
   const [standingsSaving, setStandingsSaving] = useState(false);
   const [standingsSeason, setStandingsSeason] = useState("2025/2026");
-  const [standingsVariant, setStandingsVariant] = useState<StandingsVariant>("celkem");
-  const [standingsText, setStandingsText] = useState<Record<StandingsVariant, string>>({ celkem: "", doma: "", venku: "" });
+  const [standingsPreviewVariant, setStandingsPreviewVariant] = useState<StandingsVariant>("celkem");
+  const [standingsText, setStandingsText] = useState("");
 
   const VARIANT_LABELS: Record<StandingsVariant, string> = { celkem: "Celkem", doma: "Doma", venku: "Venku" };
 
-  function parseStandingsText(text: string): Standing[] {
-    const lines = text.trim().split("\n").filter((l) => l.trim());
+  function parseStandingLines(lines: string[]): Standing[] {
     const results: Standing[] = [];
     for (const line of lines) {
-      // Skip header lines
       if (line.match(/^#\s/) || line.match(/^\s*Klub/i) || line.match(/^\s*#\s+Klub/)) continue;
-      // Split by tab or 4+ spaces
       const parts = line.split(/\t/).map((s) => s.trim()).filter(Boolean);
       if (parts.length < 8) continue;
-      // Format: #. Team Z V R P Score B
       const posStr = parts[0].replace(".", "");
       const pos = parseInt(posStr);
       if (isNaN(pos)) continue;
@@ -149,23 +145,35 @@ export default function AdminMatchesPage() {
       const v = parseInt(parts[3]) || 0;
       const r = parseInt(parts[4]) || 0;
       const p = parseInt(parts[5]) || 0;
-      // Score can be "48:17" or separate columns
       let gf = 0, ga = 0;
       const scoreMatch = parts[6].match(/(\d+)\s*:\s*(\d+)/);
       let pointsIdx = 7;
-      if (scoreMatch) {
-        gf = parseInt(scoreMatch[1]);
-        ga = parseInt(scoreMatch[2]);
-      } else {
-        gf = parseInt(parts[6]) || 0;
-        ga = parseInt(parts[7]) || 0;
-        pointsIdx = 8;
-      }
+      if (scoreMatch) { gf = parseInt(scoreMatch[1]); ga = parseInt(scoreMatch[2]); }
+      else { gf = parseInt(parts[6]) || 0; ga = parseInt(parts[7]) || 0; pointsIdx = 8; }
       const b = parseInt(parts[pointsIdx]) || 0;
       const isOur = teamName.toLowerCase().includes("dolany");
       results.push({ position: pos, team_name: teamName, matches_played: z, wins: v, draws_count: r, losses: p, goals_for: gf, goals_against: ga, points: b, is_our_team: isOur });
     }
     return results;
+  }
+
+  /** Parse multi-variant text: splits by "Celkem" / "Doma" / "Venku" headers */
+  function parseAllVariants(text: string): Record<StandingsVariant, Standing[]> {
+    const result: Record<StandingsVariant, Standing[]> = { celkem: [], doma: [], venku: [] };
+    const lines = text.split("\n");
+    let currentVariant: StandingsVariant = "celkem";
+    const sectionLines: Record<StandingsVariant, string[]> = { celkem: [], doma: [], venku: [] };
+    for (const line of lines) {
+      const trimmed = line.trim().toLowerCase();
+      if (trimmed === "celkem") { currentVariant = "celkem"; continue; }
+      if (trimmed === "doma") { currentVariant = "doma"; continue; }
+      if (trimmed === "venku") { currentVariant = "venku"; continue; }
+      if (trimmed) sectionLines[currentVariant].push(line);
+    }
+    result.celkem = parseStandingLines(sectionLines.celkem);
+    result.doma = parseStandingLines(sectionLines.doma);
+    result.venku = parseStandingLines(sectionLines.venku);
+    return result;
   }
 
   // ── Draw state ──
@@ -227,9 +235,9 @@ export default function AdminMatchesPage() {
     if (activeTab === "standings") loadStandings();
   }, [activeTab, loadStandings]);
 
-  const parseAndPreview = (variant: StandingsVariant) => {
-    const parsed = parseStandingsText(standingsText[variant]);
-    setStandingsData((prev) => ({ ...prev, [variant]: parsed }));
+  const parseAndPreview = () => {
+    const parsed = parseAllVariants(standingsText);
+    setStandingsData(parsed);
   };
 
   const saveStandings = async () => {
@@ -1022,72 +1030,69 @@ export default function AdminMatchesPage() {
             </div>
           </div>
 
-          {/* Variant tabs */}
-          <div className="flex gap-1 mb-4 bg-surface-muted rounded-lg p-1 w-fit">
-            {(["celkem", "doma", "venku"] as const).map((v) => (
-              <button key={v} onClick={() => setStandingsVariant(v)}
-                className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${standingsVariant === v ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
-                {VARIANT_LABELS[v]}
-                {standingsData[v].length > 0 && <span className="ml-1.5 text-xs opacity-70">({standingsData[v].length})</span>}
-              </button>
-            ))}
-          </div>
-
-          {/* Textarea for pasting */}
+          {/* Textarea for pasting all 3 variants at once */}
           <div className="mb-4">
-            <label className="text-xs font-semibold text-text-muted uppercase tracking-wider block mb-1.5">
-              Vložte tabulku — {VARIANT_LABELS[standingsVariant]}
-            </label>
-            <p className="text-xs text-text-muted mb-2">Zkopírujte tabulku z fotbal.cz (formát: # Klub Z V R P Skóre B, oddělené taby). Řádek s &quot;Dolany&quot; se automaticky označí.</p>
+            <p className="text-xs text-text-muted mb-2">Vložte všechny 3 tabulky najednou. Začněte řádkem <strong>Celkem</strong>, pak <strong>Doma</strong>, pak <strong>Venku</strong>. Formát: # Klub Z V R P Skóre B (oddělené taby). &quot;Dolany&quot; se označí automaticky.</p>
             <textarea
-              value={standingsText[standingsVariant]}
-              onChange={(e) => setStandingsText((prev) => ({ ...prev, [standingsVariant]: e.target.value }))}
-              rows={8}
+              value={standingsText}
+              onChange={(e) => setStandingsText(e.target.value)}
+              rows={16}
               className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text font-mono focus:outline-none focus:ring-2 focus:ring-brand-red/50"
-              placeholder={`1.\tSp. Police n/M B\t14\t13\t1\t0\t48:17\t40\n2.\tSo. V. Jesenice\t14\t11\t0\t3\t38:13\t33\n...`}
+              placeholder={"Celkem\n#\tKlub\tZ\tV\tR\tP\tSkóre\tB\n1.\tSp. Police n/M B\t14\t13\t1\t0\t48:17\t40\n...\nDoma\n#\tKlub\tZ\tV\tR\tP\tSkóre\tB\n1.\tSo. V. Jesenice\t7\t7\t0\t0\t23:4\t21\n...\nVenku\n..."}
             />
-            <button type="button" onClick={() => parseAndPreview(standingsVariant)}
+            <button type="button" onClick={parseAndPreview}
               className="mt-2 text-sm text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
               <Eye size={14} /> Zpracovat a zobrazit náhled
             </button>
           </div>
 
-          {/* Preview table */}
-          {standingsData[standingsVariant].length > 0 && (
-            <div className="bg-surface rounded-xl border border-border overflow-hidden mb-4">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-surface-muted text-text-muted">
-                      <th className="px-2 py-2 text-center w-10">#</th>
-                      <th className="px-3 py-2 text-left">Tým</th>
-                      <th className="px-2 py-2 text-center w-12">Z</th>
-                      <th className="px-2 py-2 text-center w-12">V</th>
-                      <th className="px-2 py-2 text-center w-12">R</th>
-                      <th className="px-2 py-2 text-center w-12">P</th>
-                      <th className="px-2 py-2 text-center">Skóre</th>
-                      <th className="px-2 py-2 text-center w-12 font-bold">B</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standingsLoading ? (
-                      <tr><td colSpan={8} className="px-4 py-8 text-center text-text-muted">Načítám...</td></tr>
-                    ) : standingsData[standingsVariant].map((s, i) => (
-                      <tr key={i} className={`border-b border-border last:border-0 ${s.is_our_team ? "bg-brand-red/5" : ""}`}>
-                        <td className="px-2 py-1.5 text-center font-bold text-text">{s.position}</td>
-                        <td className={`px-3 py-1.5 text-sm ${s.is_our_team ? "font-bold text-brand-red" : "text-text"}`}>{s.team_name}</td>
-                        <td className="px-2 py-1.5 text-center text-text-muted">{s.matches_played}</td>
-                        <td className="px-2 py-1.5 text-center text-text-muted">{s.wins}</td>
-                        <td className="px-2 py-1.5 text-center text-text-muted">{s.draws_count}</td>
-                        <td className="px-2 py-1.5 text-center text-text-muted">{s.losses}</td>
-                        <td className="px-2 py-1.5 text-center text-text-muted">{s.goals_for}:{s.goals_against}</td>
-                        <td className={`px-2 py-1.5 text-center font-bold ${s.is_our_team ? "text-brand-red" : "text-text"}`}>{s.points}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* Preview with variant tabs */}
+          {(standingsData.celkem.length > 0 || standingsData.doma.length > 0 || standingsData.venku.length > 0) && (
+            <>
+              <div className="flex gap-1 mb-3 bg-surface-muted rounded-lg p-1 w-fit">
+                {(["celkem", "doma", "venku"] as const).map((v) => (
+                  <button key={v} onClick={() => setStandingsPreviewVariant(v)}
+                    className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${standingsPreviewVariant === v ? "bg-brand-red text-white" : "text-text-muted hover:text-text"}`}>
+                    {VARIANT_LABELS[v]}
+                    {standingsData[v].length > 0 && <span className="ml-1.5 text-xs opacity-70">({standingsData[v].length})</span>}
+                  </button>
+                ))}
               </div>
-            </div>
+              <div className="bg-surface rounded-xl border border-border overflow-hidden mb-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-surface-muted text-text-muted">
+                        <th className="px-2 py-2 text-center w-10">#</th>
+                        <th className="px-3 py-2 text-left">Tým</th>
+                        <th className="px-2 py-2 text-center w-12">Z</th>
+                        <th className="px-2 py-2 text-center w-12">V</th>
+                        <th className="px-2 py-2 text-center w-12">R</th>
+                        <th className="px-2 py-2 text-center w-12">P</th>
+                        <th className="px-2 py-2 text-center">Skóre</th>
+                        <th className="px-2 py-2 text-center w-12 font-bold">B</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {standingsData[standingsPreviewVariant].length === 0 ? (
+                        <tr><td colSpan={8} className="px-4 py-6 text-center text-text-muted">Žádná data pro {VARIANT_LABELS[standingsPreviewVariant]}</td></tr>
+                      ) : standingsData[standingsPreviewVariant].map((s, i) => (
+                        <tr key={i} className={`border-b border-border last:border-0 ${s.is_our_team ? "bg-brand-red/5" : ""}`}>
+                          <td className="px-2 py-1.5 text-center font-bold text-text">{s.position}</td>
+                          <td className={`px-3 py-1.5 text-sm ${s.is_our_team ? "font-bold text-brand-red" : "text-text"}`}>{s.team_name}</td>
+                          <td className="px-2 py-1.5 text-center text-text-muted">{s.matches_played}</td>
+                          <td className="px-2 py-1.5 text-center text-text-muted">{s.wins}</td>
+                          <td className="px-2 py-1.5 text-center text-text-muted">{s.draws_count}</td>
+                          <td className="px-2 py-1.5 text-center text-text-muted">{s.losses}</td>
+                          <td className="px-2 py-1.5 text-center text-text-muted">{s.goals_for}:{s.goals_against}</td>
+                          <td className={`px-2 py-1.5 text-center font-bold ${s.is_our_team ? "text-brand-red" : "text-text"}`}>{s.points}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
 
           <div className="flex justify-end">

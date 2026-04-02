@@ -41,6 +41,7 @@ export const POSITIONS = [
   { value: "obrance", label: "Obránce" },
   { value: "zaloznik", label: "Záložník" },
   { value: "utocnik", label: "Útočník" },
+  { value: "trener", label: "Trenér" },
 ] as const;
 
 export const EVENT_TYPES = [
@@ -65,6 +66,7 @@ export const POSITION_LABELS: Record<string, string> = {
   obrance: "Obránce",
   zaloznik: "Záložník",
   utocnik: "Útočník",
+  trener: "Trenér",
 };
 
 export const POSITION_COLORS: Record<string, string> = {
@@ -72,6 +74,7 @@ export const POSITION_COLORS: Record<string, string> = {
   obrance: "bg-blue-500 text-white",
   zaloznik: "bg-green-500 text-white",
   utocnik: "bg-red-500 text-white",
+  trener: "bg-gray-600 text-white",
 };
 
 export const EVENT_TYPE_COLORS: Record<string, string> = {

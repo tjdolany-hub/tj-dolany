@@ -91,6 +91,9 @@ function formatMatchDate(dateStr: string): string {
   return `${day} ${date} — ${time}`;
 }
 
+const MEDAL_COLORS = ["text-yellow-500", "text-gray-400", "text-amber-700"];
+function medalClass(i: number) { return i < 3 ? MEDAL_COLORS[i] : "text-text-muted"; }
+
 export default function HomeClient({ articles, heroEvents, nextMatch, albums, clubBanner, leagueStandings, top5Scorers, top5Appearances }: HomeClientProps) {
   const featured = articles[0];
   const sidebar = articles.slice(1, 5);
@@ -519,8 +522,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                       <div className="space-y-2">
                         {top5Scorers.map((s, i) => (
                           <div key={i} className="flex items-center gap-3">
-                            <span className={`w-5 text-xs font-bold text-right ${i === 0 ? "text-brand-yellow" : "text-text-muted"}`}>{i + 1}.</span>
-                            <span className={`flex-1 text-sm ${i === 0 ? "font-bold text-text" : "text-text"}`}>{s.name}</span>
+                            <span className={`w-5 text-xs font-bold text-right ${medalClass(i)}`}>{i + 1}.</span>
+                            <span className={`flex-1 text-sm ${i < 3 ? "font-bold text-text" : "text-text"}`}>{s.name}</span>
                             <span className="flex items-center gap-1">
                               <BallIcon className="w-3.5 h-3.5 text-text-muted" />
                               <span className={`text-sm font-bold ${i === 0 ? "text-brand-red" : "text-text"}`}>{s.goals}</span>
@@ -540,8 +543,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                       <div className="space-y-2">
                         {top5Appearances.map((p, i) => (
                           <div key={i} className="flex items-center gap-3">
-                            <span className={`w-5 text-xs font-bold text-right ${i === 0 ? "text-brand-yellow" : "text-text-muted"}`}>{i + 1}.</span>
-                            <span className={`flex-1 text-sm ${i === 0 ? "font-bold text-text" : "text-text"}`}>{p.name}</span>
+                            <span className={`w-5 text-xs font-bold text-right ${medalClass(i)}`}>{i + 1}.</span>
+                            <span className={`flex-1 text-sm ${i < 3 ? "font-bold text-text" : "text-text"}`}>{p.name}</span>
                             <span className="flex items-center gap-1">
                               <JerseyIcon className="w-3.5 h-3.5 text-text-muted" />
                               <span className={`text-sm font-bold ${i === 0 ? "text-brand-red" : "text-text"}`}>{p.count}</span>
