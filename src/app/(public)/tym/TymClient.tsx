@@ -481,7 +481,7 @@ export default function TymClient({
   };
 
   const sections = [
-    { id: "kadr", label: "Kádr" },
+    { id: "soupiska", label: "Soupiska" },
     ...(matches.length > 0 ? [{ id: "vysledky", label: "Výsledky" }] : []),
     ...(standings && standings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
     ...(statsEntries && statsEntries.length > 0 ? [{ id: "statistiky", label: "Statistiky" }] : []),
@@ -501,29 +501,31 @@ export default function TymClient({
       >
         <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš tým</p>
         <h1 className="text-4xl font-extrabold text-text tracking-tight">
-          Tým
+          TJ Dolany
         </h1>
       </motion.div>
 
-      {/* Section navigation */}
-      <div className="flex flex-wrap justify-center gap-2 mb-12">
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => scrollTo(s.id)}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
-          >
-            {s.label}
-          </button>
-        ))}
+      {/* Section navigation — sticky */}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-12 border-b border-border">
+        <div className="flex flex-wrap justify-center gap-2">
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => scrollTo(s.id)}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Squad */}
-      <section id="kadr" className="mb-16 scroll-mt-24">
+      <section id="soupiska" className="mb-16 scroll-mt-28">
         <AnimatedSection>
           <h2 className="text-2xl font-bold text-text tracking-tight mb-10 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
-            Kádr mužstva
+            Soupiska týmu
           </h2>
         </AnimatedSection>
 
@@ -564,14 +566,14 @@ export default function TymClient({
 
       {/* Match results */}
       {matches.length > 0 && (
-        <div id="vysledky" className="scroll-mt-24">
+        <div id="vysledky" className="scroll-mt-28">
           <MatchResultsSection matches={matches} />
         </div>
       )}
 
       {/* League table */}
       {standings && standings.length > 0 && (
-        <div id="tabulka" className="scroll-mt-24">
+        <div id="tabulka" className="scroll-mt-28">
           <AnimatedSection className="mb-16">
             <LeagueTable standings={standings} />
           </AnimatedSection>
@@ -580,7 +582,7 @@ export default function TymClient({
 
       {/* Player statistics */}
       {statsEntries && statsEntries.length > 0 && availableSeasons && availableSeasons.length > 0 && (
-        <div id="statistiky" className="scroll-mt-24">
+        <div id="statistiky" className="scroll-mt-28">
           <AnimatedSection className="mb-16">
             <PlayerStatistics players={players} entries={statsEntries} seasons={availableSeasons} />
           </AnimatedSection>
@@ -590,7 +592,7 @@ export default function TymClient({
       {/* Season draws */}
       {draws.length > 0 && (
         <AnimatedSection>
-          <section id="los" className="scroll-mt-24">
+          <section id="los" className="scroll-mt-28">
             <h2 className="text-2xl font-bold text-text tracking-tight mb-10 flex items-center justify-center gap-3">
               <span className="w-8 h-0.5 bg-brand-red rounded-full" />
               Los soutěže

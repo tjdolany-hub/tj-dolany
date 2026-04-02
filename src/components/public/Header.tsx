@@ -11,7 +11,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 const NAV_ITEMS = [
   { href: "/", label: "Úvod" },
   { href: "/aktuality", label: "Aktuality" },
-  { href: "/tym", label: "Tým" },
+  { href: "/tym", label: "Tým a výsledky" },
   { href: "/plan-akci", label: "Plán akcí" },
   { href: "/o-klubu", label: "O klubu" },
 ];

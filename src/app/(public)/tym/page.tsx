@@ -5,11 +5,11 @@ import TymClient from "./TymClient";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Tým",
-  description: "Kádr mužstva TJ Dolany a aktuální losy soutěže.",
+  title: "Tým a výsledky",
+  description: "Soupiska týmu, výsledky zápasů a statistiky TJ Dolany.",
   openGraph: {
-    title: "Tým | TJ Dolany",
-    description: "Kádr mužstva TJ Dolany a aktuální losy soutěže.",
+    title: "Tým a výsledky | TJ Dolany",
+    description: "Soupiska týmu, výsledky zápasů a statistiky TJ Dolany.",
   },
 };
 

@@ -35,7 +35,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               {[
                 { href: "/aktuality", label: "Aktuality" },
-                { href: "/tym", label: "Tým" },
+                { href: "/tym", label: "Tým a výsledky" },
                 { href: "/plan-akci", label: "Plán akcí" },
                 { href: "/o-klubu", label: "O klubu" },
               ].map((item) => (
