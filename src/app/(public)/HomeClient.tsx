@@ -321,7 +321,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         <section className="bg-surface-alt">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
-              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Novinky</p>
+              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Novinky</p>
               <h2 className="text-2xl font-extrabold text-text tracking-tight">Aktuality</h2>
             </div>
 
@@ -437,7 +437,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           <section className="bg-surface">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
-                <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Soutěž</p>
+                <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Soutěž</p>
                 <h2 className="text-2xl font-extrabold text-text tracking-tight">Tabulka a statistiky</h2>
               </div>
 
@@ -563,7 +563,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               <div className="text-center mb-8">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <div className="w-1 h-6 bg-brand-red rounded-full" />
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Akce TJ Dolany</p>
+                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Akce TJ Dolany</p>
                 </div>
                 <h2 className="text-2xl font-bold text-text tracking-tight">Co nás čeká</h2>
               </div>
@@ -639,7 +639,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-1 h-6 bg-brand-red rounded-full" />
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Fotogalerie</p>
+                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Fotogalerie</p>
                 </div>
                 <h2 className="text-2xl font-bold text-text tracking-tight">Z našich akcí</h2>
               </div>
@@ -695,7 +695,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         <section className="bg-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
-              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Podporují nás</p>
+              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Podporují nás</p>
               <h2 className="text-2xl font-extrabold text-text tracking-tight">Sponzoři a partneři</h2>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-10">
