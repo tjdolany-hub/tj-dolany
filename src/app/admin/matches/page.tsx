@@ -590,11 +590,11 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Lineup — separated into Základní sestava and Lavička */}
+              {/* Lineup */}
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <p className="text-sm font-bold text-text flex items-center gap-2">
-                    <Users size={16} className="text-brand-red" /> Sestava ({lineup.length} hráčů — {lineup.filter((l) => l.is_starter).length} ZS, {lineup.filter((l) => !l.is_starter).length} ST)
+                    <Users size={16} className="text-brand-red" /> Sestava ({lineup.length} hráčů — {lineup.filter((l) => l.is_starter).length} ZS, {lineup.filter((l) => !l.is_starter).length} N)
                   </p>
                   <button type="button" onClick={fillAllActive} className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
                     <UserPlus size={12} /> Všichni aktivní
@@ -603,84 +603,64 @@ export default function AdminMatchesPage() {
                     <RotateCcw size={12} /> Z předchozího
                   </button>
                 </div>
+                <p className="text-xs text-text-muted mb-3">ZS = základní sestava, N = náhradník. Zápas se počítá všem zaškrtnutým.</p>
 
-                {/* Základní sestava */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2 pb-1 border-b border-green-200">
-                    <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Základní sestava</span>
-                    <span className="text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded font-bold">{lineup.filter((l) => l.is_starter).length}</span>
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { pos: "brankar", label: "Brankáři", dot: "bg-yellow-500" },
-                      { pos: "obrance", label: "Obránci", dot: "bg-blue-500" },
-                      { pos: "zaloznik", label: "Záložníci", dot: "bg-green-500" },
-                      { pos: "utocnik", label: "Útočníci", dot: "bg-red-500" },
-                    ].map(({ pos, label, dot }) => {
-                      const posPlayers = players.filter((p) => p.position === pos);
-                      if (posPlayers.length === 0) return null;
-                      return (
-                        <div key={pos}>
-                          <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full ${dot}`} /> {label}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            {posPlayers.map((p) => {
-                              const inLineup = lineup.find((l) => l.player_id === p.id);
-                              const isStarter = inLineup?.is_starter;
-                              return (
-                                <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
-                                  isStarter
-                                    ? "border-green-500 bg-green-50 text-text font-medium"
-                                    : inLineup
-                                      ? "border-orange-400 bg-orange-50 text-text font-medium"
-                                      : "border-border text-text-muted hover:border-brand-red/30"
-                                } ${!p.active ? "opacity-50" : ""}`}>
-                                  <input type="checkbox" checked={!!inLineup} onChange={() => toggleLineup(p.id, true)} className="w-3.5 h-3.5 accent-brand-red" />
-                                  <span className="flex-1 truncate">{p.name}</span>
-                                  {inLineup && (
-                                    <button type="button" onClick={() => setStarterStatus(p.id, !inLineup.is_starter)}
-                                      title={inLineup.is_starter ? "Klik → na lavičku" : "Klik → do základu"}
-                                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${inLineup.is_starter ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
-                                      {inLineup.is_starter ? "ZS" : "ST"}
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                <div className="space-y-3">
+                  {[
+                    { pos: "brankar", label: "Brankáři", dot: "bg-yellow-500" },
+                    { pos: "obrance", label: "Obránci", dot: "bg-blue-500" },
+                    { pos: "zaloznik", label: "Záložníci", dot: "bg-green-500" },
+                    { pos: "utocnik", label: "Útočníci", dot: "bg-red-500" },
+                  ].map(({ pos, label, dot }) => {
+                    const posPlayers = players.filter((p) => p.position === pos);
+                    if (posPlayers.length === 0) return null;
+                    return (
+                      <div key={pos}>
+                        <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${dot}`} /> {label}
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {posPlayers.map((p) => {
+                            const inLineup = lineup.find((l) => l.player_id === p.id);
+                            const isStarter = inLineup?.is_starter;
+                            const isBench = inLineup && !inLineup.is_starter;
+                            return (
+                              <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                                isStarter
+                                  ? "border-green-500 bg-green-600/20 font-medium"
+                                  : isBench
+                                    ? "border-orange-400 bg-orange-500/20 font-medium"
+                                    : "border-border hover:border-brand-red/30"
+                              } ${!p.active ? "opacity-50" : ""}`}>
+                                <span className="flex-1 truncate text-text">{p.name}</span>
+                                <label className={`flex items-center gap-1 cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  isStarter ? "bg-green-600/30 text-green-400" : "text-text-muted hover:text-green-400"
+                                }`} title="Základní sestava">
+                                  <input type="checkbox" checked={!!isStarter} onChange={() => {
+                                    if (isStarter) { toggleLineup(p.id, true); }
+                                    else if (isBench) { setStarterStatus(p.id, true); }
+                                    else { toggleLineup(p.id, true); }
+                                  }} className="w-3 h-3 accent-green-500" />
+                                  ZS
+                                </label>
+                                <label className={`flex items-center gap-1 cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  isBench ? "bg-orange-500/30 text-orange-400" : "text-text-muted hover:text-orange-400"
+                                }`} title="Náhradník">
+                                  <input type="checkbox" checked={!!isBench} onChange={() => {
+                                    if (isBench) { toggleLineup(p.id, false); }
+                                    else if (isStarter) { setStarterStatus(p.id, false); }
+                                    else { toggleLineup(p.id, false); }
+                                  }} className="w-3 h-3 accent-orange-500" />
+                                  N
+                                </label>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                {/* Lavička */}
-                {lineup.filter((l) => !l.is_starter).length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2 pb-1 border-b border-orange-200">
-                      <span className="text-xs font-bold text-orange-700 uppercase tracking-wider">Lavička</span>
-                      <span className="text-xs text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded font-bold">{lineup.filter((l) => !l.is_starter).length}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {lineup.filter((l) => !l.is_starter).map((l) => {
-                        const p = players.find((pl) => pl.id === l.player_id);
-                        return (
-                          <div key={l.player_id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-orange-400 bg-orange-50 text-sm font-medium text-text">
-                            <span>{p?.name || "?"}</span>
-                            <button type="button" onClick={() => setStarterStatus(l.player_id, true)}
-                              title="Přesunout do základu"
-                              className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-orange-100 text-orange-700">
-                              ST → ZS
-                            </button>
-                            <button type="button" onClick={() => toggleLineup(l.player_id, false)}
-                              className="text-red-400 hover:text-red-600"><X size={14} /></button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Scorers — each row = 1 goal, same player can appear multiple times */}
@@ -845,7 +825,7 @@ export default function AdminMatchesPage() {
                             </div>
                             {m.match_lineups.filter((l) => !l.is_starter).length > 0 && (
                               <>
-                                <h4 className="text-xs font-bold text-text-muted uppercase mb-1 mt-2">Střídající</h4>
+                                <h4 className="text-xs font-bold text-text-muted uppercase mb-1 mt-2">Náhradníci</h4>
                                 <div className="flex flex-wrap gap-1.5">
                                   {m.match_lineups.filter((l) => !l.is_starter).map((l) => (
                                     <span key={l.player_id} className="text-xs bg-orange-50 px-2 py-1 rounded border border-orange-200 text-orange-700">

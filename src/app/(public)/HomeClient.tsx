@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, Calendar, MapPin, ImageIcon, Camera } from "lucide-react";
+import { ArrowRight, Calendar, ImageIcon, Camera } from "lucide-react";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 
@@ -163,56 +163,50 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       </section>
 
       {/* ── MATCH TICKER ── */}
-      {nextMatch && (
-        <div className="bg-brand-red text-white overflow-hidden ticker-container">
-          <div className="py-2.5 whitespace-nowrap animate-ticker inline-flex items-center gap-8">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="inline-flex items-center gap-3">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  <span className="font-bold text-sm uppercase tracking-wide">Příští zápas</span>
-                </span>
-                <span className="text-sm font-medium">
-                  {formatMatchDate(nextMatch.date)} — {nextMatch.title}
-                  {nextMatch.location && (
-                    <span className="text-white/70 ml-2">
-                      <MapPin size={12} className="inline -mt-0.5 mr-0.5" />
-                      {nextMatch.location}
-                    </span>
-                  )}
-                </span>
-                <span className="text-white/30 mx-4">●</span>
+      {nextMatch && (() => {
+        const tickerText = `⚽ Příští zápas: ${formatMatchDate(nextMatch.date)} — ${nextMatch.title}${nextMatch.location ? ` 📍 ${nextMatch.location}` : ""}`;
+        return (
+          <div className="bg-brand-red text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center">
+              <span className="text-sm font-semibold tracking-wide text-center">
+                {tickerText.split("").map((char, i) => (
+                  <span
+                    key={i}
+                    className={char === " " ? undefined : "ticker-char"}
+                    style={char !== " " ? { animationDelay: `${i * 0.06}s` } : undefined}
+                  >
+                    {char}
+                  </span>
+                ))}
               </span>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── CLUB BANNER ── */}
       <AnimatedSection>
         <section className="bg-surface">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-brand-dark rounded-2xl overflow-hidden shadow-xl">
-              {/* Header */}
-              <div className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
-                <Image src="/logo.png" alt="TJ Dolany" width={40} height={40} className="drop-shadow-lg" />
-                <div>
-                  <h2 className="text-lg font-bold text-white tracking-tight">TJ Dolany</h2>
-                  <p className="text-xs text-gray-400">Okresní přebor • Náchod</p>
-                </div>
+            <div className="bg-brand-dark rounded-2xl overflow-hidden shadow-xl flex flex-col md:flex-row">
+              {/* Left — logo + name + position */}
+              <div className="md:w-[30%] flex flex-col items-center justify-center px-6 py-6 border-b md:border-b-0 md:border-r border-white/10">
+                <Image src="/logo.png" alt="TJ Dolany" width={64} height={64} className="drop-shadow-lg mb-3" />
+                <h2 className="text-xl font-extrabold text-white tracking-tight">TJ Dolany</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Okresní přebor • Náchod</p>
                 {clubBanner.leaguePosition && (
-                  <div className="ml-auto text-center">
-                    <span className="text-2xl font-extrabold text-brand-yellow">{clubBanner.leaguePosition}.</span>
+                  <div className="mt-3 text-center">
+                    <span className="text-3xl font-extrabold text-brand-yellow">{clubBanner.leaguePosition}.</span>
                     <span className="block text-[10px] text-gray-400 uppercase tracking-wider">místo</span>
                   </div>
                 )}
               </div>
 
-              {/* Stats grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/10">
+              {/* Right — stacked rows */}
+              <div className="md:w-[70%] divide-y divide-white/10">
                 {/* Forma */}
-                <div className="px-4 py-4">
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Forma</span>
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Forma</span>
                   <div className="flex gap-1.5">
                     {clubBanner.form.length > 0 ? clubBanner.form.map((r, i) => (
                       <span key={i} className={`w-7 h-7 rounded text-xs font-bold flex items-center justify-center ${
@@ -226,13 +220,41 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                   </div>
                 </div>
 
+                {/* Poslední zápas */}
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Poslední zápas</span>
+                  {clubBanner.lastMatch ? (
+                    (() => {
+                      const matchContent = (
+                        <span className="text-sm font-bold text-white group-hover:text-brand-red transition-colors">
+                          {clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}
+                          <span className="text-brand-yellow mx-1.5">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
+                          {clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}
+                        </span>
+                      );
+                      return clubBanner.lastMatch.articleSlug ? (
+                        <Link href={`/aktuality/${clubBanner.lastMatch.articleSlug}`} className="group flex items-center gap-2">
+                          {matchContent}
+                          <span className="text-[10px] text-brand-red font-medium">▸ referát</span>
+                        </Link>
+                      ) : (
+                        <Link href="/tym" className="group flex items-center gap-2">
+                          {matchContent}
+                        </Link>
+                      );
+                    })()
+                  ) : (
+                    <span className="text-xs text-gray-500">—</span>
+                  )}
+                </div>
+
                 {/* Nejlepší střelec */}
-                <div className="px-4 py-4">
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Nejlepší střelec</span>
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Nejlepší střelec</span>
                   {clubBanner.topScorer ? (
-                    <div>
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-white">{clubBanner.topScorer.name}</span>
-                      <span className="text-xs text-brand-yellow ml-1.5 font-bold">{clubBanner.topScorer.goals} gólů</span>
+                      <span className="text-xs text-brand-yellow font-bold">{clubBanner.topScorer.goals} gólů</span>
                     </div>
                   ) : (
                     <span className="text-xs text-gray-500">—</span>
@@ -240,12 +262,12 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 </div>
 
                 {/* Nejvíce karet */}
-                <div className="px-4 py-4">
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Nejvíce karet</span>
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Nejvíce karet</span>
                   {clubBanner.topCards ? (
-                    <div>
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-white">{clubBanner.topCards.name}</span>
-                      <span className="flex items-center gap-1.5 mt-0.5">
+                      <span className="flex items-center gap-1.5">
                         {clubBanner.topCards.yellows > 0 && (
                           <span className="flex items-center gap-0.5">
                             <span className="w-3 h-4 rounded-sm bg-yellow-400 inline-block" />
@@ -258,34 +280,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                             <span className="text-xs text-gray-300 font-medium">{clubBanner.topCards.reds}</span>
                           </span>
                         )}
-                        <span className="text-[10px] text-gray-500">({clubBanner.topCards.score} b.)</span>
                       </span>
                     </div>
-                  ) : (
-                    <span className="text-xs text-gray-500">—</span>
-                  )}
-                </div>
-
-                {/* Poslední zápas */}
-                <div className="px-4 py-4">
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">Poslední zápas</span>
-                  {clubBanner.lastMatch ? (
-                    clubBanner.lastMatch.articleSlug ? (
-                      <Link href={`/aktuality/${clubBanner.lastMatch.articleSlug}`} className="group">
-                        <span className="text-sm font-bold text-white group-hover:text-brand-red transition-colors">
-                          {clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}
-                          <span className="text-brand-yellow mx-1">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
-                          {clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}
-                        </span>
-                        <span className="text-[10px] text-brand-red block mt-0.5 font-medium">▸ referát</span>
-                      </Link>
-                    ) : (
-                      <span className="text-sm font-bold text-white">
-                        {clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}
-                        <span className="text-brand-yellow mx-1">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
-                        {clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}
-                      </span>
-                    )
                   ) : (
                     <span className="text-xs text-gray-500">—</span>
                   )}
