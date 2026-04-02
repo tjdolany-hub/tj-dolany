@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import { ChevronDown, Landmark, Home, Trophy, Mail, MapPin, Phone, Users } from "lucide-react";
+import { ChevronDown, Mail, MapPin, Phone, Users } from "lucide-react";
 
 const SEASONS = [
   "2018/2019",
@@ -27,21 +27,48 @@ const SEASONS = [
 export default function OKlubuClient() {
   const [openSeason, setOpenSeason] = useState<string | null>(null);
 
+  const sections = [
+    { id: "o-tj", label: "O TJ Dolany" },
+    { id: "zalozeni", label: "Založení" },
+    { id: "sokolovna", label: "Sokolovna" },
+    { id: "historie", label: "Historie" },
+    { id: "vybor", label: "Výbor" },
+    { id: "kontakt", label: "Kontakt" },
+    { id: "mapa", label: "Mapa" },
+  ];
+
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
+        className="text-center mb-8"
       >
         <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš klub</p>
         <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
       </motion.div>
 
+      {/* Section navigation */}
+      <div className="flex flex-wrap justify-center gap-2 mb-12">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => scrollTo(s.id)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* About */}
       <AnimatedSection className="mb-10">
-        <section>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+        <section id="o-tj" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             O TJ Dolany
           </h2>
@@ -63,11 +90,9 @@ export default function OKlubuClient() {
 
       {/* Founding */}
       <AnimatedSection delay={0.05} className="mb-10">
-        <section>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
-              <Landmark size={20} className="text-brand-red" />
-            </div>
+        <section id="zalozeni" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Založení klubu
           </h2>
           <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
@@ -100,11 +125,9 @@ export default function OKlubuClient() {
 
       {/* Sokolovna */}
       <AnimatedSection delay={0.1} className="mb-10">
-        <section>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
-              <Home size={20} className="text-brand-red" />
-            </div>
+        <section id="sokolovna" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Sokolovna v Dolanech
           </h2>
           <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
@@ -137,11 +160,9 @@ export default function OKlubuClient() {
 
       {/* Historical results */}
       <AnimatedSection delay={0.15} className="mb-10">
-        <section>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
-              <Trophy size={20} className="text-brand-red" />
-            </div>
+        <section id="historie" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Historické sezony
           </h2>
           <p className="text-text-muted text-sm mb-6">
@@ -188,8 +209,8 @@ export default function OKlubuClient() {
 
       {/* Board */}
       <AnimatedSection delay={0.2} className="mb-10">
-        <section>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+        <section id="vybor" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Výbor TJ Dolany
           </h2>
@@ -204,8 +225,8 @@ export default function OKlubuClient() {
 
       {/* Contact */}
       <AnimatedSection delay={0.25} className="mb-10">
-        <section>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+        <section id="kontakt" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Kontaktní údaje
           </h2>
@@ -252,8 +273,8 @@ export default function OKlubuClient() {
 
       {/* Map */}
       <AnimatedSection delay={0.3}>
-        <section>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center gap-3">
+        <section id="mapa" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Kde nás najdete
           </h2>

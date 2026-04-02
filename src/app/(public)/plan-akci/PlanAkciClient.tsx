@@ -260,7 +260,7 @@ export default function PlanAkciClient({
       {/* ═══ UPCOMING EVENTS (TJ Dolany only) ═══ */}
       {upcoming.length > 0 && (
         <AnimatedSection className="mb-16">
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-8 flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-8 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Nadcházející akce TJ Dolany
           </h2>
@@ -320,13 +320,13 @@ export default function PlanAkciClient({
 
       {/* ═══ CALENDAR — Kalendář Areálu TJ Dolany ═══ */}
       <AnimatedSection>
-        <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center gap-3">
+        <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
           Kalendář Areálu TJ Dolany
         </h2>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap justify-center gap-2 mb-4">
           {CALENDAR_FILTERS.map((f) => (
             <button
               key={f.value}

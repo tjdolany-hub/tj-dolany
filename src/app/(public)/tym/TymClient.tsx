@@ -83,7 +83,8 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
   return (
     <AnimatedSection className="mb-16">
       <section>
-        <h2 className="text-3xl font-bold text-text tracking-tight mb-6 text-center">
+        <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
+          <span className="w-8 h-0.5 bg-brand-red rounded-full" />
           Výsledky zápasů
         </h2>
 
@@ -275,7 +276,8 @@ function PlayerStatistics({ players, entries, seasons }: { players: { id: string
 
   return (
     <section>
-      <h2 className="text-3xl font-bold text-text tracking-tight mb-6 text-center">
+      <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
+        <span className="w-8 h-0.5 bg-brand-red rounded-full" />
         Statistiky hráčů
       </h2>
 
@@ -381,7 +383,8 @@ function LeagueTable({ standings }: { standings: LeagueStanding[] }) {
 
   return (
     <section>
-      <h2 className="text-3xl font-bold text-text tracking-tight mb-6 text-center">
+      <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
+        <span className="w-8 h-0.5 bg-brand-red rounded-full" />
         Tabulka soutěže
       </h2>
 
@@ -477,12 +480,24 @@ export default function TymClient({
     trener: "Realizační tým",
   };
 
+  const sections = [
+    { id: "kadr", label: "Kádr" },
+    ...(matches.length > 0 ? [{ id: "vysledky", label: "Výsledky" }] : []),
+    ...(standings && standings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
+    ...(statsEntries && statsEntries.length > 0 ? [{ id: "statistiky", label: "Statistiky" }] : []),
+    ...(draws.length > 0 ? [{ id: "los", label: "Los" }] : []),
+  ];
+
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
+        className="text-center mb-8"
       >
         <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš tým</p>
         <h1 className="text-4xl font-extrabold text-text tracking-tight">
@@ -490,18 +505,32 @@ export default function TymClient({
         </h1>
       </motion.div>
 
+      {/* Section navigation */}
+      <div className="flex flex-wrap justify-center gap-2 mb-12">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => scrollTo(s.id)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* Squad */}
-      <section className="mb-16">
+      <section id="kadr" className="mb-16 scroll-mt-24">
         <AnimatedSection>
-          <h2 className="text-3xl font-bold text-text tracking-tight mb-10 text-center">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-10 flex items-center justify-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Kádr mužstva
           </h2>
         </AnimatedSection>
 
         {grouped.map((group) => (
           <AnimatedSection key={group.position} className="mb-12">
-            <h3 className="text-xl font-bold text-brand-red mb-6 flex items-center gap-3">
-              <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+            <h3 className="text-lg font-bold text-text mb-6 flex items-center justify-center gap-3">
+              <span className="w-6 h-0.5 bg-brand-red rounded-full" />
               {PLURAL_LABELS[group.position] || group.label}
             </h3>
             <StaggerContainer className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -535,28 +564,35 @@ export default function TymClient({
 
       {/* Match results */}
       {matches.length > 0 && (
-        <MatchResultsSection matches={matches} />
+        <div id="vysledky" className="scroll-mt-24">
+          <MatchResultsSection matches={matches} />
+        </div>
       )}
 
       {/* League table */}
       {standings && standings.length > 0 && (
-        <AnimatedSection className="mb-16">
-          <LeagueTable standings={standings} />
-        </AnimatedSection>
+        <div id="tabulka" className="scroll-mt-24">
+          <AnimatedSection className="mb-16">
+            <LeagueTable standings={standings} />
+          </AnimatedSection>
+        </div>
       )}
 
       {/* Player statistics */}
       {statsEntries && statsEntries.length > 0 && availableSeasons && availableSeasons.length > 0 && (
-        <AnimatedSection className="mb-16">
-          <PlayerStatistics players={players} entries={statsEntries} seasons={availableSeasons} />
-        </AnimatedSection>
+        <div id="statistiky" className="scroll-mt-24">
+          <AnimatedSection className="mb-16">
+            <PlayerStatistics players={players} entries={statsEntries} seasons={availableSeasons} />
+          </AnimatedSection>
+        </div>
       )}
 
       {/* Season draws */}
       {draws.length > 0 && (
         <AnimatedSection>
-          <section>
-            <h2 className="text-3xl font-bold text-text tracking-tight mb-10 text-center">
+          <section id="los" className="scroll-mt-24">
+            <h2 className="text-2xl font-bold text-text tracking-tight mb-10 flex items-center justify-center gap-3">
+              <span className="w-8 h-0.5 bg-brand-red rounded-full" />
               Los soutěže
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
