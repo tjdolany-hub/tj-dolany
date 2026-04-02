@@ -218,13 +218,13 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums }: 
                         </div>
                       </div>
                     ) : (
-                      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-dark to-brand-dark-light flex items-center justify-center">
+                      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-red/20 via-brand-dark to-brand-dark-light flex items-center justify-center">
                         <div className="text-center">
                           <div className="flex items-center gap-2 justify-center mb-3">
                             <span className="text-xs font-bold text-white bg-brand-red px-2.5 py-1 rounded-md uppercase tracking-wider">
                               {CATEGORIES.find((c) => c.value === featured.category)?.label}
                             </span>
-                            <span className="text-xs text-gray-400">{formatDateCzech(featured.created_at)}</span>
+                            <span className="text-xs text-gray-300">{formatDateCzech(featured.created_at)}</span>
                           </div>
                           <h3 className="text-xl md:text-2xl font-bold text-white px-6">{featured.title}</h3>
                         </div>
