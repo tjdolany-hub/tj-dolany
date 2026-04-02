@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
+import { Save, X } from "lucide-react";
+import Link from "next/link";
 import { CATEGORIES } from "@/lib/utils";
 import ImageUploader from "@/components/admin/ImageUploader";
 
@@ -104,13 +105,21 @@ export default function NewArticlePage() {
           />
           <span className="text-sm font-semibold text-text">Publikovat</span>
         </label>
-        <button
-          type="submit"
-          disabled={saving}
-          className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
-        >
-          <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+          >
+            <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
+          </button>
+          <Link
+            href="/admin/articles"
+            className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors"
+          >
+            <X size={16} /> Zrušit
+          </Link>
+        </div>
       </form>
     </div>
   );
