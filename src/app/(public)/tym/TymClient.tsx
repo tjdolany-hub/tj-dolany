@@ -226,11 +226,20 @@ type LeagueStanding = {
 };
 
 /** Full player statistics with season/half filters */
+type SortKey = "matches" | "goals" | "yellows" | "reds";
+
 function PlayerStatistics({ players, entries, seasons }: { players: { id: string; name: string }[]; entries: StatsEntry[]; seasons: string[] }) {
   const [filterSeason, setFilterSeason] = useState<string>("all");
   const [filterHalf, setFilterHalf] = useState<"all" | "podzim" | "jaro">("all");
+  const [sortBy, setSortBy] = useState<SortKey>("matches");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const stats = useMemo(() => {
+  const toggleSort = (key: SortKey) => {
+    if (sortBy === key) setSortDir((d) => d === "desc" ? "asc" : "desc");
+    else { setSortBy(key); setSortDir("desc"); }
+  };
+
+  const rawStats = useMemo(() => {
     const filtered = entries.filter((e) => {
       if (filterSeason !== "all" && e.season !== filterSeason) return false;
       if (filterHalf !== "all" && e.half !== filterHalf) return false;
@@ -253,8 +262,16 @@ function PlayerStatistics({ players, entries, seasons }: { players: { id: string
       }
     }
 
-    return [...map.values()].sort((a, b) => b.matches - a.matches || b.goals - a.goals);
+    return [...map.values()];
   }, [entries, players, filterSeason, filterHalf]);
+
+  const stats = useMemo(() => {
+    const sorted = [...rawStats].sort((a, b) => {
+      const diff = sortDir === "desc" ? b[sortBy] - a[sortBy] : a[sortBy] - b[sortBy];
+      return diff !== 0 ? diff : a.name.localeCompare(b.name);
+    });
+    return sorted;
+  }, [rawStats, sortBy, sortDir]);
 
   return (
     <section>
@@ -301,18 +318,20 @@ function PlayerStatistics({ players, entries, seasons }: { players: { id: string
               <tr className="border-b border-border bg-surface-muted">
                 <th className="px-3 py-3 text-center font-semibold text-text-muted w-10">#</th>
                 <th className="px-4 py-3 text-left font-semibold text-text-muted">Hráč</th>
-                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Zápasy">
-                  <JerseyIcon className="w-4 h-4 mx-auto text-text-muted" />
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Góly">
-                  <BallIcon className="w-4 h-4 mx-auto text-text-muted" />
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Žluté karty">
-                  <YellowCard className="w-3 h-4 mx-auto" />
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-text-muted" title="Červené karty">
-                  <RedCard className="w-3 h-4 mx-auto" />
-                </th>
+                {([
+                  { key: "matches" as SortKey, icon: <JerseyIcon className="w-4 h-4 mx-auto" />, title: "Zápasy" },
+                  { key: "goals" as SortKey, icon: <BallIcon className="w-4 h-4 mx-auto" />, title: "Góly" },
+                  { key: "yellows" as SortKey, icon: <YellowCard className="w-3.5 h-4.5 mx-auto" />, title: "Žluté karty" },
+                  { key: "reds" as SortKey, icon: <RedCard className="w-3.5 h-4.5 mx-auto" />, title: "Červené karty" },
+                ]).map(({ key, icon, title }) => (
+                  <th key={key} className="px-3 py-3 text-center font-semibold text-text-muted cursor-pointer select-none hover:text-text transition-colors" title={title}
+                    onClick={() => toggleSort(key)}>
+                    <span className="inline-flex items-center gap-1 justify-center">
+                      {icon}
+                      {sortBy === key && <span className="text-[10px] text-brand-red">{sortDir === "desc" ? "▼" : "▲"}</span>}
+                    </span>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
