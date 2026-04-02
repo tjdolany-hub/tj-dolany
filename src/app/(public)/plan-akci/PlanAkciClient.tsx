@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, ChevronLeft, ChevronRight, X, MapPin, Clock } from "lucide-react";
+import { Calendar, X, MapPin, Clock, Sun } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { formatDateCzech, LOCATION_LABELS } from "@/lib/utils";
 
@@ -26,7 +26,6 @@ interface ScheduleEntry {
 }
 
 const DAY_NAMES = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
-const DAY_NAMES_SHORT = ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"];
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   akce: "Akce TJ",
@@ -49,6 +48,17 @@ const EVENT_DOT_COLORS: Record<string, string> = {
   trenink: "bg-blue-500",
 };
 
+const MONTH_NAMES = [
+  "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
+  "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
+];
+
+function formatLocationLabel(loc: string | null): string {
+  if (!loc) return "";
+  if (loc === "cely_areal") return LOCATION_LABELS["cely_areal"] || "Celý areál";
+  return loc.split(",").map((v) => LOCATION_LABELS[v.trim()] || v.trim()).join(", ");
+}
+
 export default function PlanAkciClient({
   upcoming,
   allEvents,
@@ -59,8 +69,6 @@ export default function PlanAkciClient({
   schedule: ScheduleEntry[];
 }) {
   const now = new Date();
-  const [calMonth, setCalMonth] = useState(now.getMonth());
-  const [calYear, setCalYear] = useState(now.getFullYear());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   // Group schedule by day
@@ -71,28 +79,14 @@ export default function PlanAkciClient({
       .sort((a, b) => a.time_from.localeCompare(b.time_from)),
   }));
 
-  // Calendar helpers
-  const firstDay = new Date(calYear, calMonth, 1);
-  const lastDay = new Date(calYear, calMonth + 1, 0);
-  const startPad = (firstDay.getDay() + 6) % 7; // Monday-start
-  const totalDays = lastDay.getDate();
+  // Find the next upcoming event (for highlighting)
+  const nextEventDate = upcoming.length > 0 ? new Date(upcoming[0].date) : null;
 
-  const monthNames = [
-    "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
-    "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
-  ];
-
-  // Events per day for this month
-  const eventsForMonth = allEvents.filter((e) => {
-    const d = new Date(e.date);
-    return d.getMonth() === calMonth && d.getFullYear() === calYear;
-  });
-
-  const eventsByDay: Record<number, CalEvent[]> = {};
-  for (const e of eventsForMonth) {
-    const day = new Date(e.date).getDate();
-    if (!eventsByDay[day]) eventsByDay[day] = [];
-    eventsByDay[day].push(e);
+  // Generate months to display: current month + next 11 months
+  const months: { month: number; year: number }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    months.push({ month: d.getMonth(), year: d.getFullYear() });
   }
 
   // Events for selected day
@@ -107,26 +101,6 @@ export default function PlanAkciClient({
       })
     : [];
 
-  function prevMonth() {
-    if (calMonth === 0) {
-      setCalMonth(11);
-      setCalYear(calYear - 1);
-    } else {
-      setCalMonth(calMonth - 1);
-    }
-    setSelectedDay(null);
-  }
-
-  function nextMonth() {
-    if (calMonth === 11) {
-      setCalMonth(0);
-      setCalYear(calYear + 1);
-    } else {
-      setCalMonth(calMonth + 1);
-    }
-    setSelectedDay(null);
-  }
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <motion.div
@@ -140,7 +114,7 @@ export default function PlanAkciClient({
         <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí</h1>
       </motion.div>
 
-      {/* ── UPCOMING EVENTS (5 cards centered) ── */}
+      {/* ── UPCOMING EVENTS ── */}
       {upcoming.length > 0 && (
         <AnimatedSection className="mb-16">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-8 flex items-center gap-3">
@@ -150,6 +124,9 @@ export default function PlanAkciClient({
           <div className="flex flex-wrap justify-center gap-4">
             {upcoming.map((event, idx) => {
               const d = new Date(event.date);
+              const h = d.getHours();
+              const m = d.getMinutes();
+              const isAllDay = h === 0 && m === 0;
               return (
                 <motion.div
                   key={event.id}
@@ -177,6 +154,11 @@ export default function PlanAkciClient({
                   <span className="text-lg font-bold text-brand-red">
                     {d.getDate()}.{d.getMonth() + 1}.
                   </span>
+                  {!isAllDay && (
+                    <span className="text-xs text-text-muted ml-1">
+                      {h.toString().padStart(2, "0")}:{m.toString().padStart(2, "0")}
+                    </span>
+                  )}
                   <h3 className="font-semibold text-text text-sm leading-snug mt-2 line-clamp-2">
                     {event.title}
                   </h3>
@@ -238,112 +220,138 @@ export default function PlanAkciClient({
       {/* ── divider ── */}
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent mb-12" />
 
-      {/* ── MONTH CALENDAR ── */}
+      {/* ── ALL MONTHS CHRONOLOGICALLY ── */}
       <AnimatedSection>
         <h2 className="text-2xl font-bold text-text tracking-tight mb-8 flex items-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
           Kalendář
         </h2>
 
-        {/* Month navigation */}
-        <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={prevMonth}
-            className="p-2 rounded-lg hover:bg-surface-alt transition-colors text-text"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <h3 className="text-xl font-bold text-text">
-            {monthNames[calMonth]} {calYear}
-          </h3>
-          <button
-            onClick={nextMonth}
-            className="p-2 rounded-lg hover:bg-surface-alt transition-colors text-text"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
+        <div className="space-y-10">
+          {months.map(({ month, year }) => {
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startPad = (firstDay.getDay() + 6) % 7;
+            const totalDays = lastDay.getDate();
 
-        {/* Calendar grid */}
-        <div className="bg-surface rounded-xl border border-border-strong overflow-hidden">
-          {/* Day headers (Monday-start) */}
-          <div className="grid grid-cols-7 bg-surface-alt border-b border-border">
-            {["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].map((d) => (
-              <div key={d} className="text-center py-2 text-xs font-bold text-text-muted uppercase">
-                {d}
-              </div>
-            ))}
-          </div>
+            const eventsForMonth = allEvents.filter((e) => {
+              const d = new Date(e.date);
+              return d.getMonth() === month && d.getFullYear() === year;
+            });
 
-          {/* Day cells */}
-          <div className="grid grid-cols-7">
-            {/* Empty padding for days before month starts */}
-            {Array.from({ length: startPad }).map((_, i) => (
-              <div key={`pad-${i}`} className="min-h-[80px] border-b border-r border-border bg-surface-alt/30" />
-            ))}
+            const eventsByDay: Record<number, CalEvent[]> = {};
+            for (const e of eventsForMonth) {
+              const day = new Date(e.date).getDate();
+              if (!eventsByDay[day]) eventsByDay[day] = [];
+              eventsByDay[day].push(e);
+            }
 
-            {Array.from({ length: totalDays }).map((_, i) => {
-              const day = i + 1;
-              const dayEvents = eventsByDay[day] ?? [];
-              const isToday =
-                day === now.getDate() &&
-                calMonth === now.getMonth() &&
-                calYear === now.getFullYear();
-              const isSelected =
-                selectedDay &&
-                day === selectedDay.getDate() &&
-                calMonth === selectedDay.getMonth() &&
-                calYear === selectedDay.getFullYear();
+            const isCurrentMonth =
+              month === now.getMonth() && year === now.getFullYear();
 
-              return (
-                <button
-                  key={day}
-                  onClick={() => {
-                    if (dayEvents.length > 0) {
-                      setSelectedDay(new Date(calYear, calMonth, day));
-                    }
-                  }}
-                  className={`min-h-[80px] border-b border-r border-border p-1.5 text-left transition-colors ${
-                    dayEvents.length > 0
-                      ? "cursor-pointer hover:bg-brand-red/5"
-                      : "cursor-default"
-                  } ${isSelected ? "bg-brand-red/10 ring-2 ring-inset ring-brand-red/30" : ""} ${
-                    isToday ? "bg-brand-yellow/10" : ""
-                  }`}
-                >
-                  <span
-                    className={`text-sm font-semibold ${
-                      isToday
-                        ? "bg-brand-red text-white w-6 h-6 rounded-full flex items-center justify-center"
-                        : "text-text"
-                    }`}
-                  >
-                    {day}
-                  </span>
-                  {dayEvents.length > 0 && (
-                    <div className="mt-1 space-y-0.5">
-                      {dayEvents.slice(0, 3).map((e) => (
-                        <div
-                          key={e.id}
-                          className="flex items-center gap-1"
-                        >
-                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
-                          <span className="text-[10px] text-text leading-tight truncate">
-                            {e.title}
-                          </span>
-                        </div>
-                      ))}
-                      {dayEvents.length > 3 && (
-                        <span className="text-[9px] text-text-muted">
-                          +{dayEvents.length - 3} další
-                        </span>
-                      )}
-                    </div>
+            return (
+              <div key={`${year}-${month}`}>
+                <h3 className={`text-lg font-bold mb-3 ${isCurrentMonth ? "text-brand-red" : "text-text"}`}>
+                  {MONTH_NAMES[month]} {year}
+                  {isCurrentMonth && (
+                    <span className="ml-2 text-xs font-semibold bg-brand-red text-white px-2 py-0.5 rounded-full">
+                      aktuální
+                    </span>
                   )}
-                </button>
-              );
-            })}
-          </div>
+                </h3>
+                <div className="bg-surface rounded-xl border border-border-strong overflow-hidden">
+                  <div className="grid grid-cols-7 bg-surface-alt border-b border-border">
+                    {["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].map((d) => (
+                      <div key={d} className="text-center py-2 text-xs font-bold text-text-muted uppercase">
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7">
+                    {Array.from({ length: startPad }).map((_, i) => (
+                      <div
+                        key={`pad-${i}`}
+                        className="min-h-[70px] border-b border-r border-border bg-surface-alt/30"
+                      />
+                    ))}
+                    {Array.from({ length: totalDays }).map((_, i) => {
+                      const day = i + 1;
+                      const dayEvents = eventsByDay[day] ?? [];
+                      const isToday =
+                        day === now.getDate() && isCurrentMonth;
+                      const isSelected =
+                        selectedDay &&
+                        day === selectedDay.getDate() &&
+                        month === selectedDay.getMonth() &&
+                        year === selectedDay.getFullYear();
+
+                      // Check if any event on this day is the next upcoming event
+                      const isNextEvent =
+                        nextEventDate &&
+                        day === nextEventDate.getDate() &&
+                        month === nextEventDate.getMonth() &&
+                        year === nextEventDate.getFullYear();
+
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => {
+                            if (dayEvents.length > 0) {
+                              setSelectedDay(new Date(year, month, day));
+                            }
+                          }}
+                          className={`min-h-[70px] border-b border-r border-border p-1.5 text-left transition-colors ${
+                            dayEvents.length > 0
+                              ? "cursor-pointer hover:bg-brand-red/5"
+                              : "cursor-default"
+                          } ${
+                            isSelected
+                              ? "bg-brand-red/10 ring-2 ring-inset ring-brand-red/30"
+                              : ""
+                          } ${isToday ? "bg-brand-yellow/10" : ""} ${
+                            isNextEvent && !isSelected
+                              ? "bg-brand-red/5 ring-2 ring-inset ring-brand-red/20"
+                              : ""
+                          }`}
+                        >
+                          <span
+                            className={`text-sm font-semibold ${
+                              isToday
+                                ? "bg-brand-red text-white w-6 h-6 rounded-full flex items-center justify-center"
+                                : "text-text"
+                            }`}
+                          >
+                            {day}
+                          </span>
+                          {dayEvents.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {dayEvents.slice(0, 3).map((e) => (
+                                <div key={e.id} className="flex items-center gap-1">
+                                  <div
+                                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                      EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"
+                                    }`}
+                                  />
+                                  <span className="text-[10px] text-text leading-tight truncate">
+                                    {e.title}
+                                  </span>
+                                </div>
+                              ))}
+                              {dayEvents.length > 3 && (
+                                <span className="text-[9px] text-text-muted">
+                                  +{dayEvents.length - 3} další
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Selected day detail modal */}
@@ -353,7 +361,7 @@ export default function PlanAkciClient({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="mt-6 bg-surface rounded-xl border border-border-strong shadow-lg p-6 relative"
+              className="mt-6 bg-surface rounded-xl border border-border-strong shadow-lg p-6 relative sticky bottom-4"
             >
               <button
                 onClick={() => setSelectedDay(null)}
@@ -367,7 +375,10 @@ export default function PlanAkciClient({
               <div className="space-y-4">
                 {selectedEvents.map((event) => {
                   const d = new Date(event.date);
-                  const time = `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+                  const h = d.getHours();
+                  const m = d.getMinutes();
+                  const isAllDay = h === 0 && m === 0;
+                  const time = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
                   return (
                     <div
                       key={event.id}
@@ -383,20 +394,30 @@ export default function PlanAkciClient({
                       <div className="flex-1">
                         <h4 className="font-semibold text-text">{event.title}</h4>
                         <div className="flex flex-wrap gap-3 mt-1 text-xs text-text-muted">
-                          <span className="flex items-center gap-1">
-                            <Clock size={12} /> {time}
-                          </span>
+                          {isAllDay ? (
+                            <span className="flex items-center gap-1">
+                              <Sun size={12} /> Celý den
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} /> {time}
+                            </span>
+                          )}
                           {event.location && (
                             <span className="flex items-center gap-1">
-                              <MapPin size={12} /> {LOCATION_LABELS[event.location] || event.location}
+                              <MapPin size={12} /> {formatLocationLabel(event.location)}
                             </span>
                           )}
                           {event.organizer && (
-                            <span className="text-text-muted">Pořadatel: {event.organizer}</span>
+                            <span className="text-text-muted">
+                              Pořadatel: {event.organizer}
+                            </span>
                           )}
                         </div>
                         {event.description && (
-                          <p className="text-sm text-text-muted mt-2">{event.description}</p>
+                          <p className="text-sm text-text-muted mt-2">
+                            {event.description}
+                          </p>
                         )}
                       </div>
                     </div>

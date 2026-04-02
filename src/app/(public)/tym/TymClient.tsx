@@ -249,10 +249,11 @@ export default function TymClient({
               <span className="w-8 h-0.5 bg-brand-red rounded-full" />
               {PLURAL_LABELS[group.position] || group.label}
             </h3>
-            <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            <StaggerContainer className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {group.players.map((player) => (
                 <StaggerItem key={player.id}>
                   <PlayerCard
+                    id={player.id}
                     name={player.name}
                     first_name={player.first_name}
                     last_name={player.last_name}

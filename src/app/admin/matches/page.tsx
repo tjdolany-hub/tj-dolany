@@ -47,6 +47,7 @@ interface Match {
   competition: string | null;
   season: string | null;
   summary: string | null;
+  summary_title: string | null;
   halftime_home: number | null;
   halftime_away: number | null;
   venue: string | null;
@@ -80,6 +81,7 @@ const emptyForm = {
   competition: "Okresní přebor",
   season: "2025/2026",
   venue: "Dolany",
+  summary_title: "",
   summary: "",
 };
 
@@ -165,6 +167,7 @@ export default function AdminMatchesPage() {
       competition: m.competition || "Okresní přebor",
       season: m.season || "2025/2026",
       venue: m.venue || "Dolany",
+      summary_title: m.summary_title || "",
       summary: m.summary || "",
     });
     setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter })) || []);
@@ -191,6 +194,7 @@ export default function AdminMatchesPage() {
       competition: form.competition,
       season: form.season,
       venue: form.venue || null,
+      summary_title: form.summary_title || null,
       summary: form.summary || null,
       lineup,
       scorers: scorers.map((s) => ({
@@ -490,31 +494,42 @@ export default function AdminMatchesPage() {
                     <RotateCcw size={12} /> Z předchozího
                   </button>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {["brankar", "obrance", "zaloznik", "utocnik"].flatMap((pos) =>
-                    players.filter((p) => p.position === pos)
-                  ).map((p) => {
-                    const inLineup = lineup.find((l) => l.player_id === p.id);
+                <div className="space-y-3">
+                  {[
+                    { pos: "brankar", label: "Brankáři", dot: "bg-yellow-500" },
+                    { pos: "obrance", label: "Obránci", dot: "bg-blue-500" },
+                    { pos: "zaloznik", label: "Záložníci", dot: "bg-green-500" },
+                    { pos: "utocnik", label: "Útočníci", dot: "bg-red-500" },
+                  ].map(({ pos, label, dot }) => {
+                    const posPlayers = players.filter((p) => p.position === pos);
+                    if (posPlayers.length === 0) return null;
                     return (
-                      <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
-                        inLineup
-                          ? "border-brand-red bg-brand-red/10 text-text font-medium"
-                          : "border-border text-text-muted hover:border-brand-red/30"
-                      } ${!p.active ? "opacity-50" : ""}`}>
-                        <input type="checkbox" checked={!!inLineup} onChange={() => toggleLineup(p.id, true)} className="w-3.5 h-3.5 accent-brand-red" />
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${
-                          p.position === "brankar" ? "bg-yellow-500" :
-                          p.position === "obrance" ? "bg-blue-500" :
-                          p.position === "zaloznik" ? "bg-green-500" : "bg-red-500"
-                        }`} />
-                        <span className="flex-1 truncate">{p.name}</span>
-                        {inLineup && (
-                          <button type="button" onClick={() => setStarterStatus(p.id, !inLineup.is_starter)}
-                            title={inLineup.is_starter ? "Základní sestava" : "Střídající"}
-                            className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${inLineup.is_starter ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
-                            {inLineup.is_starter ? "ZS" : "ST"}
-                          </button>
-                        )}
+                      <div key={pos}>
+                        <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${dot}`} /> {label}
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {posPlayers.map((p) => {
+                            const inLineup = lineup.find((l) => l.player_id === p.id);
+                            return (
+                              <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                                inLineup
+                                  ? "border-brand-red bg-brand-red/10 text-text font-medium"
+                                  : "border-border text-text-muted hover:border-brand-red/30"
+                              } ${!p.active ? "opacity-50" : ""}`}>
+                                <input type="checkbox" checked={!!inLineup} onChange={() => toggleLineup(p.id, true)} className="w-3.5 h-3.5 accent-brand-red" />
+                                <span className="flex-1 truncate">{p.name}</span>
+                                {inLineup && (
+                                  <button type="button" onClick={() => setStarterStatus(p.id, !inLineup.is_starter)}
+                                    title={inLineup.is_starter ? "Základní sestava" : "Střídající"}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${inLineup.is_starter ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                                    {inLineup.is_starter ? "ZS" : "ST"}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}
@@ -576,6 +591,10 @@ export default function AdminMatchesPage() {
 
               {/* Summary */}
               <div>
+                <label className="block text-sm font-semibold text-text mb-1">Nadpis referátu</label>
+                <input type="text" value={form.summary_title} onChange={(e) => setForm({ ...form, summary_title: e.target.value })}
+                  placeholder="např. Vydařený zápas na domácím hřišti"
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red mb-2" />
                 <label className="block text-sm font-semibold text-text mb-1">Referát / komentář</label>
                 <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} rows={3}
                   className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
@@ -643,10 +662,15 @@ export default function AdminMatchesPage() {
 
                     {isExpanded && (
                       <div className="border-t border-border p-4 bg-surface-muted space-y-3">
-                        {m.summary && (
+                        {(m.summary_title || m.summary) && (
                           <div>
                             <h4 className="text-xs font-bold text-text-muted uppercase mb-1">Referát</h4>
-                            <p className="text-sm text-text whitespace-pre-wrap">{m.summary}</p>
+                            {m.summary_title && (
+                              <p className="text-sm font-bold text-text mb-1">{m.summary_title}</p>
+                            )}
+                            {m.summary && (
+                              <p className="text-sm text-text whitespace-pre-wrap">{m.summary}</p>
+                            )}
                           </div>
                         )}
                         {m.match_lineups && m.match_lineups.length > 0 && (

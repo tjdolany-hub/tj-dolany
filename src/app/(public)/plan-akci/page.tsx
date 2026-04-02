@@ -18,11 +18,11 @@ export default async function PlanAkciPage() {
   const now = new Date().toISOString();
 
   const [{ data: upcoming }, { data: allEvents }, { data: schedule }] = await Promise.all([
-    // Next 5 public events (akce + volne, no pronajem)
+    // Next 5 public events (akce + volne + zapas, no pronajem)
     supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type, location, organizer")
-      .in("event_type", ["akce", "volne"])
+      .in("event_type", ["akce", "volne", "zapas"])
       .eq("is_public", true)
       .gte("date", now)
       .order("date", { ascending: true })

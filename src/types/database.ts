@@ -210,6 +210,7 @@ export interface Database {
           competition: string | null;
           season: string | null;
           summary: string | null;
+          summary_title: string | null;
           article_id: string | null;
           halftime_home: number | null;
           halftime_away: number | null;
@@ -226,6 +227,7 @@ export interface Database {
           competition?: string | null;
           season?: string | null;
           summary?: string | null;
+          summary_title?: string | null;
           article_id?: string | null;
           halftime_home?: number | null;
           halftime_away?: number | null;
@@ -242,6 +244,7 @@ export interface Database {
           competition?: string | null;
           season?: string | null;
           summary?: string | null;
+          summary_title?: string | null;
           article_id?: string | null;
           halftime_home?: number | null;
           halftime_away?: number | null;

@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Clock,
 } from "lucide-react";
-import { formatDateTimeCzech, LOCATIONS, LOCATION_LABELS, ORGANIZERS } from "@/lib/utils";
+import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -69,13 +69,22 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
 
+const LOCATION_OPTIONS = [
+  { value: "sokolovna", label: "Sokolovna" },
+  { value: "kantyna", label: "Kantýna" },
+  { value: "venkovni_cast", label: "Venkovní část" },
+  { value: "hriste", label: "Hřiště" },
+] as const;
+
 const DEFAULT_FORM = {
   title: "",
   description: "",
   date: "",
   time: "",
+  allDay: false,
   event_type: "akce" as EventTypeValue,
-  location: "cely_areal",
+  locationAll: true,
+  locations: [] as string[],
   organizer: "TJ Dolany",
   customOrganizer: "",
   is_public: true,
@@ -148,14 +157,21 @@ export default function AdminPlanAkciPage() {
 
   const startEdit = (e: CalendarEvent) => {
     const d = new Date(e.date);
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const isAllDay = h === 0 && m === 0;
     const isPreset = ORGANIZERS.includes(e.organizer as typeof ORGANIZERS[number]);
+    const isAll = !e.location || e.location === "cely_areal";
+    const locations = isAll ? [] : e.location!.split(",");
     setForm({
-      title: e.title,
+      title: e.event_type === "pronajem" && e.title === "Soukromá akce" ? "" : e.title,
       description: e.description || "",
       date: e.date.slice(0, 10),
-      time: `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`,
+      time: isAllDay ? "" : `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
+      allDay: isAllDay,
       event_type: e.event_type as EventTypeValue,
-      location: e.location || "cely_areal",
+      locationAll: isAll,
+      locations,
       organizer: isPreset ? (e.organizer || "TJ Dolany") : "__custom__",
       customOrganizer: isPreset ? "" : (e.organizer || ""),
       is_public: e.is_public,
@@ -168,16 +184,18 @@ export default function AdminPlanAkciPage() {
     ev.preventDefault();
     setSaving(true);
 
-    const dateTime = form.time ? `${form.date}T${form.time}` : `${form.date}T00:00`;
+    const dateTime = form.allDay ? `${form.date}T00:00` : (form.time ? `${form.date}T${form.time}` : `${form.date}T00:00`);
     const organizer = form.organizer === "__custom__" ? form.customOrganizer : form.organizer;
+    const location = form.locationAll ? "cely_areal" : form.locations.join(",");
+    const title = form.event_type === "pronajem" ? "Soukromá akce" : form.title;
 
     const body = {
-      title: form.title,
+      title,
       description: form.description || null,
       date: dateTime,
       end_date: null,
       event_type: form.event_type,
-      location: form.location || null,
+      location: location || null,
       organizer: organizer || null,
       is_public: form.is_public,
     };
@@ -360,21 +378,34 @@ export default function AdminPlanAkciPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Čas</label>
-                  <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Název</label>
-                  <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                  {form.allDay ? (
+                    <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">Celý den</div>
+                  ) : (
+                    <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })}
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                  )}
+                  <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={form.allDay} onChange={(e) => setForm({ ...form, allDay: e.target.checked, time: "" })} className="w-3.5 h-3.5" />
+                    <span className="text-xs text-text-muted">Celý den</span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Typ</label>
-                  <select value={form.event_type} onChange={(e) => setForm({ ...form, event_type: e.target.value as EventTypeValue })}
+                  <select value={form.event_type} onChange={(e) => {
+                    const val = e.target.value as EventTypeValue;
+                    setForm({ ...form, event_type: val, title: val === "pronajem" ? "" : form.title });
+                  }}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
                     {EVENT_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
+                {form.event_type !== "pronajem" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-text mb-1">Název</label>
+                    <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -395,10 +426,30 @@ export default function AdminPlanAkciPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Místo</label>
-                  <select value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
-                    {LOCATIONS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-                  </select>
+                  <label className="flex items-center gap-2 cursor-pointer mb-1.5">
+                    <input type="checkbox" checked={form.locationAll}
+                      onChange={(e) => setForm({ ...form, locationAll: e.target.checked, locations: [] })}
+                      className="w-4 h-4 accent-brand-red" />
+                    <span className="text-sm text-text font-medium">Celý areál</span>
+                  </label>
+                  {!form.locationAll && (
+                    <div className="space-y-1 ml-1">
+                      {LOCATION_OPTIONS.map((l) => (
+                        <label key={l.value} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox"
+                            checked={form.locations.includes(l.value)}
+                            onChange={(e) => {
+                              const locs = e.target.checked
+                                ? [...form.locations, l.value]
+                                : form.locations.filter((v) => v !== l.value);
+                              setForm({ ...form, locations: locs });
+                            }}
+                            className="w-3.5 h-3.5 accent-brand-red" />
+                          <span className="text-sm text-text">{l.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-end pb-2">
                   <label className="flex items-center gap-2 cursor-pointer">

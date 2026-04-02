@@ -10,6 +10,7 @@ const matchSchema = z.object({
   is_home: z.boolean().default(true),
   competition: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
+  summary_title: z.string().nullable().optional(),
   season: z.string().nullable().optional(),
   halftime_home: z.number().nullable().optional(),
   halftime_away: z.number().nullable().optional(),
