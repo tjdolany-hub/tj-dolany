@@ -187,16 +187,17 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── MATCH TICKER ── */}
       {nextMatch && (() => {
-        const tickerText = `⚽ Příští zápas: ${formatMatchDate(nextMatch.date)} — ${nextMatch.title}${nextMatch.location ? ` 📍 ${nextMatch.location}` : ""}`;
+        const tickerText = `Příští zápas: ${formatMatchDate(nextMatch.date)} — ${nextMatch.title}${nextMatch.location ? ` 📍 ${nextMatch.location}` : ""}`;
         return (
-          <div className="bg-brand-red text-white">
+          <div className="bg-brand-red text-white overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center">
-              <span className="text-sm font-semibold tracking-wide text-center">
+              <span className="ticker-container text-sm font-semibold tracking-wide text-center relative">
+                <span className="ticker-ball">⚽</span>
                 {tickerText.split("").map((char, i) => (
                   <span
                     key={i}
-                    className={char === " " ? undefined : "ticker-char"}
-                    style={char !== " " ? { animationDelay: `${i * 0.06}s` } : undefined}
+                    className={char === " " ? "ticker-space" : "ticker-char"}
+                    style={{ "--char-index": i } as React.CSSProperties}
                   >
                     {char}
                   </span>
@@ -319,17 +320,9 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       <AnimatedSection>
         <section className="bg-surface-alt">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1 h-6 bg-brand-red rounded-full" />
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Novinky</p>
-                </div>
-                <h2 className="text-2xl font-bold text-text tracking-tight">Aktuality</h2>
-              </div>
-              <Link href="/aktuality" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
-                Všechny články <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+            <div className="text-center mb-8">
+              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Novinky</p>
+              <h2 className="text-2xl font-extrabold text-text tracking-tight">Aktuality</h2>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -429,7 +422,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               </StaggerContainer>
             </div>
 
-            <div className="text-center mt-6 sm:hidden">
+            <div className="text-center mt-8">
               <Link href="/aktuality" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors inline-flex items-center gap-1">
                 Všechny články <ArrowRight size={14} />
               </Link>
@@ -443,17 +436,9 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         <AnimatedSection>
           <section className="bg-surface">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-1 h-6 bg-brand-red rounded-full" />
-                    <p className="text-xs font-semibold text-brand-red uppercase tracking-wider">Soutěž</p>
-                  </div>
-                  <h2 className="text-2xl font-bold text-text tracking-tight">Tabulka a statistiky</h2>
-                </div>
-                <Link href="/tym" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
-                  Kompletní statistiky <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
+              <div className="text-center mb-8">
+                <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Soutěž</p>
+                <h2 className="text-2xl font-extrabold text-text tracking-tight">Tabulka a statistiky</h2>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -557,7 +542,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 </div>
               </div>
 
-              <div className="text-center mt-6 sm:hidden">
+              <div className="text-center mt-8">
                 <Link href="/tym" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors inline-flex items-center gap-1">
                   Kompletní statistiky <ArrowRight size={14} />
                 </Link>
@@ -710,8 +695,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         <section className="bg-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
-              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Partneři</p>
-              <h2 className="text-2xl font-extrabold text-text tracking-tight">Sponzoři</h2>
+              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2">Podporují nás</p>
+              <h2 className="text-2xl font-extrabold text-text tracking-tight">Sponzoři a partneři</h2>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-10">
               <a href="https://www.dolany-na.cz/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">

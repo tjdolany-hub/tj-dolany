@@ -35,10 +35,8 @@ export default async function HomePage() {
       .order("date", { ascending: true })
       .limit(2),
     supabase
-      .from("calendar_events")
-      .select("title, date, location")
-      .eq("event_type", "zapas")
-      .eq("is_public", true)
+      .from("match_results")
+      .select("opponent, date, is_home, competition, venue")
       .gte("date", now)
       .order("date", { ascending: true })
       .limit(1),
@@ -111,7 +109,11 @@ export default async function HomePage() {
 
   const matchData = matchResult.data;
   const nextMatch = matchData && matchData.length > 0
-    ? matchData[0] as unknown as { title: string; date: string; location: string | null }
+    ? (() => {
+        const m = matchData[0] as unknown as { opponent: string; date: string; is_home: boolean; venue: string | null };
+        const title = m.is_home ? `Dolany - ${m.opponent}` : `${m.opponent} - Dolany`;
+        return { title, date: m.date, location: m.venue ?? (m.is_home ? "Dolany" : null) };
+      })()
     : null;
 
   // ── Club banner data (from parallel queries above) ──

@@ -105,13 +105,43 @@ html { scroll-behavior: smooth; }
 }
 .animate-float { animation: float 6s ease-in-out infinite; }
 
-@keyframes ticker-wave {
-  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.85; }
-  50% { transform: scaleY(1.25) scaleX(1.08); opacity: 1; }
-}
-.ticker-char {
+/* Ticker with rolling ball */
+.ticker-container {
+  position: relative;
   display: inline-block;
-  animation: ticker-wave 2.5s ease-in-out infinite;
+}
+
+.ticker-ball {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1em;
+  animation: ball-roll 10s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+}
+
+@keyframes ball-roll {
+  0% { left: -1.5em; opacity: 0; transform: translateY(-50%) rotate(0deg); }
+  5% { opacity: 1; }
+  85% { left: 100%; opacity: 1; transform: translateY(-50%) rotate(720deg); }
+  90% { left: calc(100% + 2em); opacity: 0; transform: translateY(-80%) rotate(900deg); }
+  100% { left: -1.5em; opacity: 0; transform: translateY(-50%) rotate(0deg); }
+}
+
+.ticker-char, .ticker-space {
+  display: inline-block;
+  animation: ticker-glow 10s ease-in-out infinite;
+  animation-delay: calc(var(--char-index) * 0.08s);
+}
+
+.ticker-space { width: 0.25em; }
+
+@keyframes ticker-glow {
+  0%, 8% { opacity: 0.75; transform: scale(1); }
+  10% { opacity: 1; transform: scale(1.15); text-shadow: 0 0 8px rgba(255,255,255,0.6); }
+  14%, 100% { opacity: 0.75; transform: scale(1); text-shadow: none; }
 }
 
 .prose h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.025em; color: var(--color-text); }
