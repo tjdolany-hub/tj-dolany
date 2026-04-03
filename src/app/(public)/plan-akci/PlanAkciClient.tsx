@@ -90,7 +90,11 @@ const CALENDAR_FILTERS: { value: CalendarFilter; label: string }[] = [
 
 // ── Helpers ──
 
-function formatLocationBadges(loc: string | null) {
+function formatLocationBadges(loc: string | null, eventType?: string) {
+  // Football events default to celý areál
+  if (!loc && (eventType === "zapas" || eventType === "trenink")) {
+    return [{ value: "cely_areal", label: LOCATION_LABELS["cely_areal"], color: LOCATION_COLORS["cely_areal"] }];
+  }
   if (!loc) return null;
   if (loc === "cely_areal") {
     return [{ value: "cely_areal", label: LOCATION_LABELS["cely_areal"], color: LOCATION_COLORS["cely_areal"] }];
@@ -108,7 +112,7 @@ function LocationLegend() {
       <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Místo:</span>
       {Object.entries(LOCATION_LABELS).map(([value, label]) => (
         <span key={value} className="flex items-center gap-1.5 text-xs text-text-muted">
-          <span className={`w-3 h-2 rounded-sm ${LOCATION_COLORS[value]}`} />
+          <span className={`w-2.5 h-1.5 rounded-sm ${LOCATION_COLORS[value]}`} />
           {label}
         </span>
       ))}
@@ -406,7 +410,7 @@ export default function PlanAkciClient({
                   {dayEvents.length > 0 && (
                     <div className="mt-1 space-y-0.5">
                       {dayEvents.slice(0, 3).map((e) => {
-                        const locBadges = formatLocationBadges(e.location);
+                        const locBadges = formatLocationBadges(e.location, e.event_type);
                         return (
                           <div key={e.id} className="flex items-center gap-1">
                             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
@@ -414,7 +418,7 @@ export default function PlanAkciClient({
                               {e.title}
                             </span>
                             {locBadges && locBadges.map((b) => (
-                              <span key={b.value} className={`w-2 h-2 rounded-sm shrink-0 ${b.color}`} title={b.label} />
+                              <span key={b.value} className={`w-2.5 h-1.5 rounded-sm shrink-0 ${b.color}`} title={b.label} />
                             ))}
                           </div>
                         );
@@ -461,7 +465,7 @@ export default function PlanAkciClient({
                   const m = d.getMinutes();
                   const isAllDay = h === 0 && m === 0;
                   const time = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-                  const locBadges = formatLocationBadges(event.location);
+                  const locBadges = formatLocationBadges(event.location, event.event_type);
                   return (
                     <div
                       key={event.id}
