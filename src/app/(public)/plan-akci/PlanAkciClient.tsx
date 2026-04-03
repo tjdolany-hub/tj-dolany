@@ -38,7 +38,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   akce: "Akce TJ",
   volne: "Ostatní",
   zapas: "Zápas",
-  trenink: "Trénink",
+  trenink: "Pravidelné akce",
   pronajem: "Soukromá akce",
 };
 
@@ -413,8 +413,8 @@ export default function PlanAkciClient({
                             <span className="text-[10px] text-text leading-tight truncate flex-1">
                               {e.title}
                             </span>
-                            {locBadges && locBadges.slice(0, 1).map((b) => (
-                              <span key={b.value} className={`w-2 h-1.5 rounded-sm shrink-0 ${b.color}`} title={b.label} />
+                            {locBadges && locBadges.map((b) => (
+                              <span key={b.value} className={`w-2 h-2 rounded-sm shrink-0 ${b.color}`} title={b.label} />
                             ))}
                           </div>
                         );
