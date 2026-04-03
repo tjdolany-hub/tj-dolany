@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -43,6 +44,10 @@ export async function PUT(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (event) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "update", entityType: "calendar_event", entityId: id, entityTitle: event.title });
+  }
+
   return NextResponse.json(event);
 }
 
@@ -58,6 +63,12 @@ export async function DELETE(
   }
 
   const admin = await createServiceClient();
-  await admin.from("calendar_events").delete().eq("id", id);
+
+  const { data: event } = await admin.from("calendar_events").select("title").eq("id", id).single();
+
+  await admin.from("calendar_events").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+
+  await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "delete", entityType: "calendar_event", entityId: id, entityTitle: event?.title ?? null });
+
   return NextResponse.json({ success: true });
 }

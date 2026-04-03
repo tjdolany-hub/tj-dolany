@@ -73,12 +73,12 @@ const SEASONS = ["2025/2026", "2024/2025", "2023/2024"];
 const emptyForm = {
   date: "",
   time: "",
-  opponent: "",
+  home_team: "Dolany",
+  away_team: "",
   score_home: 0,
   score_away: 0,
   halftime_home: "",
   halftime_away: "",
-  is_home: true,
   competition: "Okresní přebor",
   season: "2025/2026",
   venue: "Dolany",
@@ -297,15 +297,15 @@ export default function AdminMatchesPage() {
     setForm({
       date: m.date.slice(0, 10),
       time: `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`,
-      opponent: m.opponent,
+      home_team: m.is_home ? "Dolany" : m.opponent,
+      away_team: m.is_home ? m.opponent : "Dolany",
       score_home: m.score_home,
       score_away: m.score_away,
       halftime_home: m.halftime_home?.toString() ?? "",
       halftime_away: m.halftime_away?.toString() ?? "",
-      is_home: m.is_home,
       competition: m.competition || "Okresní přebor",
       season: m.season || "2025/2026",
-      venue: m.venue || "Dolany",
+      venue: m.venue || (m.is_home ? "Dolany" : m.opponent),
       summary_title: m.summary_title || "",
       summary: m.summary || "",
     });
@@ -339,14 +339,16 @@ export default function AdminMatchesPage() {
     const dateTime = form.time
       ? new Date(`${form.date}T${form.time}`).toISOString()
       : new Date(`${form.date}T00:00`).toISOString();
+    const isHome = form.home_team.toLowerCase().includes("dolany");
+    const opponent = isHome ? form.away_team : form.home_team;
     const body = {
       date: dateTime,
-      opponent: form.opponent,
+      opponent,
       score_home: form.score_home,
       score_away: form.score_away,
       halftime_home: form.halftime_home ? parseInt(form.halftime_home) : null,
       halftime_away: form.halftime_away ? parseInt(form.halftime_away) : null,
-      is_home: form.is_home,
+      is_home: isHome,
       competition: form.competition,
       season: form.season,
       venue: form.venue || null,
@@ -589,7 +591,7 @@ export default function AdminMatchesPage() {
               </div>
 
               {/* Basic fields */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Datum</label>
                   <input type="date" value={form.date} onChange={(e) => updateMatchForm({ date: e.target.value })} required
@@ -601,8 +603,13 @@ export default function AdminMatchesPage() {
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Soupeř</label>
-                  <input type="text" value={form.opponent} onChange={(e) => updateMatchForm({ opponent: e.target.value })} required
+                  <label className="block text-sm font-semibold text-text mb-1">Domácí</label>
+                  <input type="text" value={form.home_team} onChange={(e) => updateMatchForm({ home_team: e.target.value, venue: e.target.value })} required
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Hosté</label>
+                  <input type="text" value={form.away_team} onChange={(e) => updateMatchForm({ away_team: e.target.value })} required
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
@@ -624,12 +631,6 @@ export default function AdminMatchesPage() {
                   <label className="block text-sm font-semibold text-text mb-1">Hřiště</label>
                   <input type="text" value={form.venue} onChange={(e) => updateMatchForm({ venue: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
-                </div>
-                <div className="flex items-end pb-2">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={form.is_home} onChange={(e) => updateMatchForm({ is_home: e.target.checked })} className="w-4 h-4" />
-                    <span className="text-sm text-text">Hrajeme doma</span>
-                  </label>
                 </div>
               </div>
 

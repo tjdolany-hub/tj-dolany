@@ -3,6 +3,39 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          user_email: string;
+          action: "create" | "update" | "delete" | "restore";
+          entity_type: "article" | "match" | "calendar_event" | "player";
+          entity_id: string;
+          entity_title: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          user_email: string;
+          action: "create" | "update" | "delete" | "restore";
+          entity_type: "article" | "match" | "calendar_event" | "player";
+          entity_id: string;
+          entity_title?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          user_email?: string;
+          action?: "create" | "update" | "delete" | "restore";
+          entity_type?: "article" | "match" | "calendar_event" | "player";
+          entity_id?: string;
+          entity_title?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -39,6 +72,7 @@ export interface Database {
           author_id: string | null;
           created_at: string;
           updated_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -51,6 +85,7 @@ export interface Database {
           author_id?: string | null;
           created_at?: string;
           updated_at?: string;
+          deleted_at?: string | null;
         };
         Update: {
           id?: string;
@@ -63,6 +98,7 @@ export interface Database {
           author_id?: string | null;
           created_at?: string;
           updated_at?: string;
+          deleted_at?: string | null;
         };
         Relationships: [
           {
@@ -173,6 +209,7 @@ export interface Database {
           is_public: boolean;
           all_day: boolean;
           created_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -186,6 +223,7 @@ export interface Database {
           is_public?: boolean;
           all_day?: boolean;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Update: {
           id?: string;
@@ -199,6 +237,7 @@ export interface Database {
           is_public?: boolean;
           all_day?: boolean;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Relationships: [];
       };
@@ -219,6 +258,7 @@ export interface Database {
           halftime_away: number | null;
           venue: string | null;
           created_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -236,6 +276,7 @@ export interface Database {
           halftime_away?: number | null;
           venue?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Update: {
           id?: string;
@@ -253,6 +294,7 @@ export interface Database {
           halftime_away?: number | null;
           venue?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Relationships: [
           {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 import type { Database } from "@/types/database";
 
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("articles")
-    .select("*, article_images(*)", { count: "exact" });
+    .select("*, article_images(*)", { count: "exact" })
+    .is("deleted_at", null);
 
   if (!all) {
     query = query.eq("published", true);
@@ -99,6 +101,10 @@ export async function POST(req: NextRequest) {
         sort_order: i,
       }))
     );
+  }
+
+  if (article) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "create", entityType: "article", entityId: article.id, entityTitle: article.title });
   }
 
   return NextResponse.json(article, { status: 201 });

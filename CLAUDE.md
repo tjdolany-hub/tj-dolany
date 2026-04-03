@@ -60,9 +60,17 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 ### Admin Pages (unified)
 
 - **Plán akcí** (`/admin/events`) — calendar events + weekly schedule + rental requests (3 tabs); schedule has valid_from/valid_to date ranges; requests tab shows pending/approved/rejected with approve/reject workflow
-- **Zápasy** (`/admin/matches`) — match results + season draws + league standings; includes lineup (ZS/N), scorers (1 row = 1 goal), cards, photo gallery, publish-to-article flow
+- **Zápasy** (`/admin/matches`) — match results + season draws + league standings; includes lineup (ZS/N), scorers (1 row = 1 goal), cards, photo gallery, publish-to-article flow (supports published/draft toggle)
 - **Hráči** (`/admin/players`) — player management with stats computed from match data
-- **Články** (`/admin/articles`) — article CRUD with markdown editor, image upload, editable publish date
+- **Články** (`/admin/articles`) — article CRUD with markdown editor, image upload, editable publish date; edit page stays on form after save
+
+### Admin Form UX Pattern
+
+All admin forms follow a consistent save/cancel pattern:
+- **Edit mode**: "Uložit" saves and stays in form, shows green "Uloženo" confirmation. Any field change clears the message.
+- **New mode**: "Uložit" saves and closes the form (resets).
+- **Zrušit**: Always exits editing and closes the form.
+- Implementation: `saved` state + `updateXxxForm()` wrapper that calls `setSaved(false)` before `setForm()`.
 
 ### API Route Pattern
 
@@ -120,14 +128,19 @@ Long pages (Tým, O klubu) use scroll-to-section navigation buttons. On Tým pag
 - Season calculation: month >= 7 (August+) → year is season start; else previous year
 - Position values: `brankar`, `obrance`, `zaloznik`, `utocnik`
 - Event types: `zapas`, `trenink`, `akce`, `pronajem`, `volne`
+- `is_public` means "open to public attendance", NOT "visible in calendar" — all events show in calendar regardless
 
 ### Email System
 
-`src/lib/email.ts` uses Resend to send transactional emails. Currently sends from `onboarding@resend.dev` (temporary until tjdolany.net domain is verified in Resend). Reply-to is `tjdolany@gmail.com`. Two email types: new rental request notification (to admin) and approval/rejection notification (to requester).
+`src/lib/email.ts` uses Resend to send transactional emails. Currently sends from `onboarding@resend.dev` (temporary until tjdolany.net domain is verified in Resend — then change to `noreply@tjdolany.net`). Reply-to is `tjdolany@gmail.com`. Two email types: new rental request notification (to admin) and approval/rejection notification (to requester). Note: `onboarding@resend.dev` can only send to the Resend account owner's email.
 
 ### Rental Request Workflow
 
-Public form on `/plan-akci` → `POST /api/rental-requests` (rate-limited, no auth) → stores in `rental_requests` table + emails admin → admin approves/rejects in `/admin/events` Žádosti tab → approved requests auto-create `calendar_events` entry → requester gets email notification.
+Public form on `/plan-akci` → `POST /api/rental-requests` (rate-limited, no auth) → stores in `rental_requests` table + emails admin → admin approves/rejects in `/admin/events` Žádosti tab → approved requests auto-create `calendar_events` entry (with `description` for public events) → requester gets email notification.
+
+Two event types in form:
+- **Soukromá akce** (`pronajem`): No title, no description, no "Veřejná" checkbox. Has organizer name + note ("pro administrátora"). Contact always required.
+- **Ostatní** (`volne`): Has event name, organizer dropdown (ORGANIZERS + custom), optional "Veřejná" checkbox. When veřejná, shows "Popis akce" field (carries to calendar description on approval). Contact required only for custom organizer.
 
 ### Timezone Handling
 

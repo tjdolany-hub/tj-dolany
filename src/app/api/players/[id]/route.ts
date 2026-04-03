@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -46,6 +47,10 @@ export async function PUT(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (player) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "update", entityType: "player", entityId: id, entityTitle: player.name });
+  }
+
   return NextResponse.json(player);
 }
 
@@ -61,6 +66,12 @@ export async function DELETE(
   }
 
   const admin = await createServiceClient();
+
+  const { data: player } = await admin.from("players").select("name").eq("id", id).single();
+
   await admin.from("players").delete().eq("id", id);
+
+  await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "delete", entityType: "player", entityId: id, entityTitle: player?.name ?? null });
+
   return NextResponse.json({ success: true });
 }

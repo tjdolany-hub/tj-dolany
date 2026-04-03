@@ -76,6 +76,7 @@ export default function AdminPlayersPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
 
   // Stats from matches
   const [stats, setStats] = useState<Record<string, { matches: number; goals: number; yellows: number; reds: number }>>({});
@@ -212,10 +213,16 @@ export default function AdminPlayersPage() {
     await loadPlayers();
   };
 
+  const filteredPlayers = players.filter((p) => {
+    if (activeFilter === "active") return p.active;
+    if (activeFilter === "inactive") return !p.active;
+    return true;
+  });
+
   const grouped = POSITION_ORDER.map((pos) => ({
     position: pos,
     label: GROUP_LABELS[pos],
-    players: players.filter((p) => p.position === pos),
+    players: filteredPlayers.filter((p) => p.position === pos),
   })).filter((g) => g.players.length > 0);
 
   return (
@@ -230,6 +237,30 @@ export default function AdminPlayersPage() {
           className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
           <Plus size={16} /> Přidat hráče
         </button>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 mb-6 bg-surface-muted rounded-lg p-1 w-fit">
+        {([
+          { value: "all", label: "Vše" },
+          { value: "active", label: "Aktivní" },
+          { value: "inactive", label: "Neaktivní" },
+        ] as const).map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveFilter(tab.value)}
+            className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+              activeFilter === tab.value
+                ? "bg-brand-red text-white"
+                : "text-text-muted hover:text-text"
+            }`}
+          >
+            {tab.label}
+            {tab.value === "active" && ` (${players.filter((p) => p.active).length})`}
+            {tab.value === "inactive" && ` (${players.filter((p) => !p.active).length})`}
+            {tab.value === "all" && ` (${players.length})`}
+          </button>
+        ))}
       </div>
 
       {/* Form */}

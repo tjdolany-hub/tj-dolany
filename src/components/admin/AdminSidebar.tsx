@@ -11,6 +11,9 @@ import {
   Image as ImageIcon,
   CalendarDays,
   LogOut,
+  Shield,
+  History,
+  Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -22,6 +25,9 @@ const NAV = [
   { href: "/admin/events", label: "Plán akcí", icon: CalendarDays },
   { href: "/admin/matches", label: "Zápasy", icon: Trophy },
   { href: "/admin/albums", label: "Fotoalba", icon: ImageIcon },
+  { href: "/admin/users", label: "Uživatelé", icon: Shield },
+  { href: "/admin/audit", label: "Historie změn", icon: History },
+  { href: "/admin/trash", label: "Koš", icon: Trash2 },
 ];
 
 export default function AdminSidebar() {

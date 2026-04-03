@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const playerSchema = z.object({
@@ -50,6 +51,10 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (player) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "create", entityType: "player", entityId: player.id, entityTitle: player.name });
   }
 
   return NextResponse.json(player, { status: 201 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const eventSchema = z.object({
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
   const { data: startInRange } = await supabase
     .from("calendar_events")
     .select("*")
+    .is("deleted_at", null)
     .gte("date", startDate)
     .lte("date", endDate)
     .order("date", { ascending: true });
@@ -44,6 +46,7 @@ export async function GET(req: NextRequest) {
   const { data: spanIntoRange } = await supabase
     .from("calendar_events")
     .select("*")
+    .is("deleted_at", null)
     .lt("date", startDate)
     .gte("end_date", startDate)
     .order("date", { ascending: true });
@@ -81,6 +84,10 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (event) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "create", entityType: "calendar_event", entityId: event.id, entityTitle: event.title });
   }
 
   return NextResponse.json(event, { status: 201 });

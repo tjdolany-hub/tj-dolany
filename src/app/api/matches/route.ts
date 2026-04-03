@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const matchSchema = z.object({
@@ -30,6 +31,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("match_results")
     .select("*, match_lineups(player_id, is_starter, players(id, name)), match_scorers(player_id, goals, minute, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order)")
+    .is("deleted_at", null)
     .order("date", { ascending: false });
 
   if (season) {
@@ -119,6 +121,23 @@ export async function POST(req: NextRequest) {
       sort_order: i,
     }));
     await admin.from("match_images").insert(imageRows);
+  }
+
+  if (match) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "create", entityType: "match", entityId: match.id, entityTitle: `${match.is_home ? "TJ Dolany" : match.opponent} vs ${match.is_home ? match.opponent : "TJ Dolany"}` });
+
+    // Auto-create calendar event for home matches
+    if (match.is_home) {
+      await admin.from("calendar_events").insert({
+        title: `Dolany - ${match.opponent}`,
+        date: match.date,
+        event_type: "zapas",
+        location: "cely_areal",
+        is_public: true,
+        all_day: false,
+        description: match.competition || null,
+      });
+    }
   }
 
   return NextResponse.json(match, { status: 201 });

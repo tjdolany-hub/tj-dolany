@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -148,6 +149,10 @@ export async function PUT(
     .eq("id", id)
     .single();
 
+  if (updated) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "update", entityType: "match", entityId: id, entityTitle: `${updated.is_home ? "TJ Dolany" : updated.opponent} vs ${updated.is_home ? updated.opponent : "TJ Dolany"}` });
+  }
+
   return NextResponse.json(updated);
 }
 
@@ -163,6 +168,13 @@ export async function DELETE(
   }
 
   const admin = await createServiceClient();
-  await admin.from("match_results").delete().eq("id", id);
+
+  const { data: match } = await admin.from("match_results").select("opponent, is_home").eq("id", id).single();
+
+  await admin.from("match_results").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+
+  const title = match ? `${match.is_home ? "TJ Dolany" : match.opponent} vs ${match.is_home ? match.opponent : "TJ Dolany"}` : null;
+  await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "delete", entityType: "match", entityId: id, entityTitle: title });
+
   return NextResponse.json({ success: true });
 }

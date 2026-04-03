@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 import type { Database } from "@/types/database";
 
@@ -90,6 +91,10 @@ export async function PUT(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (article) {
+    await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "update", entityType: "article", entityId: id, entityTitle: article.title });
+  }
+
   return NextResponse.json(article);
 }
 
@@ -105,8 +110,14 @@ export async function DELETE(
   }
 
   const admin = await createServiceClient();
-  await admin.from("article_images").delete().eq("article_id", id);
-  await admin.from("articles").delete().eq("id", id);
+
+  // Fetch title for audit log before soft deleting
+  const { data: article } = await admin.from("articles").select("title").eq("id", id).single();
+
+  // Soft delete
+  await admin.from("articles").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+
+  await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "delete", entityType: "article", entityId: id, entityTitle: article?.title ?? null });
 
   return NextResponse.json({ success: true });
 }
