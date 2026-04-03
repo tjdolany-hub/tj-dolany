@@ -68,7 +68,7 @@ export async function PUT(
       .from("calendar_events")
       .insert({
         title: isPronajem ? "Soukromá akce" : (request.event_name || "Akce"),
-        description: null,
+        description: isPronajem ? null : (request.description || null),
         date: dateStr,
         end_date: null,
         event_type: request.event_type,

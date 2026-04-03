@@ -28,6 +28,7 @@ const DEFAULT_FORM = {
   contact_name: "",
   contact_phone: "+420 ",
   contact_email: "",
+  description: "",
   note: "",
 };
 
@@ -65,6 +66,7 @@ export default function RentalRequestForm() {
       contact_name: form.contact_name || null,
       contact_phone: form.contact_phone || null,
       contact_email: form.contact_email || null,
+      description: form.description || null,
       note: form.note || null,
     };
 
@@ -229,21 +231,23 @@ export default function RentalRequestForm() {
             </>
           )}
 
-          {/* Veřejná — shown for both types */}
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.is_public}
-                onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
-                className="w-4 h-4 accent-brand-red"
-              />
-              <span className="text-sm font-semibold text-text">Veřejná akce</span>
-            </label>
-            <p className="text-xs text-text-muted mt-1 ml-6">
-              Akce určená pro širokou veřejnost. Zobrazí se v kalendáři areálu.
-            </p>
-          </div>
+          {/* Veřejná — only for "volne" type */}
+          {form.event_type === "volne" && (
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_public}
+                  onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
+                  className="w-4 h-4 accent-brand-red"
+                />
+                <span className="text-sm font-semibold text-text">Veřejná akce</span>
+              </label>
+              <p className="text-xs text-text-muted mt-1 ml-6">
+                Akce určená pro širokou veřejnost.
+              </p>
+            </div>
+          )}
 
           {/* Date + Time */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -364,10 +368,29 @@ export default function RentalRequestForm() {
             </div>
           </div>
 
+          {/* Description — only for "volne" + veřejná */}
+          {form.event_type === "volne" && form.is_public && (
+            <div>
+              <label className="block text-sm font-semibold text-text mb-1">
+                Popis akce <span className="font-normal text-text-muted">(zobrazí se v kalendáři akcí)</span>
+              </label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows={3}
+                maxLength={500}
+                placeholder="Popis akce pro veřejnost..."
+                className={inputClass}
+              />
+            </div>
+          )}
+
           {/* Note */}
           <div>
             <label className="block text-sm font-semibold text-text mb-1">
-              Poznámka <span className="font-normal text-text-muted">(volitelné)</span>
+              Poznámka <span className="font-normal text-text-muted">
+                ({form.event_type === "pronajem" ? "volitelné, pro administrátora" : "volitelné"})
+              </span>
             </label>
             <textarea
               value={form.note}

@@ -90,11 +90,11 @@ const DEFAULT_FORM = {
   time: "",
   allDay: false,
   event_type: "akce" as EventTypeValue,
-  locationAll: true,
+  locationAll: false,
   locations: [] as string[],
   organizer: "TJ Dolany",
   customOrganizer: "",
-  is_public: true,
+  is_public: false,
 };
 
 const SCHEDULE_LOCATION_OPTIONS = [
@@ -542,19 +542,23 @@ export default function AdminPlanAkciPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex items-end pb-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={form.is_public} onChange={(e) => setForm({ ...form, is_public: e.target.checked })} className="w-4 h-4" />
-                    <span className="text-sm font-semibold text-text">Veřejná</span>
-                  </label>
-                </div>
+                {form.event_type !== "pronajem" && (
+                  <div className="flex items-end pb-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={form.is_public} onChange={(e) => setForm({ ...form, is_public: e.target.checked })} className="w-4 h-4" />
+                      <span className="text-sm font-semibold text-text">Veřejná</span>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-text mb-1">Popis</label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
-                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
-              </div>
+              {form.event_type !== "pronajem" && (
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Popis</label>
+                  <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <button type="submit" disabled={saving}
@@ -627,7 +631,7 @@ export default function AdminPlanAkciPage() {
                         </td>
                         <td className="p-3 text-text font-medium">
                           {event.title}
-                          {!event.is_public && <span className="ml-1 text-[10px] text-text-muted">(skrytá)</span>}
+                          {event.is_public && <span className="ml-1 text-[10px] text-green-500">(veřejná)</span>}
                         </td>
                         <td className="p-3 hidden md:table-cell">
                           <span className={`text-xs font-bold px-2 py-1 rounded ${getTypeBadgeStyle(event.event_type)}`}>

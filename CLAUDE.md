@@ -24,6 +24,7 @@ No test framework is configured.
 - **Tailwind CSS v4** — uses `@theme` directive in `globals.css` (not tailwind.config)
 - **Zod** — server-side validation on all API routes
 - **Sharp** — server-side image optimization (WebP, resize)
+- **Resend** — transactional email (rental request notifications)
 - **Framer Motion** — animations, **Lucide React** — icons, **Marked** — Markdown rendering
 
 ## Architecture
@@ -58,14 +59,14 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 
 ### Admin Pages (unified)
 
-- **Plán akcí** (`/admin/events`) — calendar events + weekly schedule in one page with tabs; schedule has valid_from/valid_to date ranges
+- **Plán akcí** (`/admin/events`) — calendar events + weekly schedule + rental requests (3 tabs); schedule has valid_from/valid_to date ranges; requests tab shows pending/approved/rejected with approve/reject workflow
 - **Zápasy** (`/admin/matches`) — match results + season draws + league standings; includes lineup (ZS/N), scorers (1 row = 1 goal), cards, photo gallery, publish-to-article flow
 - **Hráči** (`/admin/players`) — player management with stats computed from match data
 - **Články** (`/admin/articles`) — article CRUD with markdown editor, image upload, editable publish date
 
 ### API Route Pattern
 
-Each resource has `src/app/api/{resource}/route.ts` (GET list, POST create) and `src/app/api/{resource}/[id]/route.ts` (GET one, PUT update, DELETE). All mutations validate with Zod schemas, use `createServiceClient()`, and check auth via `supabase.auth.getUser()`.
+Each resource has `src/app/api/{resource}/route.ts` (GET list, POST create) and `src/app/api/{resource}/[id]/route.ts` (GET one, PUT update, DELETE). All mutations validate with Zod schemas, use `createServiceClient()`, and check auth via `supabase.auth.getUser()`. Exception: `POST /api/rental-requests` is public (no auth) with rate limiting.
 
 ### Database Types
 
@@ -73,11 +74,11 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Key Tables
 
-`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `future_events`, `profiles`
+`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `future_events`, `profiles`
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–009). Run via Supabase Dashboard SQL Editor. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–011). Run via Supabase Dashboard SQL Editor. Schema is SQL-first, not ORM-generated.
 
 ### Image Upload
 
@@ -120,6 +121,18 @@ Long pages (Tým, O klubu) use scroll-to-section navigation buttons. On Tým pag
 - Position values: `brankar`, `obrance`, `zaloznik`, `utocnik`
 - Event types: `zapas`, `trenink`, `akce`, `pronajem`, `volne`
 
+### Email System
+
+`src/lib/email.ts` uses Resend to send transactional emails. Currently sends from `onboarding@resend.dev` (temporary until tjdolany.net domain is verified in Resend). Reply-to is `tjdolany@gmail.com`. Two email types: new rental request notification (to admin) and approval/rejection notification (to requester).
+
+### Rental Request Workflow
+
+Public form on `/plan-akci` → `POST /api/rental-requests` (rate-limited, no auth) → stores in `rental_requests` table + emails admin → admin approves/rejects in `/admin/events` Žádosti tab → approved requests auto-create `calendar_events` entry → requester gets email notification.
+
+### Timezone Handling
+
+All datetimes stored as UTC in TIMESTAMPTZ columns. Admin forms (client-side) use `new Date().toISOString()` to convert browser local time to UTC before sending. Server-side code (API routes) uses Europe/Prague offset detection for timezone-aware conversion. Display uses `getHours()`/`getMinutes()` which automatically converts UTC to browser local time.
+
 ## Environment Variables
 
 Required in `.env.local`:
@@ -127,3 +140,4 @@ Required in `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon/public key
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-only)
 - `NEXT_PUBLIC_SITE_URL` — Production URL (https://tjdolany.net)
+- `RESEND_API_KEY` — Resend email service API key

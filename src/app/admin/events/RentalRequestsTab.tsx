@@ -18,6 +18,7 @@ interface RentalRequest {
   contact_phone: string | null;
   contact_email: string | null;
   note: string | null;
+  description: string | null;
   status: "pending" | "approved" | "rejected";
   admin_note: string | null;
   calendar_event_id: string | null;

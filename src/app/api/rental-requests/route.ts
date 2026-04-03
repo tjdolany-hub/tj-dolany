@@ -34,6 +34,7 @@ const requestSchema = z.object({
   contact_name: z.string().max(100).nullable().optional(),
   contact_phone: z.string().max(20).nullable().optional(),
   contact_email: z.string().email("Neplatný email").nullable().optional(),
+  description: z.string().max(500).nullable().optional(),
   note: z.string().max(500).nullable().optional(),
 });
 
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
     contact_name: data.contact_name || null,
     contact_phone: data.contact_phone || null,
     contact_email: data.contact_email || null,
+    description: data.description || null,
     note: data.note || null,
   });
 
