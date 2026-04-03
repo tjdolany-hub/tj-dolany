@@ -18,6 +18,7 @@ const DEFAULT_FORM = {
   event_name: "",
   organizer: "TJ Dolany",
   customOrganizer: "",
+  pronajemName: "",
   is_public: false,
   date: "",
   time: "",
@@ -35,6 +36,10 @@ export default function RentalRequestForm() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<"success" | "error" | "rate-limit" | null>(null);
 
+  // Contact is required for pronajem always, for volne only when organizer is custom
+  const isCustomOrganizer = form.organizer === "__custom__";
+  const contactRequired = form.event_type === "pronajem" || isCustomOrganizer;
+
   const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     setSubmitting(true);
@@ -43,7 +48,7 @@ export default function RentalRequestForm() {
     const location = form.locationAll ? "cely_areal" : form.locations.join(",");
     const organizer =
       form.event_type === "pronajem"
-        ? null
+        ? form.pronajemName || null
         : form.organizer === "__custom__"
           ? form.customOrganizer
           : form.organizer;
@@ -52,14 +57,14 @@ export default function RentalRequestForm() {
       event_type: form.event_type,
       event_name: form.event_type === "volne" ? form.event_name || null : null,
       organizer: organizer || null,
-      is_public: form.event_type === "pronajem" ? false : form.is_public,
+      is_public: form.is_public,
       location: location || "cely_areal",
       date: form.date,
       time: form.allDay ? null : form.time || null,
       all_day: form.allDay,
-      contact_name: form.contact_name,
-      contact_phone: form.contact_phone,
-      contact_email: form.contact_email,
+      contact_name: form.contact_name || null,
+      contact_phone: form.contact_phone || null,
+      contact_email: form.contact_email || null,
       note: form.note || null,
     };
 
@@ -150,6 +155,7 @@ export default function RentalRequestForm() {
                   event_name: "",
                   organizer: "TJ Dolany",
                   customOrganizer: "",
+                  pronajemName: "",
                   is_public: false,
                 });
               }}
@@ -159,6 +165,22 @@ export default function RentalRequestForm() {
               <option value="volne">Ostatní</option>
             </select>
           </div>
+
+          {/* Fields for "pronajem" type */}
+          {form.event_type === "pronajem" && (
+            <div>
+              <label className="block text-sm font-semibold text-text mb-1">Pořadatel (Jméno)</label>
+              <input
+                type="text"
+                value={form.pronajemName}
+                onChange={(e) => setForm({ ...form, pronajemName: e.target.value })}
+                required
+                maxLength={100}
+                placeholder="Vaše jméno"
+                className={inputClass}
+              />
+            </div>
+          )}
 
           {/* Fields for "volne" type */}
           {form.event_type === "volne" && (
@@ -174,48 +196,51 @@ export default function RentalRequestForm() {
                   className={inputClass}
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
-                  <select
-                    value={form.organizer}
-                    onChange={(e) =>
-                      setForm({ ...form, organizer: e.target.value, customOrganizer: "" })
-                    }
-                    className={inputClass}
-                  >
-                    {ORGANIZERS.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                    <option value="__custom__">Jiný...</option>
-                  </select>
-                  {form.organizer === "__custom__" && (
-                    <input
-                      type="text"
-                      value={form.customOrganizer}
-                      onChange={(e) => setForm({ ...form, customOrganizer: e.target.value })}
-                      placeholder="Jméno pořadatele"
-                      required
-                      className={`${inputClass} mt-2`}
-                    />
-                  )}
-                </div>
-                <div className="flex items-end pb-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.is_public}
-                      onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
-                      className="w-4 h-4 accent-brand-red"
-                    />
-                    <span className="text-sm font-semibold text-text">Veřejná akce</span>
-                  </label>
-                </div>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
+                <select
+                  value={form.organizer}
+                  onChange={(e) =>
+                    setForm({ ...form, organizer: e.target.value, customOrganizer: "" })
+                  }
+                  className={inputClass}
+                >
+                  {ORGANIZERS.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                  <option value="__custom__">Jiný...</option>
+                </select>
+                {isCustomOrganizer && (
+                  <input
+                    type="text"
+                    value={form.customOrganizer}
+                    onChange={(e) => setForm({ ...form, customOrganizer: e.target.value })}
+                    placeholder="Jméno pořadatele"
+                    required
+                    className={`${inputClass} mt-2`}
+                  />
+                )}
               </div>
             </>
           )}
+
+          {/* Veřejná — shown for both types */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.is_public}
+                onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
+                className="w-4 h-4 accent-brand-red"
+              />
+              <span className="text-sm font-semibold text-text">Veřejná akce</span>
+            </label>
+            <p className="text-xs text-text-muted mt-1 ml-6">
+              Veřejná akce se zobrazí v kalendáři areálu.
+            </p>
+          </div>
 
           {/* Date + Time */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -296,6 +321,9 @@ export default function RentalRequestForm() {
           <div className="border-t border-border pt-5">
             <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-3">
               Kontaktní údaje
+              {!contactRequired && (
+                <span className="font-normal normal-case tracking-normal ml-2">(volitelné)</span>
+              )}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -304,7 +332,7 @@ export default function RentalRequestForm() {
                   type="text"
                   value={form.contact_name}
                   onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
-                  required
+                  required={contactRequired}
                   maxLength={100}
                   className={inputClass}
                 />
@@ -315,7 +343,7 @@ export default function RentalRequestForm() {
                   type="tel"
                   value={form.contact_phone}
                   onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
-                  required
+                  required={contactRequired}
                   placeholder="+420 xxx xxx xxx"
                   className={inputClass}
                 />
@@ -326,7 +354,7 @@ export default function RentalRequestForm() {
                   type="email"
                   value={form.contact_email}
                   onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                  required
+                  required={contactRequired}
                   className={inputClass}
                 />
               </div>

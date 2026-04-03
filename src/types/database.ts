@@ -645,9 +645,9 @@ export interface Database {
           date: string;
           time: string | null;
           all_day: boolean;
-          contact_name: string;
-          contact_phone: string;
-          contact_email: string;
+          contact_name: string | null;
+          contact_phone: string | null;
+          contact_email: string | null;
           note: string | null;
           status: "pending" | "approved" | "rejected";
           admin_note: string | null;
@@ -664,9 +664,9 @@ export interface Database {
           date: string;
           time?: string | null;
           all_day?: boolean;
-          contact_name: string;
-          contact_phone: string;
-          contact_email: string;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          contact_email?: string | null;
           note?: string | null;
           status?: "pending" | "approved" | "rejected";
           admin_note?: string | null;
@@ -683,9 +683,9 @@ export interface Database {
           date?: string;
           time?: string | null;
           all_day?: boolean;
-          contact_name?: string;
-          contact_phone?: string;
-          contact_email?: string;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          contact_email?: string | null;
           note?: string | null;
           status?: "pending" | "approved" | "rejected";
           admin_note?: string | null;

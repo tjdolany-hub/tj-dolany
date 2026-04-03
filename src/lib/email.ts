@@ -15,9 +15,9 @@ interface RentalRequestData {
   date: string;
   time: string | null;
   allDay: boolean;
-  contactName: string;
-  contactPhone: string;
-  contactEmail: string;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
   note: string | null;
 }
 
@@ -54,12 +54,13 @@ export async function sendNewRequestNotification(data: RentalRequestData) {
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Místo:</td><td>${formatLocation(data.location)}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Veřejná:</td><td>${data.isPublic ? "Ano" : "Ne"}</td></tr>
     </table>
+    ${data.contactName || data.contactPhone || data.contactEmail ? `
     <h3>Kontakt</h3>
     <table style="border-collapse:collapse;font-family:sans-serif;">
-      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Jméno:</td><td>${data.contactName}</td></tr>
-      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Telefon:</td><td>${data.contactPhone}</td></tr>
-      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email:</td><td>${data.contactEmail}</td></tr>
-    </table>
+      ${data.contactName ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Jméno:</td><td>${data.contactName}</td></tr>` : ""}
+      ${data.contactPhone ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Telefon:</td><td>${data.contactPhone}</td></tr>` : ""}
+      ${data.contactEmail ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email:</td><td>${data.contactEmail}</td></tr>` : ""}
+    </table>` : ""}
     ${data.note ? `<h3>Poznámka</h3><p>${data.note}</p>` : ""}
     <p style="margin-top:24px;color:#666;">Žádost můžete schválit nebo zamítnout v <a href="https://tjdolany.net/admin/events">administraci</a>.</p>
   `;

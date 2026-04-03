@@ -14,9 +14,9 @@ interface RentalRequest {
   date: string;
   time: string | null;
   all_day: boolean;
-  contact_name: string;
-  contact_phone: string;
-  contact_email: string;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
   note: string | null;
   status: "pending" | "approved" | "rejected";
   admin_note: string | null;
@@ -188,11 +188,15 @@ export default function RentalRequestsTab({
                       {formatLocation(r.location)}
                     </td>
                     <td className="p-3 text-text-muted hidden lg:table-cell">
-                      <div className="text-xs">
-                        <div>{r.contact_name}</div>
-                        <div>{r.contact_phone}</div>
-                        <div>{r.contact_email}</div>
-                      </div>
+                      {(r.contact_name || r.contact_phone || r.contact_email) ? (
+                        <div className="text-xs">
+                          {r.contact_name && <div>{r.contact_name}</div>}
+                          {r.contact_phone && <div>{r.contact_phone}</div>}
+                          {r.contact_email && <div>{r.contact_email}</div>}
+                        </div>
+                      ) : (
+                        <span className="text-xs">—</span>
+                      )}
                     </td>
                     <td className="p-3">
                       <span
@@ -270,11 +274,9 @@ export default function RentalRequestsTab({
                       <div>
                         <span className="font-semibold text-text">Kontakt:</span>
                         <div className="text-text-muted mt-1">
-                          {r.contact_name}
-                          <br />
-                          {r.contact_phone}
-                          <br />
-                          {r.contact_email}
+                          {r.contact_name || "—"}
+                          {r.contact_phone && <><br />{r.contact_phone}</>}
+                          {r.contact_email && <><br />{r.contact_email}</>}
                         </div>
                       </div>
                       {r.note && (

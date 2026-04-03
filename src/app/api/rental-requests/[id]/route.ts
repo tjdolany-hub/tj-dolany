@@ -64,8 +64,8 @@ export async function PUT(
         end_date: null,
         event_type: request.event_type,
         location: request.location,
-        organizer: isPronajem ? null : request.organizer,
-        is_public: isPronajem ? true : request.is_public,
+        organizer: request.organizer,
+        is_public: request.is_public,
       })
       .select("id")
       .single();
@@ -94,12 +94,13 @@ export async function PUT(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  // Send notification to requester
+  // Send notification to requester (only if they provided email)
   try {
     const eventName =
       request.event_type === "pronajem"
         ? "Soukromá akce"
         : request.event_name || "Akce";
+    if (!request.contact_email) throw new Error("No contact email");
     await sendRequestStatusNotification(
       request.contact_email,
       parsed.data.status,
