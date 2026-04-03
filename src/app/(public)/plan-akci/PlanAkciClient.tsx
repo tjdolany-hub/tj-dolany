@@ -112,7 +112,7 @@ function LocationLegend() {
       <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Místo:</span>
       {Object.entries(LOCATION_LABELS).map(([value, label]) => (
         <span key={value} className="flex items-center gap-1.5 text-xs text-text-muted">
-          <span className={`w-2.5 h-1.5 rounded-sm ${LOCATION_COLORS[value]}`} />
+          <span className={`w-2.5 h-1.5 ${LOCATION_COLORS[value]}`} />
           {label}
         </span>
       ))}
@@ -126,7 +126,7 @@ function EventTypeLegend() {
       <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Typ:</span>
       {Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => (
         <span key={value} className="flex items-center gap-1.5 text-xs text-text-muted">
-          <span className={`w-2 h-2 rounded-full ${EVENT_DOT_COLORS[value]}`} />
+          <span className={`w-2 h-2 ${EVENT_DOT_COLORS[value]}`} />
           {label}
         </span>
       ))}
@@ -413,12 +413,12 @@ export default function PlanAkciClient({
                         const locBadges = formatLocationBadges(e.location, e.event_type);
                         return (
                           <div key={e.id} className="flex items-center gap-1">
-                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
+                            <div className={`w-1.5 h-1.5 shrink-0 ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
                             <span className="text-[10px] text-text leading-tight truncate flex-1">
                               {e.title}
                             </span>
                             {locBadges && locBadges.map((b) => (
-                              <span key={b.value} className={`w-2.5 h-1.5 rounded-sm shrink-0 ${b.color}`} title={b.label} />
+                              <span key={b.value} className={`w-2.5 h-1.5 shrink-0 ${b.color}`} title={b.label} />
                             ))}
                           </div>
                         );
