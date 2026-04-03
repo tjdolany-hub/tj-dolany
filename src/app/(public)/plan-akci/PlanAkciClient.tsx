@@ -352,11 +352,11 @@ export default function PlanAkciClient({
 
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent mb-12" />
 
-      {/* ═══ CALENDAR — Kalendář Areálu TJ Dolany ═══ */}
+      {/* ═══ CALENDAR — Kalendář akcí sportovního areálu Dolany ═══ */}
       <AnimatedSection>
         <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
-          Kalendář Areálu TJ Dolany
+          Kalendář akcí sportovního areálu Dolany
         </h2>
 
         {/* Filters */}
