@@ -23,10 +23,10 @@ const DEFAULT_FORM = {
   date: "",
   time: "",
   allDay: false,
-  locationAll: true,
+  locationAll: false,
   locations: [] as string[],
   contact_name: "",
-  contact_phone: "",
+  contact_phone: "+420 ",
   contact_email: "",
   note: "",
 };
@@ -105,10 +105,11 @@ export default function RentalRequestForm() {
       {/* Info banner */}
       <div className="max-w-2xl mx-auto mb-8 flex items-start gap-3 bg-brand-yellow/10 border border-brand-yellow/30 rounded-xl p-4">
         <Info size={20} className="text-brand-yellow shrink-0 mt-0.5" />
-        <p className="text-sm text-text">
-          <strong>Pouze pro občany obce Dolany u Jaroměře.</strong> Vyplněním formuláře
-          odešlete žádost správci areálu ke schválení. O výsledku budete informováni emailem.
-        </p>
+        <div className="text-sm text-text space-y-1">
+          <p><strong>Pouze pro občany obce Dolany u Jaroměře.</strong> Žádost odešlete až po dohodnutí s Obcí Dolany na podmínkách pronájmu. Nejprve si zkontrolujte, že je termín volný.</p>
+          <p>Pokud není známý los fotbalu, je nutno počítat s tím, že termín bude definitivně potvrzený až po losu.</p>
+          <p>O výsledku budete informováni emailem.</p>
+        </div>
       </div>
 
       {/* Success / Error states */}
@@ -157,6 +158,8 @@ export default function RentalRequestForm() {
                   customOrganizer: "",
                   pronajemName: "",
                   is_public: false,
+                  locationAll: false,
+                  locations: [],
                 });
               }}
               className={inputClass}
@@ -238,7 +241,7 @@ export default function RentalRequestForm() {
               <span className="text-sm font-semibold text-text">Veřejná akce</span>
             </label>
             <p className="text-xs text-text-muted mt-1 ml-6">
-              Veřejná akce se zobrazí v kalendáři areálu.
+              Akce určená pro širokou veřejnost. Zobrazí se v kalendáři areálu.
             </p>
           </div>
 
