@@ -49,18 +49,27 @@ export async function PUT(
   // If approving, create a calendar event
   if (parsed.data.status === "approved") {
     const isPronajem = request.event_type === "pronajem";
-    const dateTime = request.all_day
-      ? `${request.date.slice(0, 10)}T00:00`
+    // Combine date + time for calendar event
+    // Europe/Prague: CET (+01:00) or CEST (+02:00)
+    const datePart = request.date.slice(0, 10);
+    const tempDate = new Date(datePart + "T12:00:00Z");
+    const praqueOffset = tempDate.toLocaleString("en", { timeZone: "Europe/Prague", hour12: false, hour: "2-digit" });
+    const utcHour = tempDate.getUTCHours();
+    const localHour = parseInt(praqueOffset);
+    const offsetHours = localHour - utcHour;
+    const tz = `+${String(offsetHours).padStart(2, "0")}:00`;
+    const dateStr = request.all_day
+      ? `${datePart}T00:00:00${tz}`
       : request.time
-        ? `${request.date.slice(0, 10)}T${request.time}`
-        : `${request.date.slice(0, 10)}T00:00`;
+        ? `${datePart}T${request.time}:00${tz}`
+        : `${datePart}T00:00:00${tz}`;
 
     const { data: calEvent, error: calError } = await admin
       .from("calendar_events")
       .insert({
         title: isPronajem ? "Soukromá akce" : (request.event_name || "Akce"),
         description: null,
-        date: dateTime,
+        date: dateStr,
         end_date: null,
         event_type: request.event_type,
         location: request.location,

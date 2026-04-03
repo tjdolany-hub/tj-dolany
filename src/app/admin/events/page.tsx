@@ -221,7 +221,11 @@ export default function AdminPlanAkciPage() {
     ev.preventDefault();
     setSaving(true);
 
-    const dateTime = form.allDay ? `${form.date}T00:00` : (form.time ? `${form.date}T${form.time}` : `${form.date}T00:00`);
+    const dateTime = form.allDay
+      ? new Date(`${form.date}T00:00`).toISOString()
+      : form.time
+        ? new Date(`${form.date}T${form.time}`).toISOString()
+        : new Date(`${form.date}T00:00`).toISOString();
     const organizer = form.organizer === "__custom__" ? form.customOrganizer : form.organizer;
     const location = form.locationAll ? "cely_areal" : form.locations.join(",");
     const title = form.event_type === "pronajem" ? "Soukromá akce" : form.title;
