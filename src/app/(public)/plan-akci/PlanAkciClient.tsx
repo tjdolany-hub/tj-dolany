@@ -24,6 +24,7 @@ interface ScheduleEntry {
   time_from: string;
   time_to: string | null;
   location: string | null;
+  organizer: string | null;
   valid_from: string | null;
   valid_to: string | null;
 }
@@ -174,7 +175,7 @@ export default function PlanAkciClient({
           date: `${dateStr}T${s.time_from}`,
           event_type: "trenink",
           location: s.location,
-          organizer: null,
+          organizer: s.organizer,
         });
       }
     }

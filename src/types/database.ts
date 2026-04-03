@@ -603,6 +603,7 @@ export interface Database {
           time_from: string;
           time_to: string | null;
           location: string | null;
+          organizer: string | null;
           valid_from: string | null;
           valid_to: string | null;
           created_at: string;
@@ -614,6 +615,7 @@ export interface Database {
           time_from: string;
           time_to?: string | null;
           location?: string | null;
+          organizer?: string | null;
           valid_from?: string | null;
           valid_to?: string | null;
           created_at?: string;
@@ -625,6 +627,7 @@ export interface Database {
           time_from?: string;
           time_to?: string | null;
           location?: string | null;
+          organizer?: string | null;
           valid_from?: string | null;
           valid_to?: string | null;
           created_at?: string;

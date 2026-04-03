@@ -33,6 +33,7 @@ interface ScheduleEntry {
   time_from: string;
   time_to: string | null;
   location: string | null;
+  organizer: string | null;
   valid_from: string | null;
   valid_to: string | null;
 }
@@ -109,6 +110,8 @@ const DEFAULT_SCHEDULE_FORM = {
   time_to: "",
   locationAll: true,
   locations: [] as string[],
+  organizer: "TJ Dolany",
+  customOrganizer: "",
   valid_from: "",
   valid_to: "",
 };
@@ -293,6 +296,7 @@ export default function AdminPlanAkciPage() {
 
   const startScheduleEdit = (s: ScheduleEntry) => {
     const isAll = !s.location || s.location === "cely_areal";
+    const isPreset = ORGANIZERS.includes(s.organizer as typeof ORGANIZERS[number]);
     setScheduleForm({
       day_of_week: s.day_of_week,
       title: s.title,
@@ -300,6 +304,8 @@ export default function AdminPlanAkciPage() {
       time_to: s.time_to || "",
       locationAll: isAll,
       locations: isAll ? [] : s.location!.split(","),
+      organizer: isPreset ? (s.organizer || "TJ Dolany") : (s.organizer ? "__custom__" : "TJ Dolany"),
+      customOrganizer: isPreset ? "" : (s.organizer || ""),
       valid_from: s.valid_from || "",
       valid_to: s.valid_to || "",
     });
@@ -311,12 +317,14 @@ export default function AdminPlanAkciPage() {
     ev.preventDefault();
     setScheduleSaving(true);
     const location = scheduleForm.locationAll ? "cely_areal" : scheduleForm.locations.join(",");
+    const organizer = scheduleForm.organizer === "__custom__" ? scheduleForm.customOrganizer : scheduleForm.organizer;
     const body = {
       day_of_week: scheduleForm.day_of_week,
       title: scheduleForm.title,
       time_from: scheduleForm.time_from,
       time_to: scheduleForm.time_to || null,
       location: location || null,
+      organizer: organizer || null,
       valid_from: scheduleForm.valid_from || null,
       valid_to: scheduleForm.valid_to || null,
     };
@@ -695,6 +703,21 @@ export default function AdminPlanAkciPage() {
                     </div>
                   )}
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
+                  <select
+                    value={scheduleForm.organizer}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, organizer: e.target.value, customOrganizer: "" })}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text"
+                  >
+                    {ORGANIZERS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    <option value="__custom__">Jiný...</option>
+                  </select>
+                  {scheduleForm.organizer === "__custom__" && (
+                    <input type="text" value={scheduleForm.customOrganizer} onChange={(e) => setScheduleForm({ ...scheduleForm, customOrganizer: e.target.value })}
+                      placeholder="Jméno pořadatele" className="w-full px-3 py-2 mt-2 bg-surface border border-border rounded-lg text-text" />
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -734,6 +757,7 @@ export default function AdminPlanAkciPage() {
                     <th className="text-left p-3 font-semibold text-text">Název</th>
                     <th className="text-left p-3 font-semibold text-text">Čas</th>
                     <th className="text-left p-3 font-semibold text-text hidden md:table-cell">Místo</th>
+                    <th className="text-left p-3 font-semibold text-text hidden md:table-cell">Pořadatel</th>
                     <th className="text-left p-3 font-semibold text-text hidden lg:table-cell">Platnost</th>
                     <th className="text-right p-3 font-semibold text-text">Akce</th>
                   </tr>
@@ -745,6 +769,7 @@ export default function AdminPlanAkciPage() {
                       <td className="p-3 text-text">{s.title}</td>
                       <td className="p-3 text-text-muted">{s.time_from}{s.time_to ? ` – ${s.time_to}` : ""}</td>
                       <td className="p-3 text-text-muted hidden md:table-cell">{formatLocation(s.location)}</td>
+                      <td className="p-3 text-text-muted hidden md:table-cell">{s.organizer || "—"}</td>
                       <td className="p-3 text-text-muted text-xs hidden lg:table-cell">
                         {s.valid_from || s.valid_to ? (
                           <span>{s.valid_from || "∞"} → {s.valid_to || "∞"}</span>
@@ -761,7 +786,7 @@ export default function AdminPlanAkciPage() {
                     </tr>
                   ))}
                   {scheduleEntries.length === 0 && (
-                    <tr><td colSpan={6} className="p-6 text-center text-text-muted">Žádné pravidelné akce</td></tr>
+                    <tr><td colSpan={7} className="p-6 text-center text-text-muted">Žádné pravidelné akce</td></tr>
                   )}
                 </tbody>
               </table>

@@ -8,6 +8,7 @@ const scheduleSchema = z.object({
   time_from: z.string().min(1, "Čas od je povinný"),
   time_to: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
+  organizer: z.string().nullable().optional(),
   valid_from: z.string().nullable().optional(),
   valid_to: z.string().nullable().optional(),
 });
