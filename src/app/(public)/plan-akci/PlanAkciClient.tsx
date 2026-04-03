@@ -195,8 +195,9 @@ export default function PlanAkciClient({
 
   const scheduleVirtualEvents = getScheduleEventsForMonth(calMonth, calYear);
 
-  // Filter events for calendar
+  // Filter events for calendar — only home matches (title starts with "Dolany")
   const filteredCalEvents = allEvents.filter((e) => {
+    if (e.event_type === "zapas" && !e.title.toLowerCase().startsWith("dolany")) return false;
     if (calFilter === "all") return true;
     if (calFilter === "akce") return e.event_type === "akce" || e.event_type === "zapas" || e.event_type === "trenink";
     if (calFilter === "volne") return e.event_type === "volne";
