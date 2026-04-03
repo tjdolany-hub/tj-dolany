@@ -85,7 +85,7 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
       <section>
         <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
-          Výsledky zápasů
+          Zápasy — výsledky a program
         </h2>
 
         {/* Season filter */}
@@ -482,7 +482,7 @@ export default function TymClient({
 
   const sections = [
     { id: "soupiska", label: "Soupiska" },
-    ...(matches.length > 0 ? [{ id: "vysledky", label: "Výsledky" }] : []),
+    ...(matches.length > 0 ? [{ id: "vysledky", label: "Zápasy" }] : []),
     ...(standings && standings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
     ...(statsEntries && statsEntries.length > 0 ? [{ id: "statistiky", label: "Statistiky" }] : []),
     ...(draws.length > 0 ? [{ id: "los", label: "Los" }] : []),
