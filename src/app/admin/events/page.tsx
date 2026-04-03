@@ -181,7 +181,7 @@ export default function AdminPlanAkciPage() {
       setEvents(filtered);
       setMatches(
         (Array.isArray(mtchs) ? mtchs : [])
-          .filter((m: MatchEvent) => new Date(m.date).getFullYear() === filterYear)
+          .filter((m: MatchEvent) => m.is_home && new Date(m.date).getFullYear() === filterYear)
           .sort((a: MatchEvent, b: MatchEvent) => new Date(a.date).getTime() - new Date(b.date).getTime())
       );
     }).finally(() => setLoading(false));
