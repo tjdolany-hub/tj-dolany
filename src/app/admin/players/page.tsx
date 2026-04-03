@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
-  Pencil, Trash2, Plus, Save, X, ToggleLeft, ToggleRight, Users,
+  Pencil, Trash2, Plus, Save, X, ToggleLeft, ToggleRight, Users, CheckCircle,
 } from "lucide-react";
 import { POSITIONS, POSITION_COLORS, POSITION_LABELS } from "@/lib/utils";
 import ImageUploader from "@/components/admin/ImageUploader";
@@ -74,6 +74,7 @@ export default function AdminPlayersPage() {
   const [form, setForm] = useState<PlayerForm>({ ...emptyForm });
   const [images, setImages] = useState<{ url: string; alt?: string }[]>([]);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Stats from matches
@@ -130,6 +131,12 @@ export default function AdminPlayersPage() {
     setImages([]);
     setEditId(null);
     setShowForm(false);
+    setSaved(false);
+  };
+
+  const updatePlayerForm = (patch: Partial<PlayerForm>) => {
+    setSaved(false);
+    setForm((prev) => ({ ...prev, ...patch }));
   };
 
   const startEdit = (p: Player) => {
@@ -177,7 +184,7 @@ export default function AdminPlayersPage() {
         body: JSON.stringify(body),
       });
       if (res.ok) {
-        resetForm();
+        if (editId) { setSaved(true); } else { resetForm(); }
         await loadPlayers();
       }
     } finally {
@@ -233,22 +240,22 @@ export default function AdminPlayersPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-semibold text-text mb-1">Jméno *</label>
-              <input type="text" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} required placeholder="Jan"
+              <input type="text" value={form.first_name} onChange={(e) => updatePlayerForm({ first_name: e.target.value })} required placeholder="Jan"
                 className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-text mb-1">Příjmení *</label>
-              <input type="text" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} required placeholder="Novák"
+              <input type="text" value={form.last_name} onChange={(e) => updatePlayerForm({ last_name: e.target.value })} required placeholder="Novák"
                 className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-text mb-1">Přezdívka</label>
-              <input type="text" value={form.nickname} onChange={(e) => setForm({ ...form, nickname: e.target.value })} placeholder="Novák"
+              <input type="text" value={form.nickname} onChange={(e) => updatePlayerForm({ nickname: e.target.value })} placeholder="Novák"
                 className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-text mb-1">Pozice</label>
-              <select value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })}
+              <select value={form.position} onChange={(e) => updatePlayerForm({ position: e.target.value })}
                 className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
                 {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
@@ -258,24 +265,24 @@ export default function AdminPlayersPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-semibold text-text mb-1">Datum narození</label>
-              <input type="date" value={form.birth_date} onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+              <input type="date" value={form.birth_date} onChange={(e) => updatePlayerForm({ birth_date: e.target.value })}
                 className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-text mb-1">Číslo dresu</label>
-              <input type="number" min={1} max={99} value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} placeholder="10"
+              <input type="number" min={1} max={99} value={form.number} onChange={(e) => updatePlayerForm({ number: e.target.value })} placeholder="10"
                 className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-text mb-1">Preferovaná noha</label>
-              <select value={form.preferred_foot} onChange={(e) => setForm({ ...form, preferred_foot: e.target.value })}
+              <select value={form.preferred_foot} onChange={(e) => updatePlayerForm({ preferred_foot: e.target.value })}
                 className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
                 {FOOT_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </div>
             <div className="flex items-end pb-2">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="w-4 h-4 accent-brand-red" />
+                <input type="checkbox" checked={form.active} onChange={(e) => updatePlayerForm({ active: e.target.checked })} className="w-4 h-4 accent-brand-red" />
                 <span className="text-sm font-semibold text-text">Aktivní</span>
               </label>
             </div>
@@ -283,10 +290,10 @@ export default function AdminPlayersPage() {
 
           <div>
             <label className="block text-sm font-semibold text-text mb-1">Fotka</label>
-            <ImageUploader images={images} onChange={setImages} folder="players" multiple={false} />
+            <ImageUploader images={images} onChange={(imgs) => { setSaved(false); setImages(imgs); }} folder="players" multiple={false} />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <button type="submit" disabled={saving}
               className="bg-brand-red hover:bg-brand-red-dark text-white px-5 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50">
               <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
@@ -295,6 +302,11 @@ export default function AdminPlayersPage() {
               className="px-4 py-2 border border-border rounded-lg text-sm flex items-center gap-2 text-text hover:bg-surface-muted transition-colors">
               <X size={16} /> Zrušit
             </button>
+            {saved && (
+              <span className="flex items-center gap-1.5 text-green-500 text-sm font-semibold ml-2">
+                <CheckCircle size={16} /> Uloženo
+              </span>
+            )}
           </div>
         </form>
       )}

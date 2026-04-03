@@ -3,10 +3,12 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const body = await req.json().catch(() => ({}));
+  const published = body.published !== false; // default true
   const supabase = await createClient();
   const {
     data: { user },
@@ -159,7 +161,7 @@ export async function POST(
     // Update existing
     const { error: updateErr } = await admin
       .from("articles")
-      .update({ title, slug, content, summary: title, published: true })
+      .update({ title, slug, content, summary: title, published })
       .eq("id", match.article_id);
 
     if (updateErr) {
@@ -177,7 +179,7 @@ export async function POST(
         content,
         summary: title,
         category: "fotbal",
-        published: true,
+        published,
         author_id: user.id,
       })
       .select("id")

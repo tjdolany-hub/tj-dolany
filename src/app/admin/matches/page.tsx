@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Users, Target, ChevronDown, Save, X, Eye,
-  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera,
+  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera, CheckCircle,
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 
@@ -105,6 +105,7 @@ export default function AdminMatchesPage() {
   const [cards, setCards] = useState<{ player_id: string; card_type: "yellow" | "red"; minute: string }[]>([]);
   const [matchImages, setMatchImages] = useState<{ url: string; alt?: string }[]>([]);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
 
@@ -184,6 +185,7 @@ export default function AdminMatchesPage() {
   const [drawForm, setDrawForm] = useState({ season: "2025/2026", title: "", active: true });
   const [drawImages, setDrawImages] = useState<{ url: string; alt?: string }[]>([]);
   const [drawSaving, setDrawSaving] = useState(false);
+  const [drawSaved, setDrawSaved] = useState(false);
 
   // ── Load data ──
 
@@ -282,6 +284,12 @@ export default function AdminMatchesPage() {
     setMatchImages([]);
     setEditId(null);
     setShowForm(false);
+    setSaved(false);
+  };
+
+  const updateMatchForm = (patch: Partial<typeof form>) => {
+    setSaved(false);
+    setForm((prev) => ({ ...prev, ...patch }));
   };
 
   const startEdit = (m: Match) => {
@@ -363,7 +371,10 @@ export default function AdminMatchesPage() {
     const method = editId ? "PUT" : "POST";
 
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (res.ok) { resetForm(); loadMatches(); }
+    if (res.ok) {
+      if (editId) { setSaved(true); } else { resetForm(); }
+      loadMatches();
+    }
     setSaving(false);
   };
 
@@ -373,12 +384,16 @@ export default function AdminMatchesPage() {
     loadMatches();
   };
 
-  const publishMatch = async (id: string) => {
+  const publishMatch = async (id: string, published = true) => {
     setPublishing(id);
-    const res = await fetch(`/api/matches/${id}/publish`, { method: "POST" });
+    const res = await fetch(`/api/matches/${id}/publish`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ published }),
+    });
     if (res.ok) {
       loadMatches();
-      alert("Zápas publikován do Aktualit");
+      alert(published ? "Zápas publikován do Aktualit" : "Článek uložen jako koncept");
     }
     setPublishing(null);
   };
@@ -436,6 +451,7 @@ export default function AdminMatchesPage() {
     setDrawImages([]);
     setDrawEditId(null);
     setShowDrawForm(false);
+    setDrawSaved(false);
   };
 
   const startDrawEdit = (d: Draw) => {
@@ -453,7 +469,10 @@ export default function AdminMatchesPage() {
     const url = drawEditId ? `/api/draws/${drawEditId}` : "/api/draws";
     const method = drawEditId ? "PUT" : "POST";
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (res.ok) { resetDrawForm(); loadDraws(); }
+    if (res.ok) {
+      if (drawEditId) { setDrawSaved(true); } else { resetDrawForm(); }
+      loadDraws();
+    }
     setDrawSaving(false);
   };
 
@@ -573,22 +592,22 @@ export default function AdminMatchesPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Datum</label>
-                  <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required
+                  <input type="date" value={form.date} onChange={(e) => updateMatchForm({ date: e.target.value })} required
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Čas</label>
-                  <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })}
+                  <input type="time" value={form.time} onChange={(e) => updateMatchForm({ time: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Soupeř</label>
-                  <input type="text" value={form.opponent} onChange={(e) => setForm({ ...form, opponent: e.target.value })} required
+                  <input type="text" value={form.opponent} onChange={(e) => updateMatchForm({ opponent: e.target.value })} required
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Sezóna</label>
-                  <select value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })}
+                  <select value={form.season} onChange={(e) => updateMatchForm({ season: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
                     {SEASONS.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -598,17 +617,17 @@ export default function AdminMatchesPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Soutěž</label>
-                  <input type="text" value={form.competition} onChange={(e) => setForm({ ...form, competition: e.target.value })}
+                  <input type="text" value={form.competition} onChange={(e) => updateMatchForm({ competition: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Hřiště</label>
-                  <input type="text" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })}
+                  <input type="text" value={form.venue} onChange={(e) => updateMatchForm({ venue: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div className="flex items-end pb-2">
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={form.is_home} onChange={(e) => setForm({ ...form, is_home: e.target.checked })} className="w-4 h-4" />
+                    <input type="checkbox" checked={form.is_home} onChange={(e) => updateMatchForm({ is_home: e.target.checked })} className="w-4 h-4" />
                     <span className="text-sm text-text">Hrajeme doma</span>
                   </label>
                 </div>
@@ -618,22 +637,22 @@ export default function AdminMatchesPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Skóre domácí</label>
-                  <input type="number" min={0} value={form.score_home} onChange={(e) => setForm({ ...form, score_home: parseInt(e.target.value) || 0 })}
+                  <input type="number" min={0} value={form.score_home} onChange={(e) => updateMatchForm({ score_home: parseInt(e.target.value) || 0 })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Skóre hosté</label>
-                  <input type="number" min={0} value={form.score_away} onChange={(e) => setForm({ ...form, score_away: parseInt(e.target.value) || 0 })}
+                  <input type="number" min={0} value={form.score_away} onChange={(e) => updateMatchForm({ score_away: parseInt(e.target.value) || 0 })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Poločas domácí</label>
-                  <input type="number" min={0} value={form.halftime_home} onChange={(e) => setForm({ ...form, halftime_home: e.target.value })}
+                  <input type="number" min={0} value={form.halftime_home} onChange={(e) => updateMatchForm({ halftime_home: e.target.value })}
                     placeholder="—" className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Poločas hosté</label>
-                  <input type="number" min={0} value={form.halftime_away} onChange={(e) => setForm({ ...form, halftime_away: e.target.value })}
+                  <input type="number" min={0} value={form.halftime_away} onChange={(e) => updateMatchForm({ halftime_away: e.target.value })}
                     placeholder="—" className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
               </div>
@@ -766,11 +785,11 @@ export default function AdminMatchesPage() {
               {/* Summary */}
               <div>
                 <label className="block text-sm font-semibold text-text mb-1">Nadpis referátu</label>
-                <input type="text" value={form.summary_title} onChange={(e) => setForm({ ...form, summary_title: e.target.value })}
+                <input type="text" value={form.summary_title} onChange={(e) => updateMatchForm({ summary_title: e.target.value })}
                   placeholder="např. Vydařený zápas na domácím hřišti"
                   className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red mb-2" />
                 <label className="block text-sm font-semibold text-text mb-1">Referát / komentář</label>
-                <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} rows={3}
+                <textarea value={form.summary} onChange={(e) => updateMatchForm({ summary: e.target.value })} rows={3}
                   className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
               </div>
 
@@ -783,10 +802,21 @@ export default function AdminMatchesPage() {
                 <ImageUploader images={matchImages} onChange={setMatchImages} folder="matches" multiple={true} />
               </div>
 
-              <button type="submit" disabled={saving}
-                className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50">
-                <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button type="submit" disabled={saving}
+                  className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50">
+                  <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
+                </button>
+                <button type="button" onClick={resetForm}
+                  className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
+                  <X size={16} /> Zrušit
+                </button>
+                {saved && (
+                  <span className="flex items-center gap-1.5 text-green-500 text-sm font-semibold ml-2">
+                    <CheckCircle size={16} /> Uloženo
+                  </span>
+                )}
+              </div>
             </form>
           )}
 
@@ -833,8 +863,8 @@ export default function AdminMatchesPage() {
                             <BookOpen size={12} />
                           </span>
                         )}
-                        <button onClick={(e) => { e.stopPropagation(); publishMatch(m.id); }} disabled={publishing === m.id}
-                          title="Publikovat do Aktualit"
+                        <button onClick={(e) => { e.stopPropagation(); publishMatch(m.id, true); }} disabled={publishing === m.id}
+                          title={m.article_id ? "Aktualizovat článek" : "Publikovat do Aktualit"}
                           className="text-blue-500 hover:text-blue-700 p-1.5 disabled:opacity-50">
                           <Upload size={14} />
                         </button>
@@ -958,31 +988,42 @@ export default function AdminMatchesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Období</label>
-                  <select value={drawForm.season} onChange={(e) => setDrawForm({ ...drawForm, season: e.target.value })}
+                  <select value={drawForm.season} onChange={(e) => { setDrawSaved(false); setDrawForm({ ...drawForm, season: e.target.value }); }}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text">
                     {SEASONS.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Název</label>
-                  <input type="text" value={drawForm.title} onChange={(e) => setDrawForm({ ...drawForm, title: e.target.value })} required
+                  <input type="text" value={drawForm.title} onChange={(e) => { setDrawSaved(false); setDrawForm({ ...drawForm, title: e.target.value }); }} required
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
                 </div>
                 <div className="flex items-end pb-2">
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={drawForm.active} onChange={(e) => setDrawForm({ ...drawForm, active: e.target.checked })} className="w-4 h-4" />
+                    <input type="checkbox" checked={drawForm.active} onChange={(e) => { setDrawSaved(false); setDrawForm({ ...drawForm, active: e.target.checked }); }} className="w-4 h-4" />
                     <span className="text-sm text-text">Aktivní</span>
                   </label>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-text mb-1">Obrázek</label>
-                <ImageUploader images={drawImages} onChange={setDrawImages} folder="draws" multiple={false} />
+                <ImageUploader images={drawImages} onChange={(imgs) => { setDrawSaved(false); setDrawImages(imgs); }} folder="draws" multiple={false} />
               </div>
-              <button type="submit" disabled={drawSaving}
-                className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
-                <Save size={16} /> {drawSaving ? "Ukládám..." : "Uložit"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button type="submit" disabled={drawSaving}
+                  className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
+                  <Save size={16} /> {drawSaving ? "Ukládám..." : "Uložit"}
+                </button>
+                <button type="button" onClick={resetDrawForm}
+                  className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
+                  <X size={16} /> Zrušit
+                </button>
+                {drawSaved && (
+                  <span className="flex items-center gap-1.5 text-green-500 text-sm font-semibold ml-2">
+                    <CheckCircle size={16} /> Uloženo
+                  </span>
+                )}
+              </div>
             </form>
           )}
 

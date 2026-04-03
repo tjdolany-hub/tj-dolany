@@ -10,6 +10,7 @@ import {
   Calendar,
   Clock,
   FileText,
+  CheckCircle,
 } from "lucide-react";
 import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS } from "@/lib/utils";
 import RentalRequestsTab from "./RentalRequestsTab";
@@ -148,6 +149,7 @@ export default function AdminPlanAkciPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [filterYear, setFilterYear] = useState(now.getFullYear());
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [filterMonth, setFilterMonth] = useState<FilterMonth>("all");
@@ -159,6 +161,7 @@ export default function AdminPlanAkciPage() {
   const [scheduleEditId, setScheduleEditId] = useState<string | null>(null);
   const [scheduleForm, setScheduleForm] = useState(DEFAULT_SCHEDULE_FORM);
   const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [scheduleSaved, setScheduleSaved] = useState(false);
 
   // ── Events logic ──
 
@@ -189,6 +192,12 @@ export default function AdminPlanAkciPage() {
     setForm(DEFAULT_FORM);
     setEditId(null);
     setShowForm(false);
+    setSaved(false);
+  };
+
+  const updateEventForm = (patch: Partial<typeof form>) => {
+    setSaved(false);
+    setForm((prev) => ({ ...prev, ...patch }));
   };
 
   const startEdit = (e: CalendarEvent) => {
@@ -249,7 +258,7 @@ export default function AdminPlanAkciPage() {
       body: JSON.stringify(body),
     });
     if (res.ok) {
-      resetForm();
+      if (editId) { setSaved(true); } else { resetForm(); }
       loadEvents();
     }
     setSaving(false);
@@ -299,6 +308,12 @@ export default function AdminPlanAkciPage() {
     setScheduleForm(DEFAULT_SCHEDULE_FORM);
     setScheduleEditId(null);
     setShowScheduleForm(false);
+    setScheduleSaved(false);
+  };
+
+  const updateScheduleForm = (patch: Partial<typeof scheduleForm>) => {
+    setScheduleSaved(false);
+    setScheduleForm((prev) => ({ ...prev, ...patch }));
   };
 
   const startScheduleEdit = (s: ScheduleEntry) => {
@@ -343,7 +358,7 @@ export default function AdminPlanAkciPage() {
       body: JSON.stringify(body),
     });
     if (res.ok) {
-      resetScheduleForm();
+      if (scheduleEditId) { setScheduleSaved(true); } else { resetScheduleForm(); }
       loadSchedule();
     }
     setScheduleSaving(false);
@@ -464,7 +479,7 @@ export default function AdminPlanAkciPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Datum</label>
-                  <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required
+                  <input type="date" value={form.date} onChange={(e) => updateEventForm({ date: e.target.value })} required
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
@@ -472,11 +487,11 @@ export default function AdminPlanAkciPage() {
                   {form.allDay ? (
                     <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">Celý den</div>
                   ) : (
-                    <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })}
+                    <input type="time" value={form.time} onChange={(e) => updateEventForm({ time: e.target.value })}
                       className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                   )}
                   <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
-                    <input type="checkbox" checked={form.allDay} onChange={(e) => setForm({ ...form, allDay: e.target.checked, time: "" })} className="w-3.5 h-3.5" />
+                    <input type="checkbox" checked={form.allDay} onChange={(e) => updateEventForm({ allDay: e.target.checked, time: "" })} className="w-3.5 h-3.5" />
                     <span className="text-xs text-text-muted">Celý den</span>
                   </label>
                 </div>
@@ -484,7 +499,7 @@ export default function AdminPlanAkciPage() {
                   <label className="block text-sm font-semibold text-text mb-1">Typ</label>
                   <select value={form.event_type} onChange={(e) => {
                     const val = e.target.value as EventTypeValue;
-                    setForm({ ...form, event_type: val, title: val === "pronajem" ? "" : form.title });
+                    updateEventForm({ event_type: val, title: val === "pronajem" ? "" : form.title });
                   }}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
                     {EVENT_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -493,7 +508,7 @@ export default function AdminPlanAkciPage() {
                 {form.event_type !== "pronajem" && (
                   <div>
                     <label className="block text-sm font-semibold text-text mb-1">Název</label>
-                    <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required
+                    <input type="text" value={form.title} onChange={(e) => updateEventForm({ title: e.target.value })} required
                       className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                   </div>
                 )}
@@ -504,14 +519,14 @@ export default function AdminPlanAkciPage() {
                   <label className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
                   <select
                     value={form.organizer}
-                    onChange={(e) => setForm({ ...form, organizer: e.target.value, customOrganizer: "" })}
+                    onChange={(e) => updateEventForm({ organizer: e.target.value, customOrganizer: "" })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red"
                   >
                     {ORGANIZERS.map((o) => <option key={o} value={o}>{o}</option>)}
                     <option value="__custom__">Jiný...</option>
                   </select>
                   {form.organizer === "__custom__" && (
-                    <input type="text" value={form.customOrganizer} onChange={(e) => setForm({ ...form, customOrganizer: e.target.value })}
+                    <input type="text" value={form.customOrganizer} onChange={(e) => updateEventForm({ customOrganizer: e.target.value })}
                       placeholder="Jméno pořadatele" className="w-full px-3 py-2 mt-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                   )}
                 </div>
@@ -519,7 +534,7 @@ export default function AdminPlanAkciPage() {
                   <label className="block text-sm font-semibold text-text mb-1">Místo</label>
                   <label className="flex items-center gap-2 cursor-pointer mb-1.5">
                     <input type="checkbox" checked={form.locationAll}
-                      onChange={(e) => setForm({ ...form, locationAll: e.target.checked, locations: [] })}
+                      onChange={(e) => updateEventForm({ locationAll: e.target.checked, locations: [] })}
                       className="w-4 h-4 accent-brand-red" />
                     <span className="text-sm text-text font-medium">Celý areál</span>
                   </label>
@@ -533,7 +548,7 @@ export default function AdminPlanAkciPage() {
                               const locs = e.target.checked
                                 ? [...form.locations, l.value]
                                 : form.locations.filter((v) => v !== l.value);
-                              setForm({ ...form, locations: locs });
+                              updateEventForm({ locations: locs });
                             }}
                             className="w-3.5 h-3.5 accent-brand-red" />
                           <span className="text-sm text-text">{l.label}</span>
@@ -545,7 +560,7 @@ export default function AdminPlanAkciPage() {
                 {form.event_type !== "pronajem" && (
                   <div className="flex items-end pb-2">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.is_public} onChange={(e) => setForm({ ...form, is_public: e.target.checked })} className="w-4 h-4" />
+                      <input type="checkbox" checked={form.is_public} onChange={(e) => updateEventForm({ is_public: e.target.checked })} className="w-4 h-4" />
                       <span className="text-sm font-semibold text-text">Veřejná</span>
                     </label>
                   </div>
@@ -555,12 +570,12 @@ export default function AdminPlanAkciPage() {
               {form.event_type !== "pronajem" && (
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Popis</label>
-                  <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
+                  <textarea value={form.description} onChange={(e) => updateEventForm({ description: e.target.value })} rows={2}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button type="submit" disabled={saving}
                   className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
                   <Save size={16} /> {saving ? "Ukládám..." : "Uložit"}
@@ -569,6 +584,11 @@ export default function AdminPlanAkciPage() {
                   className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
                   <X size={16} /> Zrušit
                 </button>
+                {saved && (
+                  <span className="flex items-center gap-1.5 text-green-500 text-sm font-semibold ml-2">
+                    <CheckCircle size={16} /> Uloženo
+                  </span>
+                )}
               </div>
             </form>
           )}
@@ -681,31 +701,31 @@ export default function AdminPlanAkciPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Den</label>
-                  <select value={scheduleForm.day_of_week} onChange={(e) => setScheduleForm({ ...scheduleForm, day_of_week: parseInt(e.target.value) })}
+                  <select value={scheduleForm.day_of_week} onChange={(e) => updateScheduleForm({ day_of_week: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text">
                     {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Název</label>
-                  <input type="text" value={scheduleForm.title} onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })} required
+                  <input type="text" value={scheduleForm.title} onChange={(e) => updateScheduleForm({ title: e.target.value })} required
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Čas od</label>
-                  <input type="time" value={scheduleForm.time_from} onChange={(e) => setScheduleForm({ ...scheduleForm, time_from: e.target.value })} required
+                  <input type="time" value={scheduleForm.time_from} onChange={(e) => updateScheduleForm({ time_from: e.target.value })} required
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Čas do</label>
-                  <input type="time" value={scheduleForm.time_to} onChange={(e) => setScheduleForm({ ...scheduleForm, time_to: e.target.value })}
+                  <input type="time" value={scheduleForm.time_to} onChange={(e) => updateScheduleForm({ time_to: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Místo</label>
                   <label className="flex items-center gap-2 cursor-pointer mb-1.5">
                     <input type="checkbox" checked={scheduleForm.locationAll}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, locationAll: e.target.checked, locations: [] })}
+                      onChange={(e) => updateScheduleForm({ locationAll: e.target.checked, locations: [] })}
                       className="w-4 h-4 accent-brand-red" />
                     <span className="text-sm text-text font-medium">Celý areál</span>
                   </label>
@@ -719,7 +739,7 @@ export default function AdminPlanAkciPage() {
                               const locs = e.target.checked
                                 ? [...scheduleForm.locations, l.value]
                                 : scheduleForm.locations.filter((v) => v !== l.value);
-                              setScheduleForm({ ...scheduleForm, locations: locs });
+                              updateScheduleForm({ locations: locs });
                             }}
                             className="w-3.5 h-3.5 accent-brand-red" />
                           <span className="text-sm text-text">{l.label}</span>
@@ -732,14 +752,14 @@ export default function AdminPlanAkciPage() {
                   <label className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
                   <select
                     value={scheduleForm.organizer}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, organizer: e.target.value, customOrganizer: "" })}
+                    onChange={(e) => updateScheduleForm({ organizer: e.target.value, customOrganizer: "" })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text"
                   >
                     {ORGANIZERS.map((o) => <option key={o} value={o}>{o}</option>)}
                     <option value="__custom__">Jiný...</option>
                   </select>
                   {scheduleForm.organizer === "__custom__" && (
-                    <input type="text" value={scheduleForm.customOrganizer} onChange={(e) => setScheduleForm({ ...scheduleForm, customOrganizer: e.target.value })}
+                    <input type="text" value={scheduleForm.customOrganizer} onChange={(e) => updateScheduleForm({ customOrganizer: e.target.value })}
                       placeholder="Jméno pořadatele" className="w-full px-3 py-2 mt-2 bg-surface border border-border rounded-lg text-text" />
                   )}
                 </div>
@@ -747,18 +767,18 @@ export default function AdminPlanAkciPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Platnost od</label>
-                  <input type="date" value={scheduleForm.valid_from} onChange={(e) => setScheduleForm({ ...scheduleForm, valid_from: e.target.value })}
+                  <input type="date" value={scheduleForm.valid_from} onChange={(e) => updateScheduleForm({ valid_from: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
                   <p className="text-xs text-text-muted mt-1">Ponechte prázdné = platí odjakživa</p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Platnost do</label>
-                  <input type="date" value={scheduleForm.valid_to} onChange={(e) => setScheduleForm({ ...scheduleForm, valid_to: e.target.value })}
+                  <input type="date" value={scheduleForm.valid_to} onChange={(e) => updateScheduleForm({ valid_to: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text" />
                   <p className="text-xs text-text-muted mt-1">Ponechte prázdné = platí navždy</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button type="submit" disabled={scheduleSaving}
                   className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 disabled:opacity-50 transition-colors">
                   <Save size={16} /> {scheduleSaving ? "Ukládám..." : "Uložit"}
@@ -767,6 +787,11 @@ export default function AdminPlanAkciPage() {
                   className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
                   <X size={16} /> Zrušit
                 </button>
+                {scheduleSaved && (
+                  <span className="flex items-center gap-1.5 text-green-500 text-sm font-semibold ml-2">
+                    <CheckCircle size={16} /> Uloženo
+                  </span>
+                )}
               </div>
             </form>
           )}

@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
-import { Save, X } from "lucide-react";
+import { Save, X, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { CATEGORIES } from "@/lib/utils";
 import ImageUploader from "@/components/admin/ImageUploader";
 
 export default function EditArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     title: "",
@@ -55,9 +54,14 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
     });
 
     if (res.ok) {
-      router.push("/admin/articles");
+      setSaved(true);
     }
     setSaving(false);
+  };
+
+  const updateForm = (patch: Partial<typeof form>) => {
+    setSaved(false);
+    setForm({ ...form, ...patch });
   };
 
   if (loading) return <p className="text-text-muted">Načítám...</p>;
@@ -71,7 +75,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
           <input
             type="text"
             value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            onChange={(e) => updateForm({ title: e.target.value })}
             required
             className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red"
           />
@@ -81,7 +85,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             <label className="block text-sm font-semibold text-text mb-1">Kategorie</label>
             <select
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              onChange={(e) => updateForm({ category: e.target.value })}
               className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red"
             >
               {CATEGORIES.map((c) => (
@@ -94,7 +98,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             <input
               type="date"
               value={form.created_at}
-              onChange={(e) => setForm({ ...form, created_at: e.target.value })}
+              onChange={(e) => updateForm({ created_at: e.target.value })}
               className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red"
             />
           </div>
@@ -103,7 +107,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             <input
               type="text"
               value={form.summary}
-              onChange={(e) => setForm({ ...form, summary: e.target.value })}
+              onChange={(e) => updateForm({ summary: e.target.value })}
               className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red"
             />
           </div>
@@ -112,7 +116,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
           <label className="block text-sm font-semibold text-text mb-1">Obsah (Markdown)</label>
           <textarea
             value={form.content}
-            onChange={(e) => setForm({ ...form, content: e.target.value })}
+            onChange={(e) => updateForm({ content: e.target.value })}
             required
             rows={12}
             className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-red"
@@ -120,18 +124,18 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
         </div>
         <div>
           <label className="block text-sm font-semibold text-text mb-1">Obrázky</label>
-          <ImageUploader images={images} onChange={setImages} folder="articles" />
+          <ImageUploader images={images} onChange={(imgs) => { setSaved(false); setImages(imgs); }} folder="articles" />
         </div>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={form.published}
-            onChange={(e) => setForm({ ...form, published: e.target.checked })}
+            onChange={(e) => updateForm({ published: e.target.checked })}
             className="w-4 h-4"
           />
           <span className="text-sm font-semibold text-text">Publikovat</span>
         </label>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button
             type="submit"
             disabled={saving}
@@ -143,8 +147,13 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             href="/admin/articles"
             className="bg-surface border border-border text-text-muted hover:text-text px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors"
           >
-            <X size={16} /> Zrušit
+            <X size={16} /> Zpět
           </Link>
+          {saved && (
+            <span className="flex items-center gap-1.5 text-green-500 text-sm font-semibold ml-2">
+              <CheckCircle size={16} /> Uloženo
+            </span>
+          )}
         </div>
       </form>
     </div>
