@@ -1,8 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Send, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
+
+interface CalEvent {
+  id: string;
+  title: string;
+  date: string;
+  end_date?: string | null;
+  all_day?: boolean;
+  event_type: string;
+}
+
+interface ScheduleEntry {
+  day_of_week: number;
+  title: string;
+  time_from: string;
+  valid_from: string | null;
+  valid_to: string | null;
+}
 
 const ORGANIZERS = ["TJ Dolany", "Obec Dolany", "DS Dolany", "SDH Dolany"] as const;
 
@@ -34,7 +51,13 @@ const DEFAULT_FORM = {
   note: "",
 };
 
-export default function RentalRequestForm() {
+export default function RentalRequestForm({
+  allEvents = [],
+  schedule = [],
+}: {
+  allEvents?: CalEvent[];
+  schedule?: ScheduleEntry[];
+}) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<"success" | "error" | "rate-limit" | null>(null);
@@ -42,6 +65,37 @@ export default function RentalRequestForm() {
   // Contact is required for pronajem always, for volne only when organizer is custom
   const isCustomOrganizer = form.organizer === "__custom__";
   const contactRequired = form.event_type === "pronajem" || isCustomOrganizer;
+
+  // Check for conflicts on selected date
+  const dateConflicts = useMemo(() => {
+    if (!form.date) return [];
+    const conflicts: string[] = [];
+    const selectedDate = form.date;
+
+    // Check calendar events
+    for (const e of allEvents) {
+      const eventDate = e.date.slice(0, 10);
+      const endDate = e.end_date ? e.end_date.slice(0, 10) : eventDate;
+      if (selectedDate >= eventDate && selectedDate <= endDate) {
+        const d = new Date(e.date);
+        const isAllDay = e.all_day || (d.getHours() === 0 && d.getMinutes() === 0 && e.event_type !== "trenink");
+        if (isAllDay || e.event_type === "zapas") {
+          conflicts.push(e.title);
+        }
+      }
+    }
+
+    // Check weekly schedule
+    const dow = new Date(selectedDate).getDay();
+    for (const s of schedule) {
+      if (s.day_of_week !== dow) continue;
+      if (s.valid_from && selectedDate < s.valid_from) continue;
+      if (s.valid_to && selectedDate > s.valid_to) continue;
+      conflicts.push(s.title);
+    }
+
+    return conflicts;
+  }, [form.date, allEvents, schedule]);
 
   const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
@@ -277,6 +331,21 @@ export default function RentalRequestForm() {
               />
             </div>
           </div>
+
+          {/* Date conflict warning */}
+          {dateConflicts.length > 0 && (
+            <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+              <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
+              <div className="text-sm text-text">
+                <p className="font-semibold">Tento termín je již obsazen:</p>
+                <ul className="mt-1 list-disc list-inside text-text-muted">
+                  {dateConflicts.map((c, i) => <li key={i}>{c}</li>)}
+                </ul>
+                <p className="mt-1 text-text-muted">Žádost můžete přesto odeslat, ale termín nemusí být schválen.</p>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-semibold text-text mb-1">Čas</label>
             {form.allDay ? (

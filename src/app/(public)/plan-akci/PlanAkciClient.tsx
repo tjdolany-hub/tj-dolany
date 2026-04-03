@@ -101,11 +101,13 @@ function formatLocationBadges(loc: string | null, eventType?: string) {
   if (loc === "cely_areal") {
     return [{ value: "cely_areal", label: LOCATION_LABELS["cely_areal"], color: LOCATION_COLORS["cely_areal"] }];
   }
-  return loc.split(",").map((v) => ({
-    value: v.trim(),
-    label: LOCATION_LABELS[v.trim()] || v.trim(),
-    color: LOCATION_COLORS[v.trim()] || "bg-gray-400",
-  }));
+  return loc.split(",")
+    .filter((v) => LOCATION_COLORS[v.trim()])
+    .map((v) => ({
+      value: v.trim(),
+      label: LOCATION_LABELS[v.trim()] || v.trim(),
+      color: LOCATION_COLORS[v.trim()],
+    }));
 }
 
 function LocationLegend() {
@@ -114,7 +116,7 @@ function LocationLegend() {
       <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Místo:</span>
       {Object.entries(LOCATION_LABELS).map(([value, label]) => (
         <span key={value} className="flex items-center gap-1.5 text-xs text-text-muted">
-          <span className={`w-2.5 h-1.5 ${LOCATION_COLORS[value]}`} />
+          <span className={`w-2 h-2 rounded-full ${LOCATION_COLORS[value]}`} />
           {label}
         </span>
       ))}
@@ -128,7 +130,7 @@ function EventTypeLegend() {
       <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Typ:</span>
       {Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => (
         <span key={value} className="flex items-center gap-1.5 text-xs text-text-muted">
-          <span className={`w-2 h-2 ${EVENT_DOT_COLORS[value]}`} />
+          <span className={`w-0.5 h-3 rounded-full ${EVENT_DOT_COLORS[value]}`} />
           {label}
         </span>
       ))}
@@ -413,6 +415,12 @@ export default function PlanAkciClient({
               const isToday = day === now.getDate() && calMonth === now.getMonth() && calYear === now.getFullYear();
               const isSelected = selectedDay && day === selectedDay.getDate() && calMonth === selectedDay.getMonth() && calYear === selectedDay.getFullYear();
               const isNextEvent = nextEventDate && day === nextEventDate.getDate() && calMonth === nextEventDate.getMonth() && calYear === nextEventDate.getFullYear();
+              // Check if day is occupied (all-day event or match)
+              const isOccupied = dayEvents.some((e) => {
+                const ed = new Date(e.date);
+                const isAllDay = e.all_day || (ed.getHours() === 0 && ed.getMinutes() === 0 && e.event_type !== "trenink");
+                return isAllDay || e.event_type === "zapas";
+              });
 
               return (
                 <button
@@ -424,7 +432,8 @@ export default function PlanAkciClient({
                     dayEvents.length > 0 ? "cursor-pointer hover:bg-brand-red/5" : "cursor-default"
                   } ${isSelected ? "bg-brand-red/10 ring-2 ring-inset ring-brand-red/30" : ""} ${
                     isToday ? "bg-brand-yellow/10" : ""
-                  } ${isNextEvent && !isSelected ? "bg-brand-red/5" : ""}`}
+                  } ${isOccupied && !isSelected && !isToday ? "bg-brand-red/[0.07]" : ""} ${
+                    isNextEvent && !isSelected ? "bg-brand-red/5" : ""}`}
                 >
                   <span className={`text-sm font-semibold ${
                     isToday
@@ -444,12 +453,12 @@ export default function PlanAkciClient({
                         const timeStr = isAllDay ? "" : `${eh.toString().padStart(2, "0")}:${em.toString().padStart(2, "0")} `;
                         return (
                           <div key={e.id} className="flex items-center gap-1">
-                            <div className={`w-1.5 h-1.5 shrink-0 ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
+                            <div className={`w-0.5 h-3 shrink-0 rounded-full ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
                             <span className="text-[10px] text-text leading-tight truncate flex-1">
                               {timeStr}{e.title}
                             </span>
                             {locBadges && locBadges.map((b) => (
-                              <span key={b.value} className={`w-2.5 h-1.5 shrink-0 ${b.color}`} title={b.label} />
+                              <span key={b.value} className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.color}`} title={b.label} />
                             ))}
                           </div>
                         );
@@ -538,7 +547,7 @@ export default function PlanAkciClient({
                               <MapPin size={12} />
                               {locBadges.map((b) => (
                                 <span key={b.value} className="flex items-center gap-1">
-                                  <span className={`w-2.5 h-1.5 rounded-sm ${b.color}`} />
+                                  <span className={`w-2 h-2 rounded-full ${b.color}`} />
                                   {b.label}
                                 </span>
                               ))}
@@ -561,7 +570,7 @@ export default function PlanAkciClient({
         </AnimatePresence>
       </AnimatedSection>
 
-      <RentalRequestForm />
+      <RentalRequestForm allEvents={allEvents} schedule={schedule} />
     </div>
   );
 }
