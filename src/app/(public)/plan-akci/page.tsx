@@ -30,7 +30,7 @@ export default async function PlanAkciPage() {
     // All public events for calendar (all types including pronajem for admin visibility)
     supabase
       .from("calendar_events")
-      .select("id, title, description, date, event_type, location, organizer, is_public")
+      .select("id, title, description, date, end_date, all_day, event_type, location, organizer, is_public")
       .order("date", { ascending: true }),
     // Weekly schedule
     supabase
