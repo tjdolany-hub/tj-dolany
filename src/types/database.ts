@@ -171,6 +171,7 @@ export interface Database {
           location: string | null;
           organizer: string | null;
           is_public: boolean;
+          all_day: boolean;
           created_at: string;
         };
         Insert: {
@@ -183,6 +184,7 @@ export interface Database {
           location?: string | null;
           organizer?: string | null;
           is_public?: boolean;
+          all_day?: boolean;
           created_at?: string;
         };
         Update: {
@@ -195,6 +197,7 @@ export interface Database {
           location?: string | null;
           organizer?: string | null;
           is_public?: boolean;
+          all_day?: boolean;
           created_at?: string;
         };
         Relationships: [];
@@ -644,7 +647,9 @@ export interface Database {
           location: string;
           date: string;
           time: string | null;
+          time_to: string | null;
           all_day: boolean;
+          end_date: string | null;
           contact_name: string | null;
           contact_phone: string | null;
           contact_email: string | null;
@@ -664,7 +669,9 @@ export interface Database {
           location: string;
           date: string;
           time?: string | null;
+          time_to?: string | null;
           all_day?: boolean;
+          end_date?: string | null;
           contact_name?: string | null;
           contact_phone?: string | null;
           contact_email?: string | null;
@@ -684,7 +691,9 @@ export interface Database {
           location?: string;
           date?: string;
           time?: string | null;
+          time_to?: string | null;
           all_day?: boolean;
+          end_date?: string | null;
           contact_name?: string | null;
           contact_phone?: string | null;
           contact_email?: string | null;

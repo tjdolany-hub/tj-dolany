@@ -27,6 +27,7 @@ interface CalendarEvent {
   location: string | null;
   organizer: string | null;
   is_public: boolean;
+  all_day: boolean;
 }
 
 interface ScheduleEntry {
@@ -88,7 +89,9 @@ const DEFAULT_FORM = {
   title: "",
   description: "",
   date: "",
+  end_date: "",
   time: "",
+  time_to: "",
   allDay: false,
   event_type: "akce" as EventTypeValue,
   locationAll: false,
@@ -204,15 +207,33 @@ export default function AdminPlanAkciPage() {
     const d = new Date(e.date);
     const h = d.getHours();
     const m = d.getMinutes();
-    const isAllDay = h === 0 && m === 0;
+    const isAllDay = e.all_day;
     const isPreset = ORGANIZERS.includes(e.organizer as typeof ORGANIZERS[number]);
     const isAll = !e.location || e.location === "cely_areal";
     const locations = isAll ? [] : e.location!.split(",");
+
+    // Parse end_date for time_to and end_date
+    let endDateStr = "";
+    let timeTo = "";
+    if (e.end_date) {
+      const ed = new Date(e.end_date);
+      const edDate = e.end_date.slice(0, 10);
+      const startDate = e.date.slice(0, 10);
+      if (edDate !== startDate) {
+        endDateStr = edDate;
+      }
+      if (!isAllDay) {
+        timeTo = `${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
+      }
+    }
+
     setForm({
       title: e.event_type === "pronajem" && e.title === "Soukromá akce" ? "" : e.title,
       description: e.description || "",
       date: e.date.slice(0, 10),
+      end_date: endDateStr,
       time: isAllDay ? "" : `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
+      time_to: timeTo,
       allDay: isAllDay,
       event_type: e.event_type as EventTypeValue,
       locationAll: isAll,
@@ -235,6 +256,21 @@ export default function AdminPlanAkciPage() {
       : form.time
         ? new Date(`${form.date}T${form.time}`).toISOString()
         : new Date(`${form.date}T00:00`).toISOString();
+
+    // Build end_date
+    let endDateTime: string | null = null;
+    if (form.end_date) {
+      // Multi-day event
+      endDateTime = form.allDay
+        ? new Date(`${form.end_date}T23:59`).toISOString()
+        : form.time_to
+          ? new Date(`${form.end_date}T${form.time_to}`).toISOString()
+          : new Date(`${form.end_date}T23:59`).toISOString();
+    } else if (!form.allDay && form.time_to) {
+      // Same day, time range
+      endDateTime = new Date(`${form.date}T${form.time_to}`).toISOString();
+    }
+
     const organizer = form.organizer === "__custom__" ? form.customOrganizer : form.organizer;
     const location = form.locationAll ? "cely_areal" : form.locations.join(",");
     const title = form.event_type === "pronajem" ? "Soukromá akce" : form.title;
@@ -243,7 +279,8 @@ export default function AdminPlanAkciPage() {
       title,
       description: form.description || null,
       date: dateTime,
-      end_date: null,
+      end_date: endDateTime,
+      all_day: form.allDay,
       event_type: form.event_type,
       location: location || null,
       organizer: organizer || null,
@@ -478,8 +515,14 @@ export default function AdminPlanAkciPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Datum</label>
+                  <label className="block text-sm font-semibold text-text mb-1">Datum od</label>
                   <input type="date" value={form.date} onChange={(e) => updateEventForm({ date: e.target.value })} required
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Datum do <span className="font-normal text-text-muted">(vícedenní)</span></label>
+                  <input type="date" value={form.end_date} onChange={(e) => updateEventForm({ end_date: e.target.value })}
+                    min={form.date}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
@@ -487,11 +530,16 @@ export default function AdminPlanAkciPage() {
                   {form.allDay ? (
                     <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">Celý den</div>
                   ) : (
-                    <input type="time" value={form.time} onChange={(e) => updateEventForm({ time: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                    <div className="flex gap-2 items-center">
+                      <input type="time" value={form.time} onChange={(e) => updateEventForm({ time: e.target.value })} placeholder="Od"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                      <span className="text-text-muted text-sm">–</span>
+                      <input type="time" value={form.time_to} onChange={(e) => updateEventForm({ time_to: e.target.value })} placeholder="Do"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                    </div>
                   )}
                   <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
-                    <input type="checkbox" checked={form.allDay} onChange={(e) => updateEventForm({ allDay: e.target.checked, time: "" })} className="w-3.5 h-3.5" />
+                    <input type="checkbox" checked={form.allDay} onChange={(e) => updateEventForm({ allDay: e.target.checked, time: "", time_to: "" })} className="w-3.5 h-3.5" />
                     <span className="text-xs text-text-muted">Celý den</span>
                   </label>
                 </div>
@@ -615,10 +663,25 @@ export default function AdminPlanAkciPage() {
                     const d = new Date(item.data.date);
                     const h = d.getHours();
                     const m = d.getMinutes();
-                    const isAllDay = h === 0 && m === 0;
-                    const dateStr = isAllDay
+                    const isEvent = item.type === "event";
+                    const isAllDay = isEvent ? item.data.all_day : (h === 0 && m === 0);
+                    let dateStr = isAllDay
                       ? d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" })
                       : formatDateTimeCzech(item.data.date);
+                    // Show time range for events with end_date
+                    if (isEvent && item.data.end_date && !isAllDay) {
+                      const ed = new Date(item.data.end_date);
+                      dateStr += ` – ${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
+                    }
+                    // Show date range for multi-day events
+                    if (isEvent && item.data.end_date) {
+                      const edDate = item.data.end_date.slice(0, 10);
+                      const startDate = item.data.date.slice(0, 10);
+                      if (edDate !== startDate) {
+                        const ed = new Date(item.data.end_date);
+                        dateStr += ` → ${ed.toLocaleDateString("cs-CZ", { day: "numeric", month: "long" })}`;
+                      }
+                    }
 
                     if (item.type === "match") {
                       const match = item.data;

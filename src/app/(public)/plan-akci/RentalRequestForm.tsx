@@ -21,7 +21,9 @@ const DEFAULT_FORM = {
   pronajemName: "",
   is_public: false,
   date: "",
+  end_date: "",
   time: "",
+  time_to: "",
   allDay: false,
   locationAll: false,
   locations: [] as string[],
@@ -61,7 +63,9 @@ export default function RentalRequestForm() {
       is_public: form.is_public,
       location: location || "cely_areal",
       date: form.date,
+      end_date: form.end_date || null,
       time: form.allDay ? null : form.time || null,
+      time_to: form.allDay ? null : form.time_to || null,
       all_day: form.allDay,
       contact_name: form.contact_name || null,
       contact_phone: form.contact_phone || null,
@@ -252,7 +256,7 @@ export default function RentalRequestForm() {
           {/* Date + Time */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-text mb-1">Datum</label>
+              <label className="block text-sm font-semibold text-text mb-1">Datum od</label>
               <input
                 type="date"
                 value={form.date}
@@ -263,29 +267,48 @@ export default function RentalRequestForm() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-text mb-1">Čas</label>
-              {form.allDay ? (
-                <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">
-                  Celý den
-                </div>
-              ) : (
+              <label className="block text-sm font-semibold text-text mb-1">Datum do <span className="font-normal text-text-muted">(vícedenní, volitelné)</span></label>
+              <input
+                type="date"
+                value={form.end_date}
+                onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                min={form.date}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-text mb-1">Čas</label>
+            {form.allDay ? (
+              <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">
+                Celý den
+              </div>
+            ) : (
+              <div className="flex gap-2 items-center max-w-sm">
                 <input
                   type="time"
                   value={form.time}
                   onChange={(e) => setForm({ ...form, time: e.target.value })}
                   className={inputClass}
                 />
-              )}
-              <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                <span className="text-text-muted text-sm shrink-0">–</span>
                 <input
-                  type="checkbox"
-                  checked={form.allDay}
-                  onChange={(e) => setForm({ ...form, allDay: e.target.checked, time: "" })}
-                  className="w-3.5 h-3.5"
+                  type="time"
+                  value={form.time_to}
+                  onChange={(e) => setForm({ ...form, time_to: e.target.value })}
+                  className={inputClass}
                 />
-                <span className="text-xs text-text-muted">Celý den</span>
-              </label>
-            </div>
+              </div>
+            )}
+            <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.allDay}
+                onChange={(e) => setForm({ ...form, allDay: e.target.checked, time: "", time_to: "" })}
+                className="w-3.5 h-3.5"
+              />
+              <span className="text-xs text-text-muted">Celý den</span>
+            </label>
           </div>
 
           {/* Location */}

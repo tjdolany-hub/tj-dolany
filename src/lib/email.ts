@@ -13,7 +13,9 @@ interface RentalRequestData {
   isPublic: boolean;
   location: string;
   date: string;
+  endDate: string | null;
   time: string | null;
+  timeTo: string | null;
   allDay: boolean;
   contactName: string | null;
   contactPhone: string | null;
@@ -41,7 +43,14 @@ export async function sendNewRequestNotification(data: RentalRequestData) {
     month: "long",
     year: "numeric",
   });
-  const timeStr = data.allDay ? "Celý den" : (data.time || "—");
+  const timeStr = data.allDay
+    ? "Celý den"
+    : data.time && data.timeTo
+      ? `${data.time} – ${data.timeTo}`
+      : (data.time || "—");
+  const endDateStr = data.endDate
+    ? new Date(data.endDate).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" })
+    : null;
 
   const html = `
     <h2>Nová žádost o akci v areálu</h2>
@@ -49,7 +58,7 @@ export async function sendNewRequestNotification(data: RentalRequestData) {
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Typ:</td><td>${typeLabel}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Název:</td><td>${title}</td></tr>
       ${data.organizer ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Pořadatel:</td><td>${data.organizer}</td></tr>` : ""}
-      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Datum:</td><td>${dateStr}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Datum:</td><td>${dateStr}${endDateStr ? ` – ${endDateStr}` : ""}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Čas:</td><td>${timeStr}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Místo:</td><td>${formatLocation(data.location)}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Veřejná:</td><td>${data.isPublic ? "Ano" : "Ne"}</td></tr>

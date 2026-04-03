@@ -64,13 +64,29 @@ export async function PUT(
         ? `${datePart}T${request.time}:00${tz}`
         : `${datePart}T00:00:00${tz}`;
 
+    // Build end_date from request
+    let endDateStr: string | null = null;
+    if (request.end_date) {
+      // Multi-day event
+      const endDatePart = request.end_date.slice(0, 10);
+      endDateStr = request.all_day
+        ? `${endDatePart}T23:59:00${tz}`
+        : request.time_to
+          ? `${endDatePart}T${request.time_to}:00${tz}`
+          : `${endDatePart}T23:59:00${tz}`;
+    } else if (!request.all_day && request.time_to) {
+      // Same day, time range
+      endDateStr = `${datePart}T${request.time_to}:00${tz}`;
+    }
+
     const { data: calEvent, error: calError } = await admin
       .from("calendar_events")
       .insert({
         title: isPronajem ? "Soukromá akce" : (request.event_name || "Akce"),
         description: isPronajem ? null : (request.description || null),
         date: dateStr,
-        end_date: null,
+        end_date: endDateStr,
+        all_day: request.all_day,
         event_type: request.event_type,
         location: request.location,
         organizer: request.organizer,

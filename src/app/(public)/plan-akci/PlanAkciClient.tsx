@@ -12,6 +12,8 @@ interface CalEvent {
   title: string;
   description: string | null;
   date: string;
+  end_date?: string | null;
+  all_day?: boolean;
   event_type: string;
   location: string | null;
   organizer: string | null;
@@ -178,6 +180,8 @@ export default function PlanAkciClient({
           title: s.title,
           description: null,
           date: `${dateStr}T${s.time_from}`,
+          end_date: s.time_to ? `${dateStr}T${s.time_to}` : null,
+          all_day: false,
           event_type: "trenink",
           location: s.location,
           organizer: s.organizer,
@@ -202,16 +206,38 @@ export default function PlanAkciClient({
   const allMonthEvents = [
     ...filteredCalEvents.filter((e) => {
       const d = new Date(e.date);
-      return d.getMonth() === calMonth && d.getFullYear() === calYear;
+      const ed = e.end_date ? new Date(e.end_date) : null;
+      // Include if event starts in this month OR spans into this month
+      const monthStart = new Date(calYear, calMonth, 1);
+      const monthEnd = new Date(calYear, calMonth + 1, 0);
+      const startsInMonth = d.getMonth() === calMonth && d.getFullYear() === calYear;
+      const spansIntoMonth = ed && d < monthStart && ed >= monthStart;
+      return startsInMonth || spansIntoMonth;
     }),
     ...(calFilter === "all" || calFilter === "akce" ? scheduleVirtualEvents : []),
   ];
 
   const eventsByDay: Record<number, CalEvent[]> = {};
   for (const e of allMonthEvents) {
-    const day = new Date(e.date).getDate();
-    if (!eventsByDay[day]) eventsByDay[day] = [];
-    eventsByDay[day].push(e);
+    const startDate = new Date(e.date);
+    const endDate = e.end_date ? new Date(e.end_date) : startDate;
+    // For multi-day events, add to each day in the range within this month
+    const monthStart = new Date(calYear, calMonth, 1);
+    const monthEnd = new Date(calYear, calMonth + 1, 0);
+    const rangeStart = startDate < monthStart ? monthStart : startDate;
+    const rangeEnd = endDate > monthEnd ? monthEnd : endDate;
+    const current = new Date(rangeStart);
+    while (current <= rangeEnd) {
+      if (current.getMonth() === calMonth && current.getFullYear() === calYear) {
+        const day = current.getDate();
+        if (!eventsByDay[day]) eventsByDay[day] = [];
+        // Avoid duplicates for same event on same day
+        if (!eventsByDay[day].some((x) => x.id === e.id)) {
+          eventsByDay[day].push(e);
+        }
+      }
+      current.setDate(current.getDate() + 1);
+    }
   }
   // Sort events within each day by time
   for (const day in eventsByDay) {
@@ -411,11 +437,16 @@ export default function PlanAkciClient({
                     <div className="mt-1 space-y-0.5">
                       {dayEvents.slice(0, 3).map((e) => {
                         const locBadges = formatLocationBadges(e.location, e.event_type);
+                        const ed = new Date(e.date);
+                        const eh = ed.getHours();
+                        const em = ed.getMinutes();
+                        const isAllDay = e.all_day || (eh === 0 && em === 0);
+                        const timeStr = isAllDay ? "" : `${eh.toString().padStart(2, "0")}:${em.toString().padStart(2, "0")} `;
                         return (
                           <div key={e.id} className="flex items-center gap-1">
                             <div className={`w-1.5 h-1.5 shrink-0 ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
                             <span className="text-[10px] text-text leading-tight truncate flex-1">
-                              {e.title}
+                              {timeStr}{e.title}
                             </span>
                             {locBadges && locBadges.map((b) => (
                               <span key={b.value} className={`w-2.5 h-1.5 shrink-0 ${b.color}`} title={b.label} />
@@ -463,13 +494,29 @@ export default function PlanAkciClient({
                   const d = new Date(event.date);
                   const h = d.getHours();
                   const m = d.getMinutes();
-                  const isAllDay = h === 0 && m === 0;
-                  const time = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+                  const isAllDay = event.all_day || (h === 0 && m === 0);
+                  const timeFrom = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+                  let timeDisplay = timeFrom;
+                  if (event.end_date) {
+                    const ed = new Date(event.end_date);
+                    const edDate = event.end_date.slice(0, 10);
+                    const startDate = event.date.slice(0, 10);
+                    if (edDate === startDate && !isAllDay) {
+                      // Same day, time range
+                      timeDisplay = `${timeFrom} – ${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
+                    } else if (edDate !== startDate) {
+                      // Multi-day
+                      timeDisplay = isAllDay
+                        ? `${formatDateCzech(event.date)} – ${formatDateCzech(event.end_date)}`
+                        : `${timeFrom} – ${formatDateCzech(event.end_date)}`;
+                    }
+                  }
                   const locBadges = formatLocationBadges(event.location, event.event_type);
+                  const isMultiDay = event.end_date && event.end_date.slice(0, 10) !== event.date.slice(0, 10);
                   return (
                     <div
                       key={event.id}
-                      className="flex gap-4 items-start p-4 bg-surface-alt rounded-lg border border-border"
+                      className={`flex gap-4 items-start p-4 bg-surface-alt rounded-lg border border-border ${isMultiDay ? "border-l-4 border-l-brand-red/50" : ""}`}
                     >
                       <div className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold ${
                         EVENT_TYPE_COLORS[event.event_type] ?? "bg-gray-200 text-gray-700"
@@ -479,10 +526,12 @@ export default function PlanAkciClient({
                       <div className="flex-1">
                         <h4 className="font-semibold text-text">{event.title}</h4>
                         <div className="flex flex-wrap gap-3 mt-1 text-xs text-text-muted">
-                          {isAllDay ? (
+                          {isAllDay && !isMultiDay ? (
                             <span className="flex items-center gap-1"><Sun size={12} /> Celý den</span>
+                          ) : isMultiDay && isAllDay ? (
+                            <span className="flex items-center gap-1"><Calendar size={12} /> {timeDisplay}</span>
                           ) : (
-                            <span className="flex items-center gap-1"><Clock size={12} /> {time}</span>
+                            <span className="flex items-center gap-1"><Clock size={12} /> {timeDisplay}</span>
                           )}
                           {locBadges && (
                             <span className="flex items-center gap-1.5">

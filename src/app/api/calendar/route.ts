@@ -11,6 +11,7 @@ const eventSchema = z.object({
   location: z.string().nullable().optional(),
   organizer: z.string().nullable().optional(),
   is_public: z.boolean().default(true),
+  all_day: z.boolean().default(false),
 });
 
 export async function GET(req: NextRequest) {
@@ -32,14 +33,30 @@ export async function GET(req: NextRequest) {
     endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
   }
 
-  const { data: events } = await supabase
+  // Fetch events that start in range OR span into range (end_date >= startDate)
+  const { data: startInRange } = await supabase
     .from("calendar_events")
     .select("*")
     .gte("date", startDate)
     .lte("date", endDate)
     .order("date", { ascending: true });
 
-  return NextResponse.json(events ?? []);
+  const { data: spanIntoRange } = await supabase
+    .from("calendar_events")
+    .select("*")
+    .lt("date", startDate)
+    .gte("end_date", startDate)
+    .order("date", { ascending: true });
+
+  // Merge and deduplicate
+  const seen = new Set<string>();
+  const events = [...(startInRange ?? []), ...(spanIntoRange ?? [])].filter((e) => {
+    if (seen.has(e.id)) return false;
+    seen.add(e.id);
+    return true;
+  });
+
+  return NextResponse.json(events);
 }
 
 export async function POST(req: NextRequest) {

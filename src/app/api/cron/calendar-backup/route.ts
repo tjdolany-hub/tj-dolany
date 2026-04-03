@@ -30,18 +30,29 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });
 }
 
-function formatTime(dateStr: string): string {
+function formatTime(dateStr: string, endDateStr?: string | null, allDay?: boolean): string {
   const d = new Date(dateStr);
   const h = d.getHours();
   const m = d.getMinutes();
-  if (h === 0 && m === 0) return "Celý den";
-  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  if (allDay || (h === 0 && m === 0)) return "Celý den";
+  const from = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  if (endDateStr) {
+    const ed = new Date(endDateStr);
+    const edDate = endDateStr.slice(0, 10);
+    const startDate = dateStr.slice(0, 10);
+    if (edDate === startDate) {
+      return `${from} - ${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
+    }
+  }
+  return from;
 }
 
 interface CalEvent {
   id: string;
   title: string;
   date: string;
+  end_date?: string | null;
+  all_day?: boolean;
   event_type: string;
   location: string | null;
   organizer: string | null;
@@ -139,9 +150,12 @@ function generatePDF(events: CalEvent[], periodLabel: string): Promise<Buffer> {
       }
       even = !even;
 
+      const dateCell = e.end_date && e.end_date.slice(0, 10) !== e.date.slice(0, 10)
+        ? `${formatDate(e.date)} - ${formatDate(e.end_date)}`
+        : formatDate(e.date);
       const row = [
-        formatDate(e.date),
-        formatTime(e.date),
+        dateCell,
+        formatTime(e.date, e.end_date, e.all_day),
         e.title,
         EVENT_TYPE_LABELS[e.event_type] || e.event_type,
         formatLocation(e.location),
@@ -185,7 +199,7 @@ export async function GET(request: Request) {
     // Fetch calendar events
     const { data: calEvents } = await supabase
       .from("calendar_events")
-      .select("id, title, date, event_type, location, organizer")
+      .select("id, title, date, end_date, all_day, event_type, location, organizer")
       .gte("date", startStr)
       .lte("date", endStr)
       .order("date", { ascending: true });

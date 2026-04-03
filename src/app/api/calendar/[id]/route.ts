@@ -11,6 +11,7 @@ const updateSchema = z.object({
   location: z.string().nullable().optional(),
   organizer: z.string().nullable().optional(),
   is_public: z.boolean().optional(),
+  all_day: z.boolean().optional(),
 });
 
 export async function PUT(
