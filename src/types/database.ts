@@ -634,6 +634,74 @@ export interface Database {
         };
         Relationships: [];
       };
+      rental_requests: {
+        Row: {
+          id: string;
+          event_name: string | null;
+          event_type: "pronajem" | "volne";
+          organizer: string | null;
+          is_public: boolean;
+          location: string;
+          date: string;
+          time: string | null;
+          all_day: boolean;
+          contact_name: string;
+          contact_phone: string;
+          contact_email: string;
+          note: string | null;
+          status: "pending" | "approved" | "rejected";
+          admin_note: string | null;
+          calendar_event_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_name?: string | null;
+          event_type?: "pronajem" | "volne";
+          organizer?: string | null;
+          is_public?: boolean;
+          location: string;
+          date: string;
+          time?: string | null;
+          all_day?: boolean;
+          contact_name: string;
+          contact_phone: string;
+          contact_email: string;
+          note?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          admin_note?: string | null;
+          calendar_event_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_name?: string | null;
+          event_type?: "pronajem" | "volne";
+          organizer?: string | null;
+          is_public?: boolean;
+          location?: string;
+          date?: string;
+          time?: string | null;
+          all_day?: boolean;
+          contact_name?: string;
+          contact_phone?: string;
+          contact_email?: string;
+          note?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          admin_note?: string | null;
+          calendar_event_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rental_requests_calendar_event_id_fkey";
+            columns: ["calendar_event_id"];
+            isOneToOne: false;
+            referencedRelation: "calendar_events";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

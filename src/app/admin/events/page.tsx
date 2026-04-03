@@ -9,8 +9,10 @@ import {
   X,
   Calendar,
   Clock,
+  FileText,
 } from "lucide-react";
 import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS } from "@/lib/utils";
+import RentalRequestsTab from "./RentalRequestsTab";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -135,7 +137,8 @@ function formatLocation(loc: string | null): string {
 
 export default function AdminPlanAkciPage() {
   const now = new Date();
-  const [activeTab, setActiveTab] = useState<"events" | "schedule">("events");
+  const [activeTab, setActiveTab] = useState<"events" | "schedule" | "requests">("events");
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
 
   // ── Events state ──
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -373,6 +376,20 @@ export default function AdminPlanAkciPage() {
         >
           <Clock size={16} className="inline mr-2" />
           Pravidelné akce
+        </button>
+        <button
+          onClick={() => setActiveTab("requests")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            activeTab === "requests" ? "bg-brand-red text-white" : "text-text-muted hover:text-text hover:bg-surface-muted"
+          }`}
+        >
+          <FileText size={16} className="inline mr-2" />
+          Žádosti
+          {pendingRequestCount > 0 && (
+            <span className="ml-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              {pendingRequestCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -793,6 +810,11 @@ export default function AdminPlanAkciPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* ═══ REQUESTS TAB ═══ */}
+      {activeTab === "requests" && (
+        <RentalRequestsTab onPendingCountChange={setPendingRequestCount} />
       )}
     </div>
   );

@@ -1,0 +1,364 @@
+"use client";
+
+import { useState } from "react";
+import { Send, CheckCircle, AlertTriangle, Info } from "lucide-react";
+import AnimatedSection from "@/components/ui/AnimatedSection";
+
+const ORGANIZERS = ["TJ Dolany", "Obec Dolany", "DS Dolany", "SDH Dolany"] as const;
+
+const LOCATION_OPTIONS = [
+  { value: "sokolovna", label: "Sokolovna" },
+  { value: "kantyna", label: "Kantýna" },
+  { value: "venkovni_cast", label: "Venkovní část" },
+  { value: "hriste", label: "Hřiště" },
+] as const;
+
+const DEFAULT_FORM = {
+  event_type: "pronajem" as "pronajem" | "volne",
+  event_name: "",
+  organizer: "TJ Dolany",
+  customOrganizer: "",
+  is_public: false,
+  date: "",
+  time: "",
+  allDay: false,
+  locationAll: true,
+  locations: [] as string[],
+  contact_name: "",
+  contact_phone: "",
+  contact_email: "",
+  note: "",
+};
+
+export default function RentalRequestForm() {
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<"success" | "error" | "rate-limit" | null>(null);
+
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    setSubmitting(true);
+    setResult(null);
+
+    const location = form.locationAll ? "cely_areal" : form.locations.join(",");
+    const organizer =
+      form.event_type === "pronajem"
+        ? null
+        : form.organizer === "__custom__"
+          ? form.customOrganizer
+          : form.organizer;
+
+    const body = {
+      event_type: form.event_type,
+      event_name: form.event_type === "volne" ? form.event_name || null : null,
+      organizer: organizer || null,
+      is_public: form.event_type === "pronajem" ? false : form.is_public,
+      location: location || "cely_areal",
+      date: form.date,
+      time: form.allDay ? null : form.time || null,
+      all_day: form.allDay,
+      contact_name: form.contact_name,
+      contact_phone: form.contact_phone,
+      contact_email: form.contact_email,
+      note: form.note || null,
+    };
+
+    try {
+      const res = await fetch("/api/rental-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.status === 429) {
+        setResult("rate-limit");
+      } else if (res.ok) {
+        setResult("success");
+        setForm(DEFAULT_FORM);
+      } else {
+        setResult("error");
+      }
+    } catch {
+      setResult("error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const inputClass =
+    "w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red";
+
+  return (
+    <AnimatedSection className="mt-16">
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent mb-12" />
+
+      <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
+        <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+        Žádost o akci v areálu
+      </h2>
+
+      {/* Info banner */}
+      <div className="max-w-2xl mx-auto mb-8 flex items-start gap-3 bg-brand-yellow/10 border border-brand-yellow/30 rounded-xl p-4">
+        <Info size={20} className="text-brand-yellow shrink-0 mt-0.5" />
+        <p className="text-sm text-text">
+          <strong>Pouze pro občany obce Dolany u Jaroměře.</strong> Vyplněním formuláře
+          odešlete žádost správci areálu ke schválení. O výsledku budete informováni emailem.
+        </p>
+      </div>
+
+      {/* Success / Error states */}
+      {result === "success" && (
+        <div className="max-w-2xl mx-auto mb-6 flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+          <CheckCircle size={20} className="text-green-500 shrink-0" />
+          <p className="text-sm text-text">
+            <strong>Žádost odeslána!</strong> O schválení nebo zamítnutí vás budeme informovat na zadaný email.
+          </p>
+        </div>
+      )}
+      {result === "error" && (
+        <div className="max-w-2xl mx-auto mb-6 flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+          <AlertTriangle size={20} className="text-red-500 shrink-0" />
+          <p className="text-sm text-text">
+            <strong>Chyba při odesílání.</strong> Zkuste to prosím znovu nebo nás kontaktujte přímo.
+          </p>
+        </div>
+      )}
+      {result === "rate-limit" && (
+        <div className="max-w-2xl mx-auto mb-6 flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+          <AlertTriangle size={20} className="text-yellow-500 shrink-0" />
+          <p className="text-sm text-text">
+            <strong>Příliš mnoho žádostí.</strong> Zkuste to prosím za hodinu.
+          </p>
+        </div>
+      )}
+
+      {result !== "success" && (
+        <form
+          onSubmit={handleSubmit}
+          className="max-w-2xl mx-auto bg-surface rounded-xl border border-border-strong p-6 space-y-5"
+        >
+          {/* Event type */}
+          <div>
+            <label className="block text-sm font-semibold text-text mb-1">Typ akce</label>
+            <select
+              value={form.event_type}
+              onChange={(e) => {
+                const val = e.target.value as "pronajem" | "volne";
+                setForm({
+                  ...form,
+                  event_type: val,
+                  event_name: "",
+                  organizer: "TJ Dolany",
+                  customOrganizer: "",
+                  is_public: false,
+                });
+              }}
+              className={inputClass}
+            >
+              <option value="pronajem">Soukromá akce</option>
+              <option value="volne">Ostatní</option>
+            </select>
+          </div>
+
+          {/* Fields for "volne" type */}
+          {form.event_type === "volne" && (
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-1">Název akce</label>
+                <input
+                  type="text"
+                  value={form.event_name}
+                  onChange={(e) => setForm({ ...form, event_name: e.target.value })}
+                  required
+                  maxLength={100}
+                  className={inputClass}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
+                  <select
+                    value={form.organizer}
+                    onChange={(e) =>
+                      setForm({ ...form, organizer: e.target.value, customOrganizer: "" })
+                    }
+                    className={inputClass}
+                  >
+                    {ORGANIZERS.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                    <option value="__custom__">Jiný...</option>
+                  </select>
+                  {form.organizer === "__custom__" && (
+                    <input
+                      type="text"
+                      value={form.customOrganizer}
+                      onChange={(e) => setForm({ ...form, customOrganizer: e.target.value })}
+                      placeholder="Jméno pořadatele"
+                      required
+                      className={`${inputClass} mt-2`}
+                    />
+                  )}
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.is_public}
+                      onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
+                      className="w-4 h-4 accent-brand-red"
+                    />
+                    <span className="text-sm font-semibold text-text">Veřejná akce</span>
+                  </label>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Date + Time */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-text mb-1">Datum</label>
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                required
+                min={new Date().toISOString().slice(0, 10)}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-text mb-1">Čas</label>
+              {form.allDay ? (
+                <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">
+                  Celý den
+                </div>
+              ) : (
+                <input
+                  type="time"
+                  value={form.time}
+                  onChange={(e) => setForm({ ...form, time: e.target.value })}
+                  className={inputClass}
+                />
+              )}
+              <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.allDay}
+                  onChange={(e) => setForm({ ...form, allDay: e.target.checked, time: "" })}
+                  className="w-3.5 h-3.5"
+                />
+                <span className="text-xs text-text-muted">Celý den</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-semibold text-text mb-1">Místo</label>
+            <label className="flex items-center gap-2 cursor-pointer mb-1.5">
+              <input
+                type="checkbox"
+                checked={form.locationAll}
+                onChange={(e) =>
+                  setForm({ ...form, locationAll: e.target.checked, locations: [] })
+                }
+                className="w-4 h-4 accent-brand-red"
+              />
+              <span className="text-sm text-text font-medium">Celý areál</span>
+            </label>
+            {!form.locationAll && (
+              <div className="space-y-1 ml-1">
+                {LOCATION_OPTIONS.map((l) => (
+                  <label key={l.value} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.locations.includes(l.value)}
+                      onChange={(e) => {
+                        const locs = e.target.checked
+                          ? [...form.locations, l.value]
+                          : form.locations.filter((v) => v !== l.value);
+                        setForm({ ...form, locations: locs });
+                      }}
+                      className="w-3.5 h-3.5 accent-brand-red"
+                    />
+                    <span className="text-sm text-text">{l.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Contact info */}
+          <div className="border-t border-border pt-5">
+            <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-3">
+              Kontaktní údaje
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-text mb-1">Jméno</label>
+                <input
+                  type="text"
+                  value={form.contact_name}
+                  onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                  required
+                  maxLength={100}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-1">Telefon</label>
+                <input
+                  type="tel"
+                  value={form.contact_phone}
+                  onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                  required
+                  placeholder="+420 xxx xxx xxx"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-1">Email</label>
+                <input
+                  type="email"
+                  value={form.contact_email}
+                  onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                  required
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div>
+            <label className="block text-sm font-semibold text-text mb-1">
+              Poznámka <span className="font-normal text-text-muted">(volitelné)</span>
+            </label>
+            <textarea
+              value={form.note}
+              onChange={(e) => setForm({ ...form, note: e.target.value })}
+              rows={3}
+              maxLength={500}
+              placeholder="Další informace k žádosti..."
+              className={inputClass}
+            />
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-brand-red hover:bg-brand-red-dark text-white px-6 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+          >
+            <Send size={16} />
+            {submitting ? "Odesílám..." : "Odeslat žádost"}
+          </button>
+        </form>
+      )}
+    </AnimatedSection>
+  );
+}

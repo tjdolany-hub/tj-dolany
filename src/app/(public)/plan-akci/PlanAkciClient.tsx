@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, X, MapPin, Clock, Sun } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { formatDateCzech } from "@/lib/utils";
+import RentalRequestForm from "./RentalRequestForm";
 
 interface CalEvent {
   id: string;
@@ -506,6 +507,8 @@ export default function PlanAkciClient({
           )}
         </AnimatePresence>
       </AnimatedSection>
+
+      <RentalRequestForm />
     </div>
   );
 }
