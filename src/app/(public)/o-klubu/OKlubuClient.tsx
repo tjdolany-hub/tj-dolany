@@ -45,18 +45,20 @@ export default function OKlubuClient() {
 
   return (
     <div>
-      {/* Header + nav — sticky */}
-      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-3">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-6"
-          >
-            <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš klub</p>
-            <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
-          </motion.div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš klub</p>
+          <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
+        </motion.div>
+      </div>
 
+      {/* Section navigation — sticky */}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex flex-wrap justify-center gap-2">
             {sections.map((s) => (
               <button

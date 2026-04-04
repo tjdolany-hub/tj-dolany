@@ -658,7 +658,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       )}
 
       {/* ── section divider ── */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+      {albums.length > 0 && <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />}
 
       {/* ── PHOTO GALLERY ── */}
       {albums.length > 0 && (
@@ -721,7 +721,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── SPONSORS ── */}
       <AnimatedSection>
-        <section id="partneri" className="scroll-mt-28 bg-surface-alt">
+        <section id="partneri" className={`scroll-mt-28 ${albums.length > 0 ? "bg-surface-alt" : "bg-surface"}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
               <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Podporují nás</p>
