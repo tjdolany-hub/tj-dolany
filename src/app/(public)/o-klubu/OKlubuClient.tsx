@@ -29,6 +29,7 @@ export default function OKlubuClient() {
   const [openSeason, setOpenSeason] = useState<string | null>(null);
 
   const sections = [
+    { id: "stary-web", label: "Starý web" },
     { id: "o-tj", label: "O TJ Dolany" },
     { id: "zalozeni", label: "Založení" },
     { id: "sokolovna", label: "Sokolovna" },
@@ -36,7 +37,6 @@ export default function OKlubuClient() {
     { id: "vybor", label: "Výbor" },
     { id: "kontakt", label: "Kontakt" },
     { id: "mapa", label: "Mapa" },
-    { id: "stary-web", label: "Starý web" },
   ];
 
   const scrollTo = (id: string) => {
@@ -66,6 +66,40 @@ export default function OKlubuClient() {
           </button>
         ))}
       </div>
+
+      {/* Starý web */}
+      <AnimatedSection className="mb-10">
+        <section id="stary-web" className="scroll-mt-24">
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
+            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+            Starý web
+          </h2>
+          <p className="text-center text-text-muted mb-6">
+            Původní webové stránky TJ Dolany, které fungovaly od roku 2003. Obsahují kompletní archiv aktualit, fotek a dokumentů.
+          </p>
+          <a
+            href="https://tjdolany-hub.github.io/tjdolany-legacy/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block group"
+          >
+            <div className="relative rounded-xl overflow-hidden border border-border shadow-lg hover:shadow-xl transition-shadow">
+              <Image
+                src="/legacy-header.webp"
+                alt="Starý web TJ Dolany"
+                width={960}
+                height={120}
+                className="w-full h-auto group-hover:scale-[1.02] transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="bg-white text-brand-dark px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg">
+                  Otevřít starý web <ExternalLink size={16} />
+                </span>
+              </div>
+            </div>
+          </a>
+        </section>
+      </AnimatedSection>
 
       {/* About */}
       <AnimatedSection className="mb-10">
@@ -292,40 +326,6 @@ export default function OKlubuClient() {
               title="Mapa - Dolany u Jaroměře"
             />
           </div>
-        </section>
-      </AnimatedSection>
-
-      {/* Starý web */}
-      <AnimatedSection className="mb-16">
-        <section id="stary-web" className="scroll-mt-24">
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
-            <span className="w-8 h-0.5 bg-brand-red rounded-full" />
-            Starý web
-          </h2>
-          <p className="text-center text-text-muted mb-6">
-            Původní webové stránky TJ Dolany, které fungovaly od roku 2003. Obsahují kompletní archiv aktualit, fotek a dokumentů.
-          </p>
-          <a
-            href="https://tjdolany-hub.github.io/tjdolany-legacy/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block group"
-          >
-            <div className="relative rounded-xl overflow-hidden border border-border shadow-lg hover:shadow-xl transition-shadow">
-              <Image
-                src="/legacy-header.webp"
-                alt="Starý web TJ Dolany"
-                width={960}
-                height={120}
-                className="w-full h-auto group-hover:scale-[1.02] transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="bg-white text-brand-dark px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg">
-                  Otevřít starý web <ExternalLink size={16} />
-                </span>
-              </div>
-            </div>
-          </a>
         </section>
       </AnimatedSection>
 
