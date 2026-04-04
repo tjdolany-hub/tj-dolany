@@ -230,9 +230,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
             ))}
           </div>
         </div>
+        <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
       </div>
-
-      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* ── CLUB BANNER ── */}
       <AnimatedSection>
@@ -240,7 +239,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-6">
               <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Tým</p>
-              <h2 className="text-2xl font-bold text-text tracking-tight flex items-center justify-center gap-3"><span className="w-8 h-0.5 bg-brand-red rounded-full" />Statistiky</h2>
+              <h2 className="text-2xl font-extrabold text-text tracking-tight">Statistiky</h2>
             </div>
             <div className="bg-brand-dark rounded-2xl overflow-hidden shadow-xl flex flex-col md:flex-row">
               {/* Left — logo + name + position */}
@@ -354,7 +353,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
               <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Novinky</p>
-              <h2 className="text-2xl font-bold text-text tracking-tight flex items-center justify-center gap-3"><span className="w-8 h-0.5 bg-brand-red rounded-full" />Aktuality</h2>
+              <h2 className="text-2xl font-extrabold text-text tracking-tight">Aktuality</h2>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -472,7 +471,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
                 <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Soutěž</p>
-                <h2 className="text-2xl font-bold text-text tracking-tight flex items-center justify-center gap-3"><span className="w-8 h-0.5 bg-brand-red rounded-full" />Tabulka a statistiky</h2>
+                <h2 className="text-2xl font-extrabold text-text tracking-tight">Tabulka a statistiky</h2>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -596,7 +595,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
                 <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Akce TJ Dolany</p>
-                <h2 className="text-2xl font-bold text-text tracking-tight flex items-center justify-center gap-3"><span className="w-8 h-0.5 bg-brand-red rounded-full" />Co nás čeká</h2>
+                <h2 className="text-2xl font-extrabold text-text tracking-tight">Co nás čeká</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
@@ -669,7 +668,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
             <div className="flex items-center justify-between mb-8">
               <div>
                 <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Fotogalerie</p>
-                <h2 className="text-2xl font-bold text-text tracking-tight flex items-center justify-center gap-3"><span className="w-8 h-0.5 bg-brand-red rounded-full" />Z našich akcí</h2>
+                <h2 className="text-2xl font-extrabold text-text tracking-tight">Z našich akcí</h2>
               </div>
               <Link href="/galerie" className="text-sm text-text-muted hover:text-brand-red font-medium transition-colors hidden sm:flex items-center gap-1 group">
                 Všechny galerie <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -726,7 +725,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
               <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Podporují nás</p>
-              <h2 className="text-2xl font-bold text-text tracking-tight flex items-center justify-center gap-3"><span className="w-8 h-0.5 bg-brand-red rounded-full" />Sponzoři a partneři</h2>
+              <h2 className="text-2xl font-extrabold text-text tracking-tight">Sponzoři a partneři</h2>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-10">
               <a href="https://www.dolany-na.cz/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">

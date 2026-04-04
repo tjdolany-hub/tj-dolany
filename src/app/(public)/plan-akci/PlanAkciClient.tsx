@@ -297,24 +297,20 @@ export default function PlanAkciClient({
 
   return (
     <div>
-      <div className="bg-surface-alt">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
-            <span className="w-1 h-5 bg-brand-red rounded-full" />Kalendář akcí a zápasů
-          </p>
-          <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí a zápasů TJ Dolany</h1>
-        </motion.div>
-      </div>
-      </div>
+      {/* Header + nav — sticky */}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-3">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-6"
+          >
+            <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
+              <span className="w-1 h-5 bg-brand-red rounded-full" />Kalendář akcí a zápasů
+            </p>
+            <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí a zápasů TJ Dolany</h1>
+          </motion.div>
 
-      {/* Section navigation — sticky */}
-      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-2">
             {[
               ...(upcoming.length > 0 ? [{ id: "nadchazejici", label: "Nadcházející" }] : []),
@@ -331,9 +327,8 @@ export default function PlanAkciClient({
             ))}
           </div>
         </div>
+        <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
       </div>
-
-      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* ═══ UPCOMING EVENTS (TJ Dolany only) ═══ */}
       {upcoming.length > 0 && (
