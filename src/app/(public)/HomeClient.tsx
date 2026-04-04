@@ -590,7 +590,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       {/* ── EVENTS — 3 cards: past | next (highlighted) | future ── */}
       {heroEvents.some(Boolean) && (
         <AnimatedSection>
-          <section id="akce" className="scroll-mt-24 bg-surface">
+          <section id="akce" className="scroll-mt-24 bg-surface-alt">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
                 <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Akce TJ Dolany</p>
@@ -662,7 +662,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       {/* ── PHOTO GALLERY ── */}
       {albums.length > 0 && (
         <AnimatedSection>
-          <section id="fotogalerie" className="scroll-mt-24 bg-surface-alt">
+          <section id="fotogalerie" className="scroll-mt-24 bg-surface">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -720,7 +720,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── SPONSORS ── */}
       <AnimatedSection>
-        <section id="partneri" className="scroll-mt-28 bg-surface">
+        <section id="partneri" className="scroll-mt-28 bg-surface-alt">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
               <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Podporují nás</p>
