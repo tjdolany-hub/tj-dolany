@@ -288,7 +288,7 @@ export default function OKlubuClient() {
                   <p className="text-sm text-text-muted">Sekretář</p>
                 </div>
                 <div className="space-y-3">
-                  <
+                  <a
                     href="tel:+420604864424"
                     className="flex items-center gap-3 text-text-muted hover:text-brand-red transition-colors group"
                   >

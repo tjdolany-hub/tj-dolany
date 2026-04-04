@@ -124,6 +124,22 @@ function LocationLegend() {
   );
 }
 
+function OccupiedLegend() {
+  return (
+    <div className="flex flex-wrap items-center gap-3 mt-4">
+      <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Den:</span>
+      <span className="flex items-center gap-1.5 text-xs text-text-muted">
+        <span className="w-4 h-4 rounded bg-brand-red/15 border border-brand-red/30" />
+        Obsazeno (celodenní akce / zápas)
+      </span>
+      <span className="flex items-center gap-1.5 text-xs text-text-muted">
+        <span className="w-4 h-4 rounded bg-brand-yellow/10 border border-brand-yellow/30" />
+        Dnes
+      </span>
+    </div>
+  );
+}
+
 function EventTypeLegend() {
   return (
     <div className="flex flex-wrap items-center gap-3 mt-4">
@@ -452,7 +468,7 @@ export default function PlanAkciClient({
                     dayEvents.length > 0 ? "cursor-pointer hover:bg-brand-red/5" : "cursor-default"
                   } ${isSelected ? "bg-brand-red/10 ring-2 ring-inset ring-brand-red/30" : ""} ${
                     isToday ? "bg-brand-yellow/10" : ""
-                  } ${isOccupied && !isSelected && !isToday ? "bg-brand-red/[0.07]" : ""} ${
+                  } ${isOccupied && !isSelected && !isToday ? "bg-brand-red/15" : ""} ${
                     isNextEvent && !isSelected ? "bg-brand-red/5" : ""}`}
                 >
                   <span className={`text-sm font-semibold ${
@@ -495,9 +511,10 @@ export default function PlanAkciClient({
         </div>
 
         {/* Legends */}
-        <div className="flex flex-col sm:flex-row sm:gap-8">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:gap-8">
           <EventTypeLegend />
           <LocationLegend />
+          <OccupiedLegend />
         </div>
 
         {/* Selected day detail */}

@@ -170,7 +170,7 @@ Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna`
 
 ### Section Navigation Pattern
 
-Long pages (Tým, O klubu) use scroll-to-section navigation buttons. On Tým page, the nav is sticky below the header (`sticky top-16 z-30`). Sections use `id` attributes and `scroll-mt-28` for proper offset.
+All public pages use sticky scroll-to-section navigation buttons below the header (`sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm border-b border-border`). On Aktuality, the category filter is sticky instead. Sections use `id` attributes and `scroll-mt-28` for proper offset. Button style: `bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted`.
 
 ## Czech Locale Conventions
 
@@ -184,7 +184,7 @@ Long pages (Tým, O klubu) use scroll-to-section navigation buttons. On Tým pag
 
 ### Email System
 
-`src/lib/email.ts` uses Resend to send transactional emails. Currently sends from `onboarding@resend.dev` (temporary until tjdolany.net domain is verified in Resend — then change to `noreply@tjdolany.net`). Reply-to is `tjdolany@gmail.com`. Two email types: new rental request notification (to admin) and approval/rejection notification (to requester). Note: `onboarding@resend.dev` can only send to the Resend account owner's email.
+`src/lib/email.ts` uses Resend to send transactional emails. Currently sends from `onboarding@resend.dev` (temporary until tjdolany.net domain is verified in Resend — then change to `noreply@tjdolany.net`). Reply-to is `tjdolany@gmail.com`. Note: public contact email on O klubu page is `tjdolany@seznam.cz` (different from admin/system email). Two email types: new rental request notification (to admin) and approval/rejection notification (to requester). Note: `onboarding@resend.dev` can only send to the Resend account owner's email.
 
 ### Rental Request Workflow
 
