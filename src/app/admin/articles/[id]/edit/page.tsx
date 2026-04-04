@@ -94,7 +94,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-text mb-1">Datum</label>
+            <label className="block text-sm font-semibold text-text mb-1">Datum článku</label>
             <input
               type="date"
               value={form.created_at}
@@ -126,15 +126,31 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
           <label className="block text-sm font-semibold text-text mb-1">Obrázky</label>
           <ImageUploader images={images} onChange={(imgs) => { setSaved(false); setImages(imgs); }} folder="articles" />
         </div>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.published}
-            onChange={(e) => updateForm({ published: e.target.checked })}
-            className="w-4 h-4"
-          />
-          <span className="text-sm font-semibold text-text">Publikovat</span>
-        </label>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-text">Stav:</span>
+          <button
+            type="button"
+            onClick={() => updateForm({ published: true })}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+              form.published
+                ? "bg-green-600 text-white"
+                : "bg-surface border border-border text-text-muted hover:bg-green-50 hover:text-green-700"
+            }`}
+          >
+            Publikováno
+          </button>
+          <button
+            type="button"
+            onClick={() => updateForm({ published: false })}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+              !form.published
+                ? "bg-yellow-500 text-white"
+                : "bg-surface border border-border text-text-muted hover:bg-yellow-50 hover:text-yellow-700"
+            }`}
+          >
+            Koncept
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           <button
             type="submit"

@@ -21,7 +21,7 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-surface shadow-sm" style={{ borderBottom: "3px solid", borderImage: "linear-gradient(90deg, #C41E3A, #F5C518, #C41E3A) 1" }}>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-brand-dark shadow-sm" style={{ borderBottom: "3px solid", borderImage: "linear-gradient(90deg, #C41E3A, #F5C518, #C41E3A) 1" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <Image
@@ -32,10 +32,10 @@ export default function Header() {
             className="object-contain"
           />
           <div className="hidden sm:block">
-            <span className="text-sm font-bold text-text tracking-tight">
+            <span className="text-sm font-bold text-white tracking-tight">
               TJ Dolany
             </span>
-            <span className="block text-[11px] text-text-muted font-medium -mt-0.5">
+            <span className="block text-[11px] text-gray-400 font-medium -mt-0.5">
               Dolany u Jaroměře
             </span>
           </div>
@@ -50,13 +50,13 @@ export default function Header() {
                 "relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                 pathname === item.href
                   ? "text-brand-red bg-brand-red/10"
-                  : "text-text-muted hover:text-text"
+                  : "text-gray-400 hover:text-white"
               )}
             >
               {item.label}
             </Link>
           ))}
-          <div className="ml-2 border-l border-border pl-2">
+          <div className="ml-2 border-l border-white/10 pl-2">
             <ThemeToggle />
           </div>
         </nav>
@@ -65,7 +65,7 @@ export default function Header() {
           <ThemeToggle />
           <button
             onClick={() => setOpen(!open)}
-            className="text-text p-2 hover:bg-surface rounded-lg transition-colors"
+            className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
             aria-label="Menu"
           >
             {open ? <X size={20} /> : <Menu size={20} />}
@@ -74,7 +74,7 @@ export default function Header() {
       </div>
 
       {open && (
-        <div className="md:hidden glass border-t border-border">
+        <div className="md:hidden bg-brand-dark border-t border-white/10">
           <nav className="px-4 py-3 space-y-1">
             {NAV_ITEMS.map((item) => (
               <Link
@@ -85,7 +85,7 @@ export default function Header() {
                   "block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                   pathname === item.href
                     ? "text-brand-red bg-brand-red/10"
-                    : "text-text-muted hover:text-text hover:bg-surface"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                 )}
               >
                 {item.label}

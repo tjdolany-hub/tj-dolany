@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -25,10 +25,30 @@ const FILTER_OPTIONS = [
 
 export default function AktualityClient({ articles }: { articles: Article[] }) {
   const [filter, setFilter] = useState("vse");
+  const [yearFilter, setYearFilter] = useState<Set<number>>(new Set());
 
-  const filtered = filter === "vse"
-    ? articles
-    : articles.filter((a) => a.category === filter);
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    articles.forEach((a) => years.add(new Date(a.created_at).getFullYear()));
+    return [...years].sort((a, b) => b - a);
+  }, [articles]);
+
+  const toggleYear = (year: number) => {
+    setYearFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
+
+  const filtered = useMemo(() => {
+    return articles.filter((a) => {
+      if (filter !== "vse" && a.category !== filter) return false;
+      if (yearFilter.size > 0 && !yearFilter.has(new Date(a.created_at).getFullYear())) return false;
+      return true;
+    });
+  }, [articles, filter, yearFilter]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -43,27 +63,49 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
         </h1>
       </motion.div>
 
-      {/* Category filters — sticky */}
+      {/* Filters — sticky */}
       <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-10 border-b border-border">
         <div className="flex flex-wrap justify-center gap-2">
-        {FILTER_OPTIONS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              filter === f.value
-                ? "bg-brand-red text-white"
-                : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+          {FILTER_OPTIONS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                filter === f.value
+                  ? "bg-brand-red text-white"
+                  : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+          <span className="w-px h-8 bg-border mx-1 self-center" />
+          {availableYears.map((y) => (
+            <button
+              key={y}
+              onClick={() => toggleYear(y)}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                yearFilter.has(y)
+                  ? "bg-brand-yellow text-brand-dark"
+                  : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
+              }`}
+            >
+              {y}
+            </button>
+          ))}
+          {yearFilter.size > 0 && (
+            <button
+              onClick={() => setYearFilter(new Set())}
+              className="px-2 py-2 text-xs text-text-muted hover:text-text transition-colors"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
       {filtered.length > 0 ? (
-        <StaggerContainer key={filter} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StaggerContainer key={`${filter}-${[...yearFilter].join(",")}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((article) => (
             <StaggerItem key={article.id}>
               <Link
@@ -106,7 +148,7 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
         </StaggerContainer>
       ) : (
         <p className="text-center text-text-muted py-12 text-lg">
-          Žádné aktuality v této kategorii.
+          Žádné aktuality pro vybraný filtr.
         </p>
       )}
     </div>

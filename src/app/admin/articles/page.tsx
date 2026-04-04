@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Pencil, Trash2, Plus, Share2, Copy, X, ExternalLink } from "lucide-react";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
@@ -18,6 +18,8 @@ export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [shareDialog, setShareDialog] = useState<{ slug: string; title: string } | null>(null);
+  const [catFilter, setCatFilter] = useState("vse");
+  const [yearFilter, setYearFilter] = useState<Set<number>>(new Set());
 
   const loadArticles = () => {
     fetch("/api/articles?all=true&limit=100")
@@ -37,6 +39,38 @@ export default function AdminArticlesPage() {
   const categoryLabel = (val: string) =>
     CATEGORIES.find((c) => c.value === val)?.label || val;
 
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    articles.forEach((a) => years.add(new Date(a.created_at).getFullYear()));
+    return [...years].sort((a, b) => b - a);
+  }, [articles]);
+
+  const toggleYear = (year: number) => {
+    setYearFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
+
+  const filtered = useMemo(() => {
+    return articles.filter((a) => {
+      if (catFilter !== "vse" && a.category !== catFilter) return false;
+      if (yearFilter.size > 0 && !yearFilter.has(new Date(a.created_at).getFullYear())) return false;
+      return true;
+    });
+  }, [articles, catFilter, yearFilter]);
+
+  const togglePublished = async (id: string, current: boolean) => {
+    await fetch(`/api/articles/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ published: !current }),
+    });
+    setArticles((prev) => prev.map((a) => a.id === id ? { ...a, published: !current } : a));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -49,6 +83,44 @@ export default function AdminArticlesPage() {
         </Link>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {[{ value: "vse", label: "Vše" }, ...CATEGORIES].map((c) => (
+          <button
+            key={c.value}
+            onClick={() => setCatFilter(c.value)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+              catFilter === c.value
+                ? "bg-brand-red text-white"
+                : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+        <span className="w-px h-6 bg-border mx-1" />
+        {availableYears.map((y) => (
+          <button
+            key={y}
+            onClick={() => toggleYear(y)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+              yearFilter.has(y)
+                ? "bg-brand-yellow text-brand-dark"
+                : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
+            }`}
+          >
+            {y}
+          </button>
+        ))}
+        {yearFilter.size > 0 && (
+          <button
+            onClick={() => setYearFilter(new Set())}
+            className="px-2 py-1.5 text-xs text-text-muted hover:text-text transition-colors"
+          >
+            ✕ roky
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <p className="text-text-muted">Načítám...</p>
       ) : (
@@ -58,23 +130,27 @@ export default function AdminArticlesPage() {
               <tr>
                 <th className="text-left p-3 font-semibold text-text">Titulek</th>
                 <th className="text-left p-3 font-semibold text-text">Kategorie</th>
-                <th className="text-left p-3 font-semibold text-text">Datum</th>
+                <th className="text-left p-3 font-semibold text-text">Datum článku</th>
                 <th className="text-left p-3 font-semibold text-text">Stav</th>
                 <th className="text-right p-3 font-semibold text-text">Akce</th>
               </tr>
             </thead>
             <tbody>
-              {articles.map((a) => (
+              {filtered.map((a) => (
                 <tr key={a.id} className="border-t border-border">
                   <td className="p-3 font-medium text-text">{a.title}</td>
                   <td className="p-3 text-text-muted">{categoryLabel(a.category)}</td>
                   <td className="p-3 text-text-muted">{formatDateCzech(a.created_at)}</td>
                   <td className="p-3">
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${
-                      a.published ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                    }`}>
+                    <button
+                      onClick={() => togglePublished(a.id, a.published)}
+                      className={`text-xs font-bold px-2 py-1 rounded cursor-pointer transition-colors ${
+                        a.published ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                      }`}
+                      title={a.published ? "Klikni pro skrytí" : "Klikni pro publikování"}
+                    >
                       {a.published ? "Publikováno" : "Koncept"}
-                    </span>
+                    </button>
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-2">
