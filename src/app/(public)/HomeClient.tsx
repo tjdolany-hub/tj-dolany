@@ -208,10 +208,38 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         );
       })()}
 
+      {/* ── Section navigation — sticky ── */}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              { id: "aktuality", label: "Aktuality" },
+              { id: "tym", label: "Tým" },
+              ...(leagueStandings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
+              ...(heroEvents.some(Boolean) ? [{ id: "akce", label: "Akce" }] : []),
+              ...(albums.length > 0 ? [{ id: "fotogalerie", label: "Fotogalerie" }] : []),
+              { id: "partneri", label: "Partneři" },
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── CLUB BANNER ── */}
       <AnimatedSection>
-        <section className="bg-surface">
+        <section id="tym" className="scroll-mt-28 bg-surface">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center mb-6">
+              <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Tým</p>
+              <h2 className="text-2xl font-extrabold text-text tracking-tight">Statistiky</h2>
+            </div>
             <div className="bg-brand-dark rounded-2xl overflow-hidden shadow-xl flex flex-col md:flex-row">
               {/* Left — logo + name + position */}
               <div className="md:w-[30%] flex flex-col items-center justify-center px-6 py-6 border-b md:border-b-0 md:border-r border-white/10">
@@ -315,28 +343,6 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           </div>
         </section>
       </AnimatedSection>
-
-      {/* ── Section navigation ── */}
-      <div className="bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex flex-wrap justify-center gap-2">
-            {[
-              { id: "aktuality", label: "Aktuality" },
-              ...(leagueStandings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
-              ...(heroEvents.some(Boolean) ? [{ id: "akce", label: "Akce" }] : []),
-              ...(albums.length > 0 ? [{ id: "fotogalerie", label: "Fotogalerie" }] : []),
-            ].map((s) => (
-              <button
-                key={s.id}
-                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-white/20 text-text hover:bg-brand-red/10 hover:border-brand-red/30 hover:text-brand-red transition-colors"
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* ── FEATURED ARTICLE + SIDEBAR ── */}
       <AnimatedSection>
@@ -708,7 +714,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── SPONSORS ── */}
       <AnimatedSection>
-        <section className="bg-surface">
+        <section id="partneri" className="scroll-mt-28 bg-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
               <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Podporují nás</p>

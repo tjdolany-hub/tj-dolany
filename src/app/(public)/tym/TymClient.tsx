@@ -512,7 +512,7 @@ export default function TymClient({
             <button
               key={s.id}
               onClick={() => scrollTo(s.id)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-white/20 text-text hover:bg-brand-red/10 hover:border-brand-red/30 hover:text-brand-red transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
             >
               {s.label}
             </button>

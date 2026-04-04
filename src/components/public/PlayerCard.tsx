@@ -44,7 +44,7 @@ export default function PlayerCard({
       <motion.div
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="bg-surface rounded-xl border border-border overflow-hidden hover:shadow-xl hover:shadow-brand-red/10 transition-shadow duration-300 cursor-pointer"
+        className="bg-surface rounded-xl border border-border-strong overflow-hidden hover:shadow-xl hover:shadow-brand-red/10 transition-shadow duration-300 cursor-pointer"
       >
         <div className="relative aspect-square bg-gradient-to-br from-brand-dark to-brand-dark-light overflow-hidden">
           {photo ? (
