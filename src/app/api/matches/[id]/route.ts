@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -154,6 +155,80 @@ export async function PUT(
 
   if (updated) {
     await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "update", entityType: "match", entityId: id, entityTitle: `${updated.is_home ? "TJ Dolany" : updated.opponent} vs ${updated.is_home ? updated.opponent : "TJ Dolany"}` });
+
+    // Auto-sync to linked article if it exists
+    if (updated.article_id) {
+      try {
+        const d = new Date(updated.date);
+        const dateStr = d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" });
+        const home = updated.is_home ? "TJ Dolany" : updated.opponent;
+        const away = updated.is_home ? updated.opponent : "TJ Dolany";
+        const title = `${home} - ${away} ${updated.score_home}:${updated.score_away}`;
+        const slug = slugify(`${title}-${d.toISOString().slice(0, 10)}`);
+
+        let content = `## ${home} - ${away} ${updated.score_home}:${updated.score_away}`;
+        if (updated.halftime_home != null && updated.halftime_away != null) {
+          content += ` (${updated.halftime_home}:${updated.halftime_away})`;
+        }
+        content += `\n\n**Datum:** ${dateStr}`;
+        if (updated.competition) content += `\n**Soutěž:** ${updated.competition}`;
+        if (updated.venue) content += `\n**Hřiště:** ${updated.venue}`;
+
+        const starters = updated.match_lineups?.filter((l: { is_starter: boolean }) => l.is_starter) ?? [];
+        const subs = updated.match_lineups?.filter((l: { is_starter: boolean }) => !l.is_starter) ?? [];
+        if (starters.length > 0) {
+          content += `\n\n**Základní sestava:** ${starters.map((l: { players: { name: string } | null }) => l.players?.name || "?").join(", ")}`;
+        }
+        if (subs.length > 0) {
+          content += `\n**Střídající:** ${subs.map((l: { players: { name: string } | null }) => l.players?.name || "?").join(", ")}`;
+        }
+
+        if (updated.match_scorers && updated.match_scorers.length > 0) {
+          const goalMap = new Map<string, { name: string; minutes: (number | null)[] }>();
+          updated.match_scorers.forEach((s: { player_id: string; players: { name: string } | null; goals: number; minute: number | null }) => {
+            const existing = goalMap.get(s.player_id);
+            if (existing) { existing.minutes.push(s.minute); }
+            else { goalMap.set(s.player_id, { name: s.players?.name || "?", minutes: [s.minute] }); }
+          });
+          const goalTexts = [...goalMap.values()].map((g) => {
+            let txt = g.name;
+            if (g.minutes.length > 1) txt += ` ${g.minutes.length}×`;
+            const mins = g.minutes.filter((m): m is number => m != null).sort((a, b) => a - b);
+            if (mins.length > 0) txt += ` (${mins.map((m) => `${m}'`).join(", ")})`;
+            return txt;
+          });
+          content += `\n\n**Góly Dolany:** ${goalTexts.join(", ")}`;
+        }
+        if (updated.opponent_scorers) content += `\n**Góly ${updated.opponent}:** ${updated.opponent_scorers}`;
+
+        const yellows = updated.match_cards?.filter((c: { card_type: string }) => c.card_type === "yellow") ?? [];
+        const reds = updated.match_cards?.filter((c: { card_type: string }) => c.card_type === "red") ?? [];
+        if (yellows.length > 0) {
+          content += `\n**Žluté karty:** ${yellows.map((c: { players: { name: string } | null; minute: number | null }) => { let txt = c.players?.name || "?"; if (c.minute) txt += ` (${c.minute}')`; return txt; }).join(", ")}`;
+        }
+        if (reds.length > 0) {
+          content += `\n**Červené karty:** ${reds.map((c: { players: { name: string } | null; minute: number | null }) => { let txt = c.players?.name || "?"; if (c.minute) txt += ` (${c.minute}')`; return txt; }).join(", ")}`;
+        }
+        if (updated.opponent_cards) content += `\n**Karty ${updated.opponent}:** ${updated.opponent_cards}`;
+        if (updated.summary) content += `\n\n${updated.summary}`;
+        if (updated.video_url) content += `\n\n**Video:**\n${updated.video_url}`;
+
+        await admin.from("articles").update({ title, slug, content, summary: title }).eq("id", updated.article_id);
+
+        // Sync images
+        const matchImages = (updated.match_images as { url: string; alt: string | null; sort_order: number }[] | null) ?? [];
+        await admin.from("article_images").delete().eq("article_id", updated.article_id);
+        if (matchImages.length > 0) {
+          const articleId = updated.article_id as string;
+          const rows = matchImages
+            .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+            .map((img: { url: string; alt: string | null }) => ({ article_id: articleId, url: img.url, alt: img.alt }));
+          await admin.from("article_images").insert(rows);
+        }
+      } catch {
+        // Article sync failure should not break match save
+      }
+    }
   }
 
   return NextResponse.json(updated);
