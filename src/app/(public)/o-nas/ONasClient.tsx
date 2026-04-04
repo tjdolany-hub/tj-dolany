@@ -92,6 +92,10 @@ export default function ONasClient() {
               </div>
               <div className="space-y-4">
                 <h3 className="font-semibold text-text mb-3">Kontakt</h3>
+                <div className="mb-2">
+                  <p className="font-medium text-text">Pavel Martínek</p>
+                  <p className="text-sm text-text-muted">Sekretář</p>
+                </div>
                 <div className="space-y-3">
                   <a
                     href="tel:+420604864424"

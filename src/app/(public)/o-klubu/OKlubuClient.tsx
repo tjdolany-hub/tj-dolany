@@ -283,8 +283,12 @@ export default function OKlubuClient() {
               </div>
               <div className="space-y-4">
                 <h3 className="font-semibold text-text mb-3">Kontakt</h3>
+                <div className="mb-2">
+                  <p className="font-medium text-text">Pavel Martínek</p>
+                  <p className="text-sm text-text-muted">Sekretář</p>
+                </div>
                 <div className="space-y-3">
-                  <a
+                  <
                     href="tel:+420604864424"
                     className="flex items-center gap-3 text-text-muted hover:text-brand-red transition-colors group"
                   >
@@ -294,13 +298,13 @@ export default function OKlubuClient() {
                     604 864 424
                   </a>
                   <a
-                    href="mailto:tjdolany@gmail.com"
+                    href="mailto:tjdolany@seznam.cz"
                     className="flex items-center gap-3 text-text-muted hover:text-brand-red transition-colors group"
                   >
                     <div className="w-9 h-9 rounded-lg bg-brand-red/10 flex items-center justify-center group-hover:bg-brand-red/20 transition-colors">
                       <Mail size={16} className="text-brand-red" />
                     </div>
-                    tjdolany@gmail.com
+                    tjdolany@seznam.cz
                   </a>
                 </div>
               </div>
@@ -354,7 +358,7 @@ export default function OKlubuClient() {
               latitude: "50.367",
               longitude: "15.882",
             },
-            email: "tjdolany@gmail.com",
+            email: "tjdolany@seznam.cz",
             telephone: "+420604864424",
             url: "https://tjdolany.net",
           }),

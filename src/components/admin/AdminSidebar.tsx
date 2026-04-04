@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -69,10 +70,14 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-white/10 space-y-1">
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <ThemeToggle />
+          <span className="text-sm text-gray-400">Motiv</span>
+        </div>
         <Link
           href="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors mb-1"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
         >
           Zobrazit web
         </Link>
