@@ -25,8 +25,26 @@ interface Article {
   article_images: ArticleImage[];
 }
 
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function renderContentWithVideo(html: string): string {
+  // Replace bare YouTube URLs (on their own line as <a> tags from marked) with embeds
+  return html.replace(
+    /<a href="(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)[^"]+)">[^<]+<\/a>/g,
+    (fullMatch, url) => {
+      const videoId = extractYouTubeId(url);
+      if (!videoId) return fullMatch;
+      return `<div class="relative w-full aspect-video rounded-xl overflow-hidden my-4"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute inset-0 w-full h-full"></iframe></div>`;
+    }
+  );
+}
+
 export default function ArticleDetail({ article }: { article: Article }) {
-  const html = marked.parse(article.content) as string;
+  const rawHtml = marked.parse(article.content) as string;
+  const html = renderContentWithVideo(rawHtml);
   const heroImage = article.article_images?.[0];
 
   return (

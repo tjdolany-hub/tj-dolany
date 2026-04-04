@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Users, Target, ChevronDown, Save, X, Eye,
-  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera, CheckCircle,
+  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera, CheckCircle, Video, Share2, Copy, ExternalLink,
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 
@@ -51,6 +51,9 @@ interface Match {
   halftime_home: number | null;
   halftime_away: number | null;
   venue: string | null;
+  video_url: string | null;
+  opponent_scorers: string | null;
+  opponent_cards: string | null;
   article_id: string | null;
   match_lineups?: LineupEntry[];
   match_scorers?: ScorerEntry[];
@@ -84,6 +87,9 @@ const emptyForm = {
   venue: "Dolany",
   summary_title: "",
   summary: "",
+  video_url: "",
+  opponent_scorers: "",
+  opponent_cards: "",
 };
 
 // ─── Component ───────────────────────────────────────────────
@@ -108,6 +114,7 @@ export default function AdminMatchesPage() {
   const [saved, setSaved] = useState(false);
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [shareDialog, setShareDialog] = useState<{ slug: string; title: string } | null>(null);
 
   // ── Standings state ──
   type StandingsVariant = "celkem" | "doma" | "venku";
@@ -308,6 +315,9 @@ export default function AdminMatchesPage() {
       venue: m.venue || (m.is_home ? "Dolany" : m.opponent),
       summary_title: m.summary_title || "",
       summary: m.summary || "",
+      video_url: m.video_url || "",
+      opponent_scorers: m.opponent_scorers || "",
+      opponent_cards: m.opponent_cards || "",
     });
     setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter })) || []);
     // Expand each scorer entry into individual goal rows (1 per goal) for editing
@@ -354,6 +364,9 @@ export default function AdminMatchesPage() {
       venue: form.venue || null,
       summary_title: form.summary_title || null,
       summary: form.summary || null,
+      video_url: form.video_url || null,
+      opponent_scorers: form.opponent_scorers || null,
+      opponent_cards: form.opponent_cards || null,
       lineup,
       // Each row = 1 goal; same player can appear multiple times
       scorers: scorers.filter((s) => s.player_id).map((s) => ({
@@ -394,8 +407,11 @@ export default function AdminMatchesPage() {
       body: JSON.stringify({ published }),
     });
     if (res.ok) {
+      const result = await res.json();
       loadMatches();
-      alert(published ? "Zápas publikován do Aktualit" : "Článek uložen jako koncept");
+      if (published && result.slug) {
+        setShareDialog({ slug: result.slug, title: result.title });
+      }
     }
     setPublishing(null);
   };
@@ -783,6 +799,22 @@ export default function AdminMatchesPage() {
                 </button>
               </div>
 
+              {/* Opponent scorers & cards (free text, display only) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Góly soupeře <span className="text-xs font-normal text-text-muted">(volný text, jen pro referát)</span></label>
+                  <input type="text" value={form.opponent_scorers} onChange={(e) => updateMatchForm({ opponent_scorers: e.target.value })}
+                    placeholder='např. Novák 2× (15&apos;, 67&apos;), Dvořák (88&apos;)'
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Karty soupeře <span className="text-xs font-normal text-text-muted">(volný text, jen pro referát)</span></label>
+                  <input type="text" value={form.opponent_cards} onChange={(e) => updateMatchForm({ opponent_cards: e.target.value })}
+                    placeholder='např. ŽK: Horák (34&apos;), ČK: Malý (80&apos;)'
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+              </div>
+
               {/* Summary */}
               <div>
                 <label className="block text-sm font-semibold text-text mb-1">Nadpis referátu</label>
@@ -801,6 +833,17 @@ export default function AdminMatchesPage() {
                   <span className="text-xs font-normal text-text-muted">(automaticky převedeno na WebP)</span>
                 </p>
                 <ImageUploader images={matchImages} onChange={setMatchImages} folder="matches" multiple={true} />
+              </div>
+
+              {/* Video URL */}
+              <div>
+                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
+                  <Video size={16} className="text-brand-red" /> Video
+                </p>
+                <input type="url" value={form.video_url} onChange={(e) => updateMatchForm({ video_url: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                <p className="text-xs text-text-muted mt-1">YouTube odkaz — zobrazí se v referátu jako vložené video</p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -954,6 +997,24 @@ export default function AdminMatchesPage() {
                                 </span>
                               ))}
                             </div>
+                          </div>
+                        )}
+                        {m.opponent_scorers && (
+                          <div>
+                            <h4 className="text-xs font-bold text-text-muted uppercase mb-1">Góly soupeře</h4>
+                            <p className="text-sm text-text">{m.opponent_scorers}</p>
+                          </div>
+                        )}
+                        {m.opponent_cards && (
+                          <div>
+                            <h4 className="text-xs font-bold text-text-muted uppercase mb-1">Karty soupeře</h4>
+                            <p className="text-sm text-text">{m.opponent_cards}</p>
+                          </div>
+                        )}
+                        {m.video_url && (
+                          <div>
+                            <h4 className="text-xs font-bold text-text-muted uppercase mb-1">Video</h4>
+                            <a href={m.video_url} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-red hover:underline">{m.video_url}</a>
                           </div>
                         )}
                       </div>
@@ -1144,6 +1205,53 @@ export default function AdminMatchesPage() {
             </button>
           </div>
         </>
+      )}
+
+      {/* Share dialog after publish */}
+      {shareDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShareDialog(null)}>
+          <div className="bg-surface border border-border rounded-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-text flex items-center gap-2">
+                <Share2 size={20} className="text-brand-red" /> Článek publikován
+              </h3>
+              <button onClick={() => setShareDialog(null)} className="text-text-muted hover:text-text">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-text-muted">Sdílejte článek na sociálních sítích:</p>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  const url = `https://tjdolany.net/aktuality/${shareDialog.slug}`;
+                  const quote = `${shareDialog.title}\n\nCelý článek na tjdolany.net`;
+                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(quote)}`, "_blank", "width=600,height=400");
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-[#1877F2] hover:bg-[#1565C0] text-white rounded-lg font-semibold text-sm transition-colors"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                Sdílet na Facebook
+                <ExternalLink size={14} className="ml-auto opacity-70" />
+              </button>
+              <button
+                onClick={async () => {
+                  const url = `https://tjdolany.net/aktuality/${shareDialog.slug}`;
+                  await navigator.clipboard.writeText(url);
+                  const btn = document.getElementById("copy-link-btn");
+                  if (btn) btn.textContent = "Zkopírováno!";
+                  setTimeout(() => { if (btn) btn.textContent = "Kopírovat odkaz"; }, 2000);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-surface-muted hover:bg-border text-text rounded-lg font-semibold text-sm border border-border transition-colors"
+              >
+                <Copy size={18} />
+                <span id="copy-link-btn">Kopírovat odkaz</span>
+              </button>
+            </div>
+            <p className="text-xs text-text-muted">
+              Facebook automaticky načte obrázek a popisek z článku (OG meta tagy).
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

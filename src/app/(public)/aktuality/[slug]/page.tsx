@@ -36,12 +36,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!article) return { title: "Článek nenalezen" };
 
+  const ogImage = article.article_images?.sort(
+    (a: ArticleImageRow, b: ArticleImageRow) => a.sort_order - b.sort_order
+  )[0]?.url;
+
   return {
     title: article.title,
     description: article.summary || undefined,
     openGraph: {
       title: `${article.title} | TJ Dolany`,
       description: article.summary || undefined,
+      type: "article",
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
   };
 }

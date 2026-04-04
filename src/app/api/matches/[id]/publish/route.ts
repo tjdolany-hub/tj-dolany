@@ -99,7 +99,12 @@ export async function POST(
       if (mins.length > 0) txt += ` (${mins.map((m) => `${m}'`).join(", ")})`;
       return txt;
     });
-    content += `\n\n**Góly:** ${goalTexts.join(", ")}`;
+    content += `\n\n**Góly Dolany:** ${goalTexts.join(", ")}`;
+  }
+
+  // Opponent scorers (free text)
+  if (match.opponent_scorers) {
+    content += `\n**Góly ${match.opponent}:** ${match.opponent_scorers}`;
   }
 
   // Cards
@@ -135,9 +140,19 @@ export async function POST(
       .join(", ")}`;
   }
 
+  // Opponent cards (free text)
+  if (match.opponent_cards) {
+    content += `\n**Karty ${match.opponent}:** ${match.opponent_cards}`;
+  }
+
   // Summary/report
   if (match.summary) {
     content += `\n\n${match.summary}`;
+  }
+
+  // Video
+  if (match.video_url) {
+    content += `\n\n**Video:**\n${match.video_url}`;
   }
 
   // Helper: sync match images to article_images
@@ -168,7 +183,7 @@ export async function POST(
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
     await syncImages(match.article_id);
-    return NextResponse.json({ article_id: match.article_id, updated: true });
+    return NextResponse.json({ article_id: match.article_id, slug, title, updated: true });
   } else {
     // Create new
     const { data: article, error: insertErr } = await admin
@@ -199,6 +214,8 @@ export async function POST(
 
     return NextResponse.json({
       article_id: article.id,
+      slug,
+      title,
       updated: false,
     });
   }

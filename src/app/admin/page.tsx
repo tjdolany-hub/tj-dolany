@@ -7,19 +7,16 @@ export default async function AdminDashboard() {
     { count: articlesCount },
     { count: playersCount },
     { count: eventsCount },
-    { count: albumsCount },
   ] = await Promise.all([
     supabase.from("articles").select("*", { count: "exact", head: true }),
     supabase.from("players").select("*", { count: "exact", head: true }),
     supabase.from("future_events").select("*", { count: "exact", head: true }),
-    supabase.from("photo_albums").select("*", { count: "exact", head: true }),
   ]);
 
   const stats = [
     { label: "Články", count: articlesCount ?? 0 },
     { label: "Hráči", count: playersCount ?? 0 },
     { label: "Akce", count: eventsCount ?? 0 },
-    { label: "Fotoalba", count: albumsCount ?? 0 },
   ];
 
   return (

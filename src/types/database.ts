@@ -257,6 +257,9 @@ export interface Database {
           halftime_home: number | null;
           halftime_away: number | null;
           venue: string | null;
+          video_url: string | null;
+          opponent_scorers: string | null;
+          opponent_cards: string | null;
           created_at: string;
           deleted_at: string | null;
         };
@@ -275,6 +278,9 @@ export interface Database {
           halftime_home?: number | null;
           halftime_away?: number | null;
           venue?: string | null;
+          video_url?: string | null;
+          opponent_scorers?: string | null;
+          opponent_cards?: string | null;
           created_at?: string;
           deleted_at?: string | null;
         };
@@ -293,6 +299,9 @@ export interface Database {
           halftime_home?: number | null;
           halftime_away?: number | null;
           venue?: string | null;
+          video_url?: string | null;
+          opponent_scorers?: string | null;
+          opponent_cards?: string | null;
           created_at?: string;
           deleted_at?: string | null;
         };
