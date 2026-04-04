@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true); // default dark to match SSR/initial script
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setDark(document.documentElement.getAttribute("data-theme") === "dark");
+    setDark(document.documentElement.getAttribute("data-theme") !== "light");
+    setMounted(true);
   }, []);
 
   function toggle() {
@@ -19,6 +21,8 @@ export default function ThemeToggle() {
     );
     localStorage.setItem("theme", next ? "dark" : "light");
   }
+
+  if (!mounted) return <div className="w-[34px] h-[34px]" />;
 
   return (
     <button

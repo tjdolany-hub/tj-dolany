@@ -46,7 +46,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
   akce: "bg-brand-red text-white",
-  volne: "bg-gray-500 text-white",
+  volne: "bg-cyan-600 text-white",
   zapas: "bg-green-600 text-white",
   trenink: "bg-blue-500 text-white",
   pronajem: "bg-yellow-500 text-black",
@@ -54,7 +54,7 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 
 const EVENT_DOT_COLORS: Record<string, string> = {
   akce: "bg-brand-red",
-  volne: "bg-gray-400",
+  volne: "bg-cyan-500",
   zapas: "bg-green-500",
   trenink: "bg-blue-500",
   pronajem: "bg-yellow-500",
@@ -70,7 +70,7 @@ const LOCATION_COLORS: Record<string, string> = {
   sokolovna: "bg-blue-500",
   kantyna: "bg-orange-500",
   venkovni_cast: "bg-green-500",
-  hriste: "bg-emerald-600",
+  hriste: "bg-rose-500",
 };
 
 const LOCATION_LABELS: Record<string, string> = {

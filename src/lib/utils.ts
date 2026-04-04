@@ -82,7 +82,7 @@ export const EVENT_TYPE_COLORS: Record<string, string> = {
   trenink: "bg-yellow-500",
   akce: "bg-green-500",
   pronajem: "bg-blue-500",
-  volne: "bg-gray-200",
+  volne: "bg-cyan-500",
 };
 
 export const LOCATIONS = [
