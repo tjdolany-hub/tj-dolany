@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Upload, X, GripVertical, Trash2, CheckSquare, Square } from "lucide-react";
+import { Upload, X, Trash2, Check } from "lucide-react";
 
 interface UploadedImage {
   url: string;
@@ -25,6 +25,7 @@ export default function ImageUploader({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = async (files: FileList) => {
@@ -85,15 +86,17 @@ export default function ImageUploader({
   };
 
   const selectAll = () => {
-    if (selected.size === images.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(images.map((_, i) => i)));
-    }
+    setSelected(new Set(images.map((_, i) => i)));
   };
 
   const deleteSelected = () => {
     onChange(images.filter((_, i) => !selected.has(i)));
+    setSelected(new Set());
+    setSelectMode(false);
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
     setSelected(new Set());
   };
 
@@ -129,26 +132,45 @@ export default function ImageUploader({
 
       {images.length > 0 && (
         <div className="mt-4">
-          {/* Bulk actions bar */}
+          {/* Toolbar */}
           {multiple && images.length > 1 && (
             <div className="flex items-center gap-2 mb-3">
-              <button
-                type="button"
-                onClick={selectAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface border border-border text-text-muted hover:text-text transition-colors"
-              >
-                {selected.size === images.length ? <CheckSquare size={14} /> : <Square size={14} />}
-                {selected.size === images.length ? "Zrušit výběr" : "Vybrat vše"}
-              </button>
-              {selected.size > 0 && (
+              {!selectMode ? (
                 <button
                   type="button"
-                  onClick={deleteSelected}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  onClick={() => setSelectMode(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface border border-border text-text-muted hover:text-text transition-colors"
                 >
-                  <Trash2 size={14} />
-                  Smazat vybrané ({selected.size})
+                  <Check size={14} />
+                  Označit
                 </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={selectAll}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface border border-border text-text-muted hover:text-text transition-colors"
+                  >
+                    Vybrat vše
+                  </button>
+                  {selected.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={deleteSelected}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                      Smazat ({selected.size})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={exitSelectMode}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-muted hover:text-text transition-colors"
+                  >
+                    Zrušit
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -157,7 +179,11 @@ export default function ImageUploader({
             {images.map((img, i) => {
               const isSelected = selected.has(i);
               return (
-                <div key={i} className="relative group rounded-lg overflow-hidden">
+                <div
+                  key={i}
+                  className={`relative group rounded-lg overflow-hidden cursor-pointer ${isSelected ? "ring-3 ring-brand-red" : ""}`}
+                  onClick={selectMode ? () => toggleSelect(i) : undefined}
+                >
                   <div className="relative aspect-square">
                     <Image
                       src={img.url}
@@ -168,37 +194,26 @@ export default function ImageUploader({
                     />
                   </div>
                   {/* Overlay */}
-                  <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-brand-red/30" : "bg-black/0 group-hover:bg-black/30"}`} />
-                  {/* Checkbox — always visible on mobile, hover on desktop */}
-                  {multiple && images.length > 1 && (
+                  <div className={`absolute inset-0 transition-colors pointer-events-none ${isSelected ? "bg-brand-red/30" : selectMode ? "bg-black/0" : "bg-black/0 group-hover:bg-black/20"}`} />
+                  {/* Checkmark when selected */}
+                  {selectMode && (
+                    <div className={`absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center pointer-events-none ${
+                      isSelected
+                        ? "bg-brand-red text-white"
+                        : "bg-black/40 border-2 border-white/70"
+                    }`}>
+                      {isSelected && <Check size={16} strokeWidth={3} />}
+                    </div>
+                  )}
+                  {/* Single delete — only when NOT in select mode */}
+                  {!selectMode && (
                     <button
                       type="button"
-                      onClick={() => toggleSelect(i)}
-                      className={`absolute top-1.5 left-1.5 w-6 h-6 rounded flex items-center justify-center transition-all ${
-                        isSelected
-                          ? "bg-brand-red text-white"
-                          : "bg-black/50 text-white/70 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                      }`}
+                      onClick={(e) => { e.stopPropagation(); remove(i); }}
+                      className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
                     >
-                      {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                      <X size={14} />
                     </button>
-                  )}
-                  {/* Single delete button */}
-                  <button
-                    type="button"
-                    onClick={() => remove(i)}
-                    className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                  >
-                    <X size={14} />
-                  </button>
-                  {/* Selection ring */}
-                  {isSelected && (
-                    <div className="absolute inset-0 ring-2 ring-inset ring-brand-red rounded-lg pointer-events-none" />
-                  )}
-                  {multiple && !isSelected && (
-                    <div className="absolute top-1 left-1 text-white opacity-0 group-hover:opacity-0 transition-opacity">
-                      <GripVertical size={16} />
-                    </div>
                   )}
                 </div>
               );
