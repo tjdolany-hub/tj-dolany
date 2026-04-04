@@ -44,33 +44,39 @@ export default function OKlubuClient() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
-      >
-        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš klub</p>
-        <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
-      </motion.div>
+    <div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš klub</p>
+          <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
+        </motion.div>
+      </div>
 
       {/* Section navigation — sticky */}
-      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-12 border-b border-border">
-        <div className="flex flex-wrap justify-center gap-2">
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => scrollTo(s.id)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
-            >
-              {s.label}
-            </button>
-          ))}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap justify-center gap-2">
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Starý web */}
-      <AnimatedSection className="mb-10">
+      <div className="bg-surface py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <AnimatedSection>
         <section id="stary-web" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
@@ -102,15 +108,19 @@ export default function OKlubuClient() {
           </a>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* About */}
-      <AnimatedSection className="mb-10">
+      <div className="bg-surface-alt py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <AnimatedSection>
         <section id="o-tj" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             O TJ Dolany
           </h2>
-          <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
+          <div className="prose max-w-none">
             <p>
               Tělovýchovná jednota Dolany u Jaroměře sdružuje občany obce a okolí
               ke sportovnímu vyžití a společenskému životu. Tělovýchovná činnost
@@ -125,15 +135,19 @@ export default function OKlubuClient() {
           </div>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* Founding */}
-      <AnimatedSection delay={0.05} className="mb-10">
+      <div className="bg-surface py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <AnimatedSection delay={0.05}>
         <section id="zalozeni" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Založení klubu
           </h2>
-          <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
+          <div className="prose max-w-none">
             <p>
               Tělovýchovná činnost v obci Dolany u Jaroměře má dlouholetou tradici.
               Velkého rozmachu dosáhla po druhé světové válce, kdy místní nadšenci
@@ -160,15 +174,19 @@ export default function OKlubuClient() {
           </div>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* Sokolovna */}
-      <AnimatedSection delay={0.1} className="mb-10">
+      <div className="bg-surface-alt py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <AnimatedSection delay={0.1}>
         <section id="sokolovna" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Sokolovna v Dolanech
           </h2>
-          <div className="bg-surface rounded-xl border border-border p-6 prose max-w-none">
+          <div className="prose max-w-none">
             <h3>70. výročí zahájení budování sokolovny</h3>
             <p>
               V květnu 2017 si obec připomněla 70. výročí zahájení budování dolanské sokolovny.
@@ -195,9 +213,13 @@ export default function OKlubuClient() {
           </div>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* Historical results */}
-      <AnimatedSection delay={0.15} className="mb-10">
+      <div className="bg-surface py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <AnimatedSection delay={0.15}>
         <section id="historie" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
@@ -208,7 +230,7 @@ export default function OKlubuClient() {
           </p>
           <div className="space-y-2">
             {SEASONS.map((season) => (
-              <div key={season} className="bg-surface rounded-xl border border-border overflow-hidden">
+              <div key={season} className="rounded-xl overflow-hidden">
                 <button
                   onClick={() => setOpenSeason(openSeason === season ? null : season)}
                   className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-surface-muted transition-colors"
@@ -244,15 +266,19 @@ export default function OKlubuClient() {
           </div>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* Board */}
-      <AnimatedSection delay={0.2} className="mb-10">
+      <div className="bg-surface-alt py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <AnimatedSection delay={0.2}>
         <section id="vybor" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Výbor TJ Dolany
           </h2>
-          <div className="bg-surface rounded-xl border border-border p-6">
+          <div>
             <div className="flex items-start gap-3 text-text-muted">
               <Users size={18} className="text-brand-red mt-0.5 shrink-0" />
               <p>Složení výboru bude doplněno.</p>
@@ -260,15 +286,19 @@ export default function OKlubuClient() {
           </div>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* Contact */}
-      <AnimatedSection delay={0.25} className="mb-10">
+      <div className="bg-surface py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <AnimatedSection delay={0.25}>
         <section id="kontakt" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Kontaktní údaje
           </h2>
-          <div className="bg-surface rounded-xl border border-border p-6">
+          <div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="font-semibold text-text mb-3">Adresa</h3>
@@ -312,15 +342,19 @@ export default function OKlubuClient() {
           </div>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* Map */}
+      <div className="bg-surface-alt py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <AnimatedSection delay={0.3}>
         <section id="mapa" className="scroll-mt-24">
           <h2 className="text-2xl font-bold text-text tracking-tight mb-5 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Kde nás najdete
           </h2>
-          <div className="bg-surface rounded-xl border border-border overflow-hidden shadow-lg">
+          <div className="rounded-xl overflow-hidden shadow-lg">
             <iframe
               src="https://maps.google.com/maps?q=Dolany+98,+552+01+Dolany+u+Jarom%C4%9B%C5%99e&t=m&z=15&output=embed&hl=cs"
               width="100%"
@@ -334,6 +368,8 @@ export default function OKlubuClient() {
           </div>
         </section>
       </AnimatedSection>
+      </div>
+      </div>
 
       {/* JSON-LD */}
       <script

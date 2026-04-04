@@ -296,40 +296,46 @@ export default function PlanAkciClient({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
-      >
-        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
-          <span className="w-1 h-5 bg-brand-red rounded-full" />Kalendář akcí a zápasů
-        </p>
-        <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí a zápasů TJ Dolany</h1>
-      </motion.div>
+    <div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
+            <span className="w-1 h-5 bg-brand-red rounded-full" />Kalendář akcí a zápasů
+          </p>
+          <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí a zápasů TJ Dolany</h1>
+        </motion.div>
+      </div>
 
       {/* Section navigation — sticky */}
-      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-12 border-b border-border">
-        <div className="flex flex-wrap justify-center gap-2">
-          {[
-            ...(upcoming.length > 0 ? [{ id: "nadchazejici", label: "Nadcházející" }] : []),
-            { id: "kalendar", label: "Kalendář" },
-            { id: "zadost", label: "Žádost o akci" },
-          ].map((s) => (
-            <button
-              key={s.id}
-              onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
-            >
-              {s.label}
-            </button>
-          ))}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              ...(upcoming.length > 0 ? [{ id: "nadchazejici", label: "Nadcházející" }] : []),
+              { id: "kalendar", label: "Kalendář" },
+              { id: "zadost", label: "Žádost o akci" },
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* ═══ UPCOMING EVENTS (TJ Dolany only) ═══ */}
       {upcoming.length > 0 && (
-        <AnimatedSection className="mb-16">
+        <div className="bg-surface py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <AnimatedSection>
           <h2 id="nadchazejici" className="scroll-mt-24 text-2xl font-bold text-text tracking-tight mb-8 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Nadcházející akce TJ Dolany
@@ -384,11 +390,13 @@ export default function PlanAkciClient({
             })}
           </div>
         </AnimatedSection>
+        </div>
+        </div>
       )}
 
-      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent mb-12" />
-
       {/* ═══ CALENDAR — Kalendář akcí sportovního areálu Dolany ═══ */}
+      <div className="bg-surface-alt py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <AnimatedSection>
         <h2 id="kalendar" className="scroll-mt-24 text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
@@ -606,9 +614,15 @@ export default function PlanAkciClient({
           )}
         </AnimatePresence>
       </AnimatedSection>
+      </div>
+      </div>
 
+      <div className="bg-surface py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div id="zadost" className="scroll-mt-24">
         <RentalRequestForm allEvents={allEvents} schedule={schedule} />
+      </div>
+      </div>
       </div>
     </div>
   );

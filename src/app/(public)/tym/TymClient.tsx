@@ -81,7 +81,7 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
   const isPlayed = (match: MatchResult) => new Date(match.date) <= now;
 
   return (
-    <AnimatedSection className="mb-16">
+    <AnimatedSection>
       <section>
         <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
@@ -493,35 +493,41 @@ export default function TymClient({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
-      >
-        <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš tým</p>
-        <h1 className="text-4xl font-extrabold text-text tracking-tight">
-          Tým a statistiky
-        </h1>
-      </motion.div>
+    <div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš tým</p>
+          <h1 className="text-4xl font-extrabold text-text tracking-tight">
+            Tým a statistiky
+          </h1>
+        </motion.div>
+      </div>
 
       {/* Section navigation — sticky */}
-      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-12 border-b border-border">
-        <div className="flex flex-wrap justify-center gap-2">
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => scrollTo(s.id)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
-            >
-              {s.label}
-            </button>
-          ))}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap justify-center gap-2">
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Squad */}
-      <section id="soupiska" className="mb-16 scroll-mt-28">
+      <div className="bg-surface py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="soupiska" className="scroll-mt-28">
         <AnimatedSection>
           <h2 className="text-2xl font-bold text-text tracking-tight mb-10 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
@@ -563,34 +569,50 @@ export default function TymClient({
           </p>
         )}
       </section>
+      </div>
+      </div>
 
       {/* Match results */}
       {matches.length > 0 && (
+        <div className="bg-surface-alt py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div id="vysledky" className="scroll-mt-28">
           <MatchResultsSection matches={matches} />
+        </div>
+        </div>
         </div>
       )}
 
       {/* League table */}
       {standings && standings.length > 0 && (
+        <div className="bg-surface py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div id="tabulka" className="scroll-mt-28">
-          <AnimatedSection className="mb-16">
+          <AnimatedSection>
             <LeagueTable standings={standings} />
           </AnimatedSection>
+        </div>
+        </div>
         </div>
       )}
 
       {/* Player statistics */}
       {statsEntries && statsEntries.length > 0 && availableSeasons && availableSeasons.length > 0 && (
+        <div className="bg-surface-alt py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div id="statistiky" className="scroll-mt-28">
-          <AnimatedSection className="mb-16">
+          <AnimatedSection>
             <PlayerStatistics players={players} entries={statsEntries} seasons={availableSeasons} />
           </AnimatedSection>
+        </div>
+        </div>
         </div>
       )}
 
       {/* Season draws */}
       {draws.length > 0 && (
+        <div className="bg-surface py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <AnimatedSection>
           <section id="los" className="scroll-mt-28">
             <h2 className="text-2xl font-bold text-text tracking-tight mb-10 flex items-center justify-center gap-3">
@@ -621,6 +643,8 @@ export default function TymClient({
             </div>
           </section>
         </AnimatedSection>
+        </div>
+        </div>
       )}
     </div>
   );
