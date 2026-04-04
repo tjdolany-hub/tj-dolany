@@ -394,6 +394,8 @@ export default function PlanAkciClient({
         </div>
       )}
 
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+
       {/* ═══ CALENDAR — Kalendář akcí sportovního areálu Dolany ═══ */}
       <div className="bg-surface-alt py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -616,6 +618,8 @@ export default function PlanAkciClient({
       </AnimatedSection>
       </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       <div className="bg-surface py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

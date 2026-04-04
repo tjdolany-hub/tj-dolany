@@ -572,6 +572,8 @@ export default function TymClient({
       </div>
       </div>
 
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+
       {/* Match results */}
       {matches.length > 0 && (
         <div className="bg-surface-alt py-12">
@@ -582,6 +584,8 @@ export default function TymClient({
         </div>
         </div>
       )}
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* League table */}
       {standings && standings.length > 0 && (
@@ -596,6 +600,8 @@ export default function TymClient({
         </div>
       )}
 
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+
       {/* Player statistics */}
       {statsEntries && statsEntries.length > 0 && availableSeasons && availableSeasons.length > 0 && (
         <div className="bg-surface-alt py-12">
@@ -608,6 +614,8 @@ export default function TymClient({
         </div>
         </div>
       )}
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* Season draws */}
       {draws.length > 0 && (

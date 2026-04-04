@@ -344,6 +344,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         </section>
       </AnimatedSection>
 
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+
       {/* ── FEATURED ARTICLE + SIDEBAR ── */}
       <AnimatedSection>
         <section id="aktuality" className="scroll-mt-24 bg-surface-alt">
@@ -458,6 +460,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           </div>
         </section>
       </AnimatedSection>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* ── LEAGUE TABLE + STATS ── */}
       {leagueStandings.length > 0 && (
@@ -711,6 +715,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           </section>
         </AnimatedSection>
       )}
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* ── SPONSORS ── */}
       <AnimatedSection>

@@ -111,6 +111,8 @@ export default function OKlubuClient() {
       </div>
       </div>
 
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+
       {/* About */}
       <div className="bg-surface-alt py-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -137,6 +139,8 @@ export default function OKlubuClient() {
       </AnimatedSection>
       </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* Founding */}
       <div className="bg-surface py-10">
@@ -177,6 +181,8 @@ export default function OKlubuClient() {
       </div>
       </div>
 
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+
       {/* Sokolovna */}
       <div className="bg-surface-alt py-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -215,6 +221,8 @@ export default function OKlubuClient() {
       </AnimatedSection>
       </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* Historical results */}
       <div className="bg-surface py-10">
@@ -269,6 +277,8 @@ export default function OKlubuClient() {
       </div>
       </div>
 
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+
       {/* Board */}
       <div className="bg-surface-alt py-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -288,6 +298,8 @@ export default function OKlubuClient() {
       </AnimatedSection>
       </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* Contact */}
       <div className="bg-surface py-10">
@@ -344,6 +356,8 @@ export default function OKlubuClient() {
       </AnimatedSection>
       </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* Map */}
       <div className="bg-surface-alt py-10">
