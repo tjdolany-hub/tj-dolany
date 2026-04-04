@@ -371,7 +371,7 @@ export default function OKlubuClient() {
           </h2>
           <div className="rounded-xl overflow-hidden shadow-lg">
             <iframe
-              src="https://maps.google.com/maps?q=Dolany+98,+552+01+Dolany+u+Jarom%C4%9B%C5%99e&t=m&z=15&output=embed&hl=cs"
+              src="https://maps.google.com/maps?q=50.3678,15.8825&t=m&z=17&output=embed&hl=cs"
               width="100%"
               height="400"
               style={{ border: 0 }}
@@ -408,8 +408,8 @@ export default function OKlubuClient() {
             },
             geo: {
               "@type": "GeoCoordinates",
-              latitude: "50.367",
-              longitude: "15.882",
+              latitude: "50.3678",
+              longitude: "15.8825",
             },
             email: "tjdolany@seznam.cz",
             telephone: "+420604864424",
