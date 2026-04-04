@@ -26,11 +26,14 @@ export default function ImageUploader({
   const [dragOver, setDragOver] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{ ok: number; fail: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = async (files: FileList) => {
     setUploading(true);
+    setUploadResult(null);
     const newImages: UploadedImage[] = [];
+    let failCount = 0;
 
     for (const file of Array.from(files)) {
       const formData = new FormData();
@@ -39,12 +42,18 @@ export default function ImageUploader({
 
       try {
         const res = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!res.ok) {
+          failCount++;
+          continue;
+        }
         const data = await res.json();
         if (data.url) {
           newImages.push({ url: data.url });
+        } else {
+          failCount++;
         }
       } catch {
-        // skip failed uploads
+        failCount++;
       }
     }
 
@@ -53,6 +62,7 @@ export default function ImageUploader({
     } else {
       onChange(newImages.slice(0, 1));
     }
+    setUploadResult({ ok: newImages.length, fail: failCount });
     setUploading(false);
   };
 
@@ -119,16 +129,33 @@ export default function ImageUploader({
             ? "Nahrávám..."
             : "Přetáhněte obrázky sem nebo klikněte pro výběr"}
         </p>
-        <p className="text-xs text-text-muted/60 mt-1">JPG, PNG, WebP — max 5 MB</p>
+        <p className="text-xs text-text-muted/60 mt-1">JPG, PNG, WebP, HEIC — max 5 MB</p>
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
           multiple={multiple}
           onChange={(e) => e.target.files && upload(e.target.files)}
           className="hidden"
         />
       </div>
+
+      {uploadResult && (
+        <div className={`mt-2 text-sm px-3 py-2 rounded-lg ${
+          uploadResult.fail === 0
+            ? "bg-green-500/10 text-green-600"
+            : uploadResult.ok === 0
+              ? "bg-red-500/10 text-red-500"
+              : "bg-yellow-500/10 text-yellow-700"
+        }`}>
+          {uploadResult.fail === 0
+            ? `Nahráno ${uploadResult.ok} ${uploadResult.ok === 1 ? "obrázek" : uploadResult.ok < 5 ? "obrázky" : "obrázků"}`
+            : uploadResult.ok === 0
+              ? `Nahrávání selhalo (${uploadResult.fail} ${uploadResult.fail === 1 ? "soubor" : "souborů"})`
+              : `Nahráno ${uploadResult.ok}, selhalo ${uploadResult.fail}`
+          }
+        </div>
+      )}
 
       {images.length > 0 && (
         <div className="mt-4">

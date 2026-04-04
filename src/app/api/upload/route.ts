@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+  const allowedTypes = [
+    "image/jpeg", "image/png", "image/webp", "image/avif",
+    "image/heic", "image/heif",
+  ];
   if (!allowedTypes.includes(file.type)) {
     return NextResponse.json(
       { error: "Invalid file type" },
@@ -44,6 +47,7 @@ export async function POST(request: NextRequest) {
 
   // Convert to WebP, resize if needed
   const webpBuffer = await sharp(buffer)
+    .rotate() // auto-orient based on EXIF (fixes iPhone portrait rotation)
     .resize({ width: MAX_WIDTH, withoutEnlargement: true })
     .webp({ quality: QUALITY })
     .toBuffer();

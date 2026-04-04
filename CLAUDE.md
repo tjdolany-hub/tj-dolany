@@ -37,7 +37,7 @@ No test framework is configured.
   - `tym/` — squad, match results, league table, player stats, season draws + `[id]` player detail
   - `plan-akci/` — upcoming events + interactive calendar with weekly schedule
   - `o-klubu/` — club history, sokolovna, board, contact, map
-- `src/app/admin/` — admin panel with sidebar, protected by Supabase Auth + middleware redirect to `/login`
+- `src/app/admin/` — admin panel with sidebar (desktop: fixed left sidebar, mobile: hamburger menu with slide-out drawer), protected by Supabase Auth + middleware redirect to `/login`
 - `src/app/api/` — REST endpoints; all mutations require authenticated session
 - `src/app/login/` — auth page
 
@@ -135,7 +135,7 @@ SQL migrations in `supabase/migrations/` (001–015). Run via Supabase CLI: `SUP
 
 ### Image Upload
 
-`src/app/api/upload/route.ts` accepts images (JPEG, PNG, WebP, AVIF, max 5 MB), validates MIME type, resizes via Sharp to WebP (max 1920px, quality 80), uploads to Supabase Storage bucket "photos".
+`src/app/api/upload/route.ts` accepts images (JPEG, PNG, WebP, AVIF, max 5 MB), validates MIME type, resizes via Sharp to WebP (max 1920px, quality 80), uploads to Supabase Storage bucket "photos". The `ImageUploader` component supports drag-and-drop, and has an explicit **bulk select mode** ("Označit" button) where tapping an image toggles selection, with "Vybrat vše" and "Smazat (N)" bulk actions.
 
 ### URL Redirects
 
@@ -168,9 +168,28 @@ Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna`
 - Occupied days (all-day events, matches) have red background tint
 - Multi-day events appear on all days in date range
 
+### Section Layout Pattern
+
+All public pages use **alternating section backgrounds** (`bg-surface` / `bg-surface-alt`) for visual separation. Each section is a full-width wrapper with an internal `max-w-7xl` (or `max-w-4xl` for O klubu) container. Between every pair of sections and after the last section, insert a **red gradient divider**: `<div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />`.
+
+When optional sections (e.g., Fotogalerie on homepage) are conditionally hidden, the alternation and dividers must adapt — use dynamic className for the next section's background.
+
 ### Section Navigation Pattern
 
-All public pages use sticky scroll-to-section navigation buttons below the header (`sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm border-b border-border`). On Aktuality, the category filter is sticky instead. Sections use `id` attributes and `scroll-mt-28` for proper offset. Button style: `bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted`.
+Page titles (subtitle + H1) scroll away normally. Only the **nav buttons + red gradient line** stay sticky below the header. Structure:
+```jsx
+<div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    {/* nav buttons */}
+  </div>
+  <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+</div>
+```
+On Aktuality, the category/year filter bar is sticky instead of section nav. Sections use `id` attributes and `scroll-mt-28` for proper offset. Button style: `bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted`.
+
+### Heading Pattern Exception
+
+Homepage H2 section headings use `font-extrabold` **without** the red bar decoration — the subtitle pattern above them already provides a red indicator. All other page section H2s use the standard red dash + `font-bold` pattern.
 
 ## Czech Locale Conventions
 
