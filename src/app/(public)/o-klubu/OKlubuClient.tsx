@@ -371,7 +371,7 @@ export default function OKlubuClient() {
           </h2>
           <div className="rounded-xl overflow-hidden shadow-lg">
             <iframe
-              src="https://maps.google.com/maps?q=50.3735,15.9365&t=k&z=17&output=embed&hl=cs"
+              src="https://maps.google.com/maps?q=TJ+Dolany,+Dolany+98,+552+01+Dolany&t=k&z=18&output=embed&hl=cs"
               width="100%"
               height="400"
               style={{ border: 0 }}
