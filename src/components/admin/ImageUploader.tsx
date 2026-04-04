@@ -14,6 +14,49 @@ interface ImageUploaderProps {
   onChange: (images: UploadedImage[]) => void;
   folder: string;
   multiple?: boolean;
+  /** Max width for client-side compression (default 1920, e.g. 800 for player cards) */
+  maxWidth?: number;
+}
+
+function compressImage(file: File, maxWidth: number): Promise<File> {
+  return new Promise((resolve, reject) => {
+    // Skip non-raster or already small files
+    if (!file.type.startsWith("image/") || file.size < 500_000) {
+      resolve(file);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxWidth / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob || blob.size >= file.size) {
+            // Compression didn't help, send original
+            resolve(file);
+            return;
+          }
+          resolve(new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.85,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
+    img.src = url;
+  });
 }
 
 export default function ImageUploader({
@@ -21,6 +64,7 @@ export default function ImageUploader({
   onChange,
   folder,
   multiple = true,
+  maxWidth = 1920,
 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -35,7 +79,14 @@ export default function ImageUploader({
     const newImages: UploadedImage[] = [];
     let failCount = 0;
 
-    for (const file of Array.from(files)) {
+    for (const rawFile of Array.from(files)) {
+      let file: File;
+      try {
+        file = await compressImage(rawFile, maxWidth);
+      } catch {
+        failCount++;
+        continue;
+      }
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", folder);
@@ -129,7 +180,7 @@ export default function ImageUploader({
             ? "Nahrávám..."
             : "Přetáhněte obrázky sem nebo klikněte pro výběr"}
         </p>
-        <p className="text-xs text-text-muted/60 mt-1">JPG, PNG, WebP, HEIC — max 5 MB</p>
+        <p className="text-xs text-text-muted/60 mt-1">JPG, PNG, WebP, HEIC — automaticky zmenšeno</p>
         <input
           ref={inputRef}
           type="file"

@@ -321,7 +321,7 @@ export default function AdminPlayersPage() {
 
           <div>
             <label className="block text-sm font-semibold text-text mb-1">Fotka</label>
-            <ImageUploader images={images} onChange={(imgs) => { setSaved(false); setImages(imgs); }} folder="players" multiple={false} />
+            <ImageUploader images={images} onChange={(imgs) => { setSaved(false); setImages(imgs); }} folder="players" multiple={false} maxWidth={800} />
           </div>
 
           <div className="flex items-center gap-3">
