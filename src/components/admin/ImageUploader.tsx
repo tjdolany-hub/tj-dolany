@@ -19,9 +19,9 @@ interface ImageUploaderProps {
 }
 
 function compressImage(file: File, maxWidth: number): Promise<File> {
-  return new Promise((resolve, reject) => {
-    // Skip non-raster or already small files
-    if (!file.type.startsWith("image/") || file.size < 500_000) {
+  return new Promise((resolve) => {
+    // Skip already small files
+    if (file.size < 500_000) {
       resolve(file);
       return;
     }
@@ -44,7 +44,6 @@ function compressImage(file: File, maxWidth: number): Promise<File> {
       canvas.toBlob(
         (blob) => {
           if (!blob || blob.size >= file.size) {
-            // Compression didn't help, send original
             resolve(file);
             return;
           }
@@ -54,7 +53,8 @@ function compressImage(file: File, maxWidth: number): Promise<File> {
         0.85,
       );
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
+    // Can't load into canvas (e.g. HEIC on desktop) — send original, let server handle it
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
   });
 }
@@ -80,13 +80,7 @@ export default function ImageUploader({
     let failCount = 0;
 
     for (const rawFile of Array.from(files)) {
-      let file: File;
-      try {
-        file = await compressImage(rawFile, maxWidth);
-      } catch {
-        failCount++;
-        continue;
-      }
+      const file = await compressImage(rawFile, maxWidth);
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", folder);

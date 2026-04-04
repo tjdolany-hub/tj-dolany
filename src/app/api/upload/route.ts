@@ -36,7 +36,10 @@ export async function POST(request: NextRequest) {
     "image/jpeg", "image/png", "image/webp", "image/avif",
     "image/heic", "image/heif",
   ];
-  if (!allowedTypes.includes(file.type)) {
+  const allowedExts = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".heic", ".heif"];
+  const ext = file.name.toLowerCase().replace(/^.*(\.\w+)$/, "$1");
+  const typeOk = allowedTypes.includes(file.type) || allowedExts.includes(ext);
+  if (!typeOk) {
     return NextResponse.json(
       { error: "Invalid file type" },
       { status: 400 }
