@@ -494,6 +494,7 @@ export default function TymClient({
 
   return (
     <div>
+      <div className="bg-surface-alt">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -506,9 +507,10 @@ export default function TymClient({
           </h1>
         </motion.div>
       </div>
+      </div>
 
       {/* Section navigation — sticky */}
-      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 border-b border-border">
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-2">
             {sections.map((s) => (
@@ -523,6 +525,8 @@ export default function TymClient({
           </div>
         </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* Squad */}
       <div className="bg-surface py-12">
@@ -654,6 +658,8 @@ export default function TymClient({
         </div>
         </div>
       )}
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
     </div>
   );
 }

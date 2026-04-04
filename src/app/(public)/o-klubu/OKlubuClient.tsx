@@ -45,6 +45,7 @@ export default function OKlubuClient() {
 
   return (
     <div>
+      <div className="bg-surface-alt">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -55,9 +56,10 @@ export default function OKlubuClient() {
           <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
         </motion.div>
       </div>
+      </div>
 
       {/* Section navigation — sticky */}
-      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 border-b border-border">
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-2">
             {sections.map((s) => (
@@ -72,6 +74,8 @@ export default function OKlubuClient() {
           </div>
         </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* Starý web */}
       <div className="bg-surface py-10">
@@ -384,6 +388,8 @@ export default function OKlubuClient() {
       </AnimatedSection>
       </div>
       </div>
+
+      <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
       {/* JSON-LD */}
       <script
