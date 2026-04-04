@@ -371,7 +371,7 @@ export default function OKlubuClient() {
           </h2>
           <div className="rounded-xl overflow-hidden shadow-lg">
             <iframe
-              src="https://maps.google.com/maps?q=Fotbalov%C3%A9+h%C5%99i%C5%A1t%C4%9B+Dolany&t=k&z=17&output=embed&hl=cs"
+              src="https://maps.google.com/maps?q=50.3735,15.9365&t=k&z=17&output=embed&hl=cs"
               width="100%"
               height="400"
               style={{ border: 0 }}
@@ -408,8 +408,8 @@ export default function OKlubuClient() {
             },
             geo: {
               "@type": "GeoCoordinates",
-              latitude: "50.3592",
-              longitude: "15.9270",
+              latitude: "50.3735",
+              longitude: "15.9365",
             },
             email: "tjdolany@seznam.cz",
             telephone: "+420604864424",
