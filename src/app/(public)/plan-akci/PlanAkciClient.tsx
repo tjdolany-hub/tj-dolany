@@ -292,20 +292,23 @@ export default function PlanAkciClient({
         <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí a zápasů TJ Dolany</h1>
       </motion.div>
 
-      {/* Section navigation */}
-      <div className="flex flex-wrap justify-center gap-2 mb-12">
-        {[
-          ...(upcoming.length > 0 ? [{ id: "nadchazejici", label: "Nadcházející" }] : []),
-          { id: "kalendar", label: "Kalendář" },
-        ].map((s) => (
-          <button
-            key={s.id}
-            onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
-          >
-            {s.label}
-          </button>
-        ))}
+      {/* Section navigation — sticky */}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-12 border-b border-border">
+        <div className="flex flex-wrap justify-center gap-2">
+          {[
+            ...(upcoming.length > 0 ? [{ id: "nadchazejici", label: "Nadcházející" }] : []),
+            { id: "kalendar", label: "Kalendář" },
+            { id: "zadost", label: "Žádost o akci" },
+          ].map((s) => (
+            <button
+              key={s.id}
+              onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ═══ UPCOMING EVENTS (TJ Dolany only) ═══ */}
@@ -587,7 +590,9 @@ export default function PlanAkciClient({
         </AnimatePresence>
       </AnimatedSection>
 
-      <RentalRequestForm allEvents={allEvents} schedule={schedule} />
+      <div id="zadost" className="scroll-mt-24">
+        <RentalRequestForm allEvents={allEvents} schedule={schedule} />
+      </div>
     </div>
   );
 }

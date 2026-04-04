@@ -213,8 +213,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex flex-wrap justify-center gap-2">
             {[
-              { id: "aktuality", label: "Aktuality" },
               { id: "tym", label: "Tým" },
+              { id: "aktuality", label: "Aktuality" },
               ...(leagueStandings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
               ...(heroEvents.some(Boolean) ? [{ id: "akce", label: "Akce" }] : []),
               ...(albums.length > 0 ? [{ id: "fotogalerie", label: "Fotogalerie" }] : []),

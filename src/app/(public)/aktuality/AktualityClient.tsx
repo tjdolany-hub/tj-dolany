@@ -43,8 +43,9 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
         </h1>
       </motion.div>
 
-      {/* Category filters */}
-      <div className="flex flex-wrap justify-center gap-2 mb-10">
+      {/* Category filters — sticky */}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-10 border-b border-border">
+        <div className="flex flex-wrap justify-center gap-2">
         {FILTER_OPTIONS.map((f) => (
           <button
             key={f.value}
@@ -58,6 +59,7 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
             {f.label}
           </button>
         ))}
+        </div>
       </div>
 
       {filtered.length > 0 ? (

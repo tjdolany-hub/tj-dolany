@@ -54,17 +54,19 @@ export default function OKlubuClient() {
         <h1 className="text-4xl font-extrabold text-text tracking-tight">O klubu</h1>
       </motion.div>
 
-      {/* Section navigation */}
-      <div className="flex flex-wrap justify-center gap-2 mb-12">
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => scrollTo(s.id)}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
-          >
-            {s.label}
-          </button>
-        ))}
+      {/* Section navigation — sticky */}
+      <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-12 border-b border-border">
+        <div className="flex flex-wrap justify-center gap-2">
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => scrollTo(s.id)}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Starý web */}
