@@ -18,7 +18,7 @@ export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [shareDialog, setShareDialog] = useState<{ slug: string; title: string } | null>(null);
-  const [catFilter, setCatFilter] = useState("vse");
+  const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
   const [yearFilter, setYearFilter] = useState<Set<number>>(new Set());
 
   const loadArticles = () => {
@@ -54,9 +54,18 @@ export default function AdminArticlesPage() {
     });
   };
 
+  const toggleCat = (cat: string) => {
+    setCatFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   const filtered = useMemo(() => {
     return articles.filter((a) => {
-      if (catFilter !== "vse" && a.category !== catFilter) return false;
+      if (catFilter.size > 0 && !catFilter.has(a.category)) return false;
       if (yearFilter.size > 0 && !yearFilter.has(new Date(a.created_at).getFullYear())) return false;
       return true;
     });
@@ -84,12 +93,12 @@ export default function AdminArticlesPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        {[{ value: "vse", label: "Vše" }, ...CATEGORIES].map((c) => (
+        {CATEGORIES.map((c) => (
           <button
             key={c.value}
-            onClick={() => setCatFilter(c.value)}
+            onClick={() => toggleCat(c.value)}
             className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-              catFilter === c.value
+              catFilter.has(c.value)
                 ? "bg-brand-red text-white"
                 : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
             }`}
@@ -97,6 +106,14 @@ export default function AdminArticlesPage() {
             {c.label}
           </button>
         ))}
+        {catFilter.size > 0 && (
+          <button
+            onClick={() => setCatFilter(new Set())}
+            className="px-2 py-1.5 text-xs text-text-muted hover:text-text transition-colors"
+          >
+            ✕
+          </button>
+        )}
         <span className="w-px h-6 bg-border mx-1" />
         {availableYears.map((y) => (
           <button

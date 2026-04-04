@@ -18,13 +18,8 @@ interface Article {
   article_images: { url: string; alt: string | null }[];
 }
 
-const FILTER_OPTIONS = [
-  { value: "vse", label: "Vše" },
-  ...CATEGORIES,
-];
-
 export default function AktualityClient({ articles }: { articles: Article[] }) {
-  const [filter, setFilter] = useState("vse");
+  const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
   const [yearFilter, setYearFilter] = useState<Set<number>>(new Set());
 
   const availableYears = useMemo(() => {
@@ -32,6 +27,15 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
     articles.forEach((a) => years.add(new Date(a.created_at).getFullYear()));
     return [...years].sort((a, b) => b - a);
   }, [articles]);
+
+  const toggleCat = (cat: string) => {
+    setCatFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
 
   const toggleYear = (year: number) => {
     setYearFilter((prev) => {
@@ -44,11 +48,11 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
 
   const filtered = useMemo(() => {
     return articles.filter((a) => {
-      if (filter !== "vse" && a.category !== filter) return false;
+      if (catFilter.size > 0 && !catFilter.has(a.category)) return false;
       if (yearFilter.size > 0 && !yearFilter.has(new Date(a.created_at).getFullYear())) return false;
       return true;
     });
-  }, [articles, filter, yearFilter]);
+  }, [articles, catFilter, yearFilter]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -66,19 +70,27 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
       {/* Filters — sticky */}
       <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-10 border-b border-border">
         <div className="flex flex-wrap justify-center gap-2">
-          {FILTER_OPTIONS.map((f) => (
+          {CATEGORIES.map((c) => (
             <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
+              key={c.value}
+              onClick={() => toggleCat(c.value)}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                filter === f.value
+                catFilter.has(c.value)
                   ? "bg-brand-red text-white"
                   : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
               }`}
             >
-              {f.label}
+              {c.label}
             </button>
           ))}
+          {catFilter.size > 0 && (
+            <button
+              onClick={() => setCatFilter(new Set())}
+              className="px-2 py-2 text-xs text-text-muted hover:text-text transition-colors"
+            >
+              ✕
+            </button>
+          )}
           <span className="w-px h-8 bg-border mx-1 self-center" />
           {availableYears.map((y) => (
             <button
@@ -105,7 +117,7 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
       </div>
 
       {filtered.length > 0 ? (
-        <StaggerContainer key={`${filter}-${[...yearFilter].join(",")}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StaggerContainer key={`${[...catFilter].join(",")}-${[...yearFilter].join(",")}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((article) => (
             <StaggerItem key={article.id}>
               <Link
