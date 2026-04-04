@@ -501,7 +501,7 @@ export default function TymClient({
       >
         <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Náš tým</p>
         <h1 className="text-4xl font-extrabold text-text tracking-tight">
-          TJ Dolany
+          Tým a statistiky
         </h1>
       </motion.div>
 
@@ -512,7 +512,7 @@ export default function TymClient({
             <button
               key={s.id}
               onClick={() => scrollTo(s.id)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-white/20 text-text hover:bg-brand-red/10 hover:border-brand-red/30 hover:text-brand-red transition-colors"
             >
               {s.label}
             </button>

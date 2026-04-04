@@ -292,10 +292,26 @@ export default function PlanAkciClient({
         <h1 className="text-4xl font-extrabold text-text tracking-tight">Plán akcí a zápasů TJ Dolany</h1>
       </motion.div>
 
+      {/* Section navigation */}
+      <div className="flex flex-wrap justify-center gap-2 mb-12">
+        {[
+          ...(upcoming.length > 0 ? [{ id: "nadchazejici", label: "Nadcházející" }] : []),
+          { id: "kalendar", label: "Kalendář" },
+        ].map((s) => (
+          <button
+            key={s.id}
+            onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-white/20 text-text hover:bg-brand-red/10 hover:border-brand-red/30 hover:text-brand-red transition-colors"
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* ═══ UPCOMING EVENTS (TJ Dolany only) ═══ */}
       {upcoming.length > 0 && (
         <AnimatedSection className="mb-16">
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-8 flex items-center justify-center gap-3">
+          <h2 id="nadchazejici" className="scroll-mt-24 text-2xl font-bold text-text tracking-tight mb-8 flex items-center justify-center gap-3">
             <span className="w-8 h-0.5 bg-brand-red rounded-full" />
             Nadcházející akce TJ Dolany
           </h2>
@@ -355,7 +371,7 @@ export default function PlanAkciClient({
 
       {/* ═══ CALENDAR — Kalendář akcí sportovního areálu Dolany ═══ */}
       <AnimatedSection>
-        <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
+        <h2 id="kalendar" className="scroll-mt-24 text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
           <span className="w-8 h-0.5 bg-brand-red rounded-full" />
           Kalendář akcí sportovního areálu Dolany
         </h2>

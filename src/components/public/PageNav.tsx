@@ -7,7 +7,7 @@ import { ChevronRight } from "lucide-react";
 const PAGE_TITLES: Record<string, string> = {
   "/": "Úvod",
   "/aktuality": "Aktuality",
-  "/tym": "Tým",
+  "/tym": "Tým a statistiky",
   "/plan-akci": "Plán akcí",
   "/galerie": "Galerie",
   "/o-klubu": "O klubu",

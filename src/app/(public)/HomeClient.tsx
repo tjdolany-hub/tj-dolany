@@ -316,9 +316,31 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         </section>
       </AnimatedSection>
 
+      {/* ── Section navigation ── */}
+      <div className="bg-surface border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              { id: "aktuality", label: "Aktuality" },
+              ...(leagueStandings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
+              ...(heroEvents.some(Boolean) ? [{ id: "akce", label: "Akce" }] : []),
+              ...(albums.length > 0 ? [{ id: "fotogalerie", label: "Fotogalerie" }] : []),
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface border border-white/20 text-text hover:bg-brand-red/10 hover:border-brand-red/30 hover:text-brand-red transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── FEATURED ARTICLE + SIDEBAR ── */}
       <AnimatedSection>
-        <section className="bg-surface-alt">
+        <section id="aktuality" className="scroll-mt-24 bg-surface-alt">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-8">
               <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Novinky</p>
@@ -434,7 +456,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       {/* ── LEAGUE TABLE + STATS ── */}
       {leagueStandings.length > 0 && (
         <AnimatedSection>
-          <section className="bg-surface">
+          <section id="tabulka" className="scroll-mt-24 bg-surface">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
                 <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Soutěž</p>
@@ -558,7 +580,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       {/* ── EVENTS — 3 cards: past | next (highlighted) | future ── */}
       {heroEvents.some(Boolean) && (
         <AnimatedSection>
-          <section className="bg-surface">
+          <section id="akce" className="scroll-mt-24 bg-surface">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="text-center mb-8">
                 <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><span className="w-1 h-5 bg-brand-red rounded-full" />Akce TJ Dolany</p>
@@ -630,7 +652,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       {/* ── PHOTO GALLERY ── */}
       {albums.length > 0 && (
         <AnimatedSection>
-          <section className="bg-surface-alt">
+          <section id="fotogalerie" className="scroll-mt-24 bg-surface-alt">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex items-center justify-between mb-8">
               <div>
