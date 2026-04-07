@@ -848,8 +848,7 @@ export default function AdminMatchesPage() {
               </div>
 
               {/* Paste match report */}
-              {!editId && (
-                <div className="border border-dashed border-border rounded-lg p-4 bg-surface-muted/30">
+              <div className="border border-dashed border-border rounded-lg p-4 bg-surface-muted/30">
                   <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
                     <BookOpen size={16} className="text-brand-red" /> Vložit zápis z webu svazu
                   </p>
@@ -869,7 +868,6 @@ export default function AdminMatchesPage() {
                     <Upload size={14} /> Načíst data
                   </button>
                 </div>
-              )}
 
               {/* Basic fields */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
