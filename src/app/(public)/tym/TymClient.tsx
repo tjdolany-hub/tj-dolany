@@ -158,13 +158,13 @@ function MatchTimeline({ match, events }: { match: MatchResult; events: MatchEve
 
   const matchHeader = (
     <div className="flex items-center justify-center gap-3 sm:gap-5 py-3 border-b border-border">
-      <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-        <span className="text-sm sm:text-base font-bold text-text text-right truncate">{home}</span>
+      <div className="flex flex-col items-center flex-1 min-w-0">
         {homeLogo ? (
-          <Image src={homeLogo} alt={home} width={32} height={32} className="rounded-full object-cover ring-1 ring-border shrink-0" />
+          <Image src={homeLogo} alt={home} width={36} height={36} className="rounded-full object-cover ring-2 ring-white/20 bg-white mb-1" />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-surface-muted ring-1 ring-border shrink-0" />
+          <div className="w-9 h-9 rounded-full bg-surface-muted ring-1 ring-border mb-1" />
         )}
+        <span className="text-xs sm:text-sm font-bold text-text text-center truncate max-w-full">{home}</span>
       </div>
       <div className="flex flex-col items-center shrink-0">
         <span className="text-xl sm:text-2xl font-extrabold text-text tabular-nums">{match.score_home}:{match.score_away}</span>
@@ -172,13 +172,13 @@ function MatchTimeline({ match, events }: { match: MatchResult; events: MatchEve
           <span className="text-[10px] text-text-muted tabular-nums">({match.halftime_home}:{match.halftime_away})</span>
         )}
       </div>
-      <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="flex flex-col items-center flex-1 min-w-0">
         {awayLogo ? (
-          <Image src={awayLogo} alt={away} width={32} height={32} className="rounded-full object-cover ring-1 ring-border shrink-0" />
+          <Image src={awayLogo} alt={away} width={36} height={36} className="rounded-full object-cover ring-2 ring-white/20 bg-white mb-1" />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-surface-muted ring-1 ring-border shrink-0" />
+          <div className="w-9 h-9 rounded-full bg-surface-muted ring-1 ring-border mb-1" />
         )}
-        <span className="text-sm sm:text-base font-bold text-text truncate">{away}</span>
+        <span className="text-xs sm:text-sm font-bold text-text text-center truncate max-w-full">{away}</span>
       </div>
     </div>
   );
@@ -392,11 +392,11 @@ function MatchResultsSection({ matches, matchEvents }: { matches: MatchResult[];
                               const aLogo = match.is_home ? oLogo : DOLANY_LOGO;
                               return (
                                 <>
-                                  {hLogo && <Image src={hLogo} alt="" width={18} height={18} className="rounded-full object-cover ring-1 ring-border shrink-0" />}
+                                  {hLogo && <Image src={hLogo} alt="" width={18} height={18} className="rounded-full object-cover ring-2 ring-white/20 bg-white shrink-0" />}
                                   <span>{match.is_home ? "TJ Dolany" : match.opponent}</span>
                                   <span className="text-text-muted">–</span>
-                                  {aLogo && <Image src={aLogo} alt="" width={18} height={18} className="rounded-full object-cover ring-1 ring-border shrink-0" />}
                                   <span>{match.is_home ? match.opponent : "TJ Dolany"}</span>
+                                  {aLogo && <Image src={aLogo} alt="" width={18} height={18} className="rounded-full object-cover ring-2 ring-white/20 bg-white shrink-0" />}
                                 </>
                               );
                             })()}

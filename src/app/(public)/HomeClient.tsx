@@ -198,7 +198,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           <div className="bg-brand-red text-white overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-3">
               {homeLogo && (
-                <Image src={homeLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-1 ring-white/30" />
+                <Image src={homeLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-2 ring-white/30 bg-white" />
               )}
               <span className="ticker-container text-sm font-semibold tracking-wide text-center relative">
                 <span className="ticker-ball">⚽</span>
@@ -213,7 +213,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 ))}
               </span>
               {awayLogo && (
-                <Image src={awayLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-1 ring-white/30" />
+                <Image src={awayLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-2 ring-white/30 bg-white" />
               )}
             </div>
           </div>
@@ -258,7 +258,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               <div className="md:w-[30%] flex flex-col items-center justify-center px-6 py-6 border-b md:border-b-0 md:border-r border-white/10">
                 <Image src="/logo.png" alt="TJ Dolany" width={64} height={64} className="drop-shadow-lg mb-3" />
                 <h2 className="text-xl font-extrabold text-white tracking-tight">TJ Dolany</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Okresní přebor • Náchod</p>
+                <p className="text-xs text-gray-400 mt-0.5">AGRO CS 8 liga Muži</p>
                 {clubBanner.leaguePosition && (
                   <Link href="/tym#tabulka" className="mt-3 text-center group">
                     <span className="text-3xl font-extrabold text-brand-yellow group-hover:text-white transition-colors">{clubBanner.leaguePosition}.</span>
@@ -295,11 +295,11 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                       const awayLogo = clubBanner.lastMatch.is_home ? oppLogo : DOLANY_LOGO;
                       const matchContent = (
                         <span className="flex items-center gap-2 text-sm font-bold text-white group-hover:text-brand-red transition-colors">
-                          {homeLogo && <Image src={homeLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-1 ring-white/20" />}
+                          {homeLogo && <Image src={homeLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-2 ring-white/20 bg-white" />}
                           <span>{clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}</span>
                           <span className="text-brand-yellow">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
                           <span>{clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}</span>
-                          {awayLogo && <Image src={awayLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-1 ring-white/20" />}
+                          {awayLogo && <Image src={awayLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-2 ring-white/20 bg-white" />}
                         </span>
                       );
                       return clubBanner.lastMatch.articleSlug ? (

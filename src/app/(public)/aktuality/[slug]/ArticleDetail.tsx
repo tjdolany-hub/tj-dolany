@@ -347,15 +347,15 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
         </span>
       </div>
 
-      {/* Logo - Score - Logo */}
+      {/* Logo above Name - Score - Logo above Name (Livesport style) */}
       <div className="flex items-center justify-center gap-4 sm:gap-6 px-4 pb-2">
-        <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-          <span className="text-sm sm:text-base font-bold text-text text-right truncate">{home}</span>
+        <div className="flex flex-col items-center flex-1 min-w-0">
           {homeLogo ? (
-            <Image src={homeLogo} alt={home} width={48} height={48} className="rounded-full object-cover ring-1 ring-border shrink-0" />
+            <Image src={homeLogo} alt={home} width={56} height={56} className="rounded-full object-cover ring-2 ring-white/20 bg-white mb-2" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-surface ring-1 ring-border shrink-0" />
+            <div className="w-14 h-14 rounded-full bg-surface ring-1 ring-border mb-2" />
           )}
+          <span className="text-sm sm:text-base font-bold text-text text-center truncate max-w-full">{home}</span>
         </div>
         <div className="flex flex-col items-center shrink-0">
           <span className="text-3xl sm:text-4xl font-extrabold text-text tabular-nums tracking-tight">
@@ -365,13 +365,13 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
             <span className="text-[10px] text-text-muted tabular-nums">({match.halftime_home}:{match.halftime_away})</span>
           )}
         </div>
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex flex-col items-center flex-1 min-w-0">
           {awayLogo ? (
-            <Image src={awayLogo} alt={away} width={48} height={48} className="rounded-full object-cover ring-1 ring-border shrink-0" />
+            <Image src={awayLogo} alt={away} width={56} height={56} className="rounded-full object-cover ring-2 ring-white/20 bg-white mb-2" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-surface ring-1 ring-border shrink-0" />
+            <div className="w-14 h-14 rounded-full bg-surface ring-1 ring-border mb-2" />
           )}
-          <span className="text-sm sm:text-base font-bold text-text truncate">{away}</span>
+          <span className="text-sm sm:text-base font-bold text-text text-center truncate max-w-full">{away}</span>
         </div>
       </div>
 
