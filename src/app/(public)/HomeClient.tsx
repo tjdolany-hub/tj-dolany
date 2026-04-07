@@ -195,23 +195,16 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         const awayLogo = nextMatch.is_home ? oppLogo : DOLANY_LOGO;
         const homeTeam = nextMatch.is_home ? "TJ Dolany" : nextMatch.opponent;
         const awayTeam = nextMatch.is_home ? nextMatch.opponent : "TJ Dolany";
-        const prefix = `Příští zápas: ${formatMatchDate(nextMatch.date)} — `;
-        const suffix = nextMatch.location ? ` | Hřiště: ${nextMatch.location}` : "";
         return (
           <div className="bg-brand-red text-white overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-2 sm:gap-3">
-              <span className="ticker-container text-sm font-semibold tracking-wide relative">
-                <span className="ticker-ball">⚽</span>
-                {prefix.split("").map((char, i) => (
-                  <span key={`p-${i}`} className={char === " " ? "ticker-space" : "ticker-char"} style={{ "--char-index": i } as React.CSSProperties}>{char}</span>
-                ))}
-              </span>
-              {homeLogo && <Image src={homeLogo} alt="" width={22} height={22} className="object-contain shrink-0" />}
-              <span className="text-sm font-semibold tracking-wide whitespace-nowrap">{homeTeam}</span>
-              <span className="text-sm font-semibold">-</span>
-              {awayLogo && <Image src={awayLogo} alt="" width={22} height={22} className="object-contain shrink-0" />}
-              <span className="text-sm font-semibold tracking-wide whitespace-nowrap">{awayTeam}</span>
-              {suffix && <span className="text-sm font-semibold tracking-wide whitespace-nowrap hidden sm:inline">{suffix}</span>}
+            <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-center gap-1.5 sm:gap-2.5">
+              <span className="text-[11px] sm:text-sm font-semibold shrink-0">⚽ {formatMatchDate(nextMatch.date)}</span>
+              <span className="text-[11px] sm:text-sm text-white/70 shrink-0">—</span>
+              {homeLogo && <Image src={homeLogo} alt="" width={18} height={18} className="object-contain shrink-0 sm:w-[22px] sm:h-[22px]" />}
+              <span className="text-[11px] sm:text-sm font-semibold whitespace-nowrap">{homeTeam}</span>
+              <span className="text-[11px] sm:text-sm font-semibold">-</span>
+              {awayLogo && <Image src={awayLogo} alt="" width={18} height={18} className="object-contain shrink-0 sm:w-[22px] sm:h-[22px]" />}
+              <span className="text-[11px] sm:text-sm font-semibold whitespace-nowrap">{awayTeam}</span>
             </div>
           </div>
         );
