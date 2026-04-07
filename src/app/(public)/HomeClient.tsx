@@ -190,31 +190,28 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── MATCH TICKER ── */}
       {nextMatch && (() => {
-        const tickerText = `Příští zápas: ${formatMatchDate(nextMatch.date)} — ${nextMatch.title}${nextMatch.location ? ` | Hřiště: ${nextMatch.location}` : ""}`;
         const oppLogo = getTeamLogo(nextMatch.opponent);
         const homeLogo = nextMatch.is_home ? DOLANY_LOGO : oppLogo;
         const awayLogo = nextMatch.is_home ? oppLogo : DOLANY_LOGO;
+        const homeTeam = nextMatch.is_home ? "TJ Dolany" : nextMatch.opponent;
+        const awayTeam = nextMatch.is_home ? nextMatch.opponent : "TJ Dolany";
+        const prefix = `Příští zápas: ${formatMatchDate(nextMatch.date)} — `;
+        const suffix = nextMatch.location ? ` | Hřiště: ${nextMatch.location}` : "";
         return (
           <div className="bg-brand-red text-white overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-3">
-              {homeLogo && (
-                <Image src={homeLogo} alt="" width={24} height={24} className="object-contain shrink-0" />
-              )}
-              <span className="ticker-container text-sm font-semibold tracking-wide text-center relative">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-2 sm:gap-3">
+              <span className="ticker-container text-sm font-semibold tracking-wide relative">
                 <span className="ticker-ball">⚽</span>
-                {tickerText.split("").map((char, i) => (
-                  <span
-                    key={i}
-                    className={char === " " ? "ticker-space" : "ticker-char"}
-                    style={{ "--char-index": i } as React.CSSProperties}
-                  >
-                    {char}
-                  </span>
+                {prefix.split("").map((char, i) => (
+                  <span key={`p-${i}`} className={char === " " ? "ticker-space" : "ticker-char"} style={{ "--char-index": i } as React.CSSProperties}>{char}</span>
                 ))}
               </span>
-              {awayLogo && (
-                <Image src={awayLogo} alt="" width={24} height={24} className="object-contain shrink-0" />
-              )}
+              {homeLogo && <Image src={homeLogo} alt="" width={22} height={22} className="object-contain shrink-0" />}
+              <span className="text-sm font-semibold tracking-wide whitespace-nowrap">{homeTeam}</span>
+              <span className="text-sm font-semibold">-</span>
+              {awayLogo && <Image src={awayLogo} alt="" width={22} height={22} className="object-contain shrink-0" />}
+              <span className="text-sm font-semibold tracking-wide whitespace-nowrap">{awayTeam}</span>
+              {suffix && <span className="text-sm font-semibold tracking-wide whitespace-nowrap hidden sm:inline">{suffix}</span>}
             </div>
           </div>
         );
@@ -298,8 +295,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                           {homeLogo && <Image src={homeLogo} alt="" width={20} height={20} className="object-contain" />}
                           <span>{clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}</span>
                           <span className="text-brand-yellow">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
-                          <span>{clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}</span>
                           {awayLogo && <Image src={awayLogo} alt="" width={20} height={20} className="object-contain" />}
+                          <span>{clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}</span>
                         </span>
                       );
                       return clubBanner.lastMatch.articleSlug ? (

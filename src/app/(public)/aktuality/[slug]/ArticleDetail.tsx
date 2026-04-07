@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { marked } from "marked";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
 import { BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
@@ -329,13 +329,15 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
     </div>
   );
 
-  // Footer info
+  // Footer info (no match_number, no delegate)
   const footerParts: string[] = [];
-  if (match.match_number) footerParts.push(`Cislo utkani: ${match.match_number}`);
-  if (match.referee) footerParts.push(`Rozhodci: ${match.referee}`);
-  if (match.delegate) footerParts.push(`Delegat: ${match.delegate}`);
-  if (match.venue) footerParts.push(`Hriste: ${match.venue}`);
-  if (match.spectators != null) footerParts.push(`Divaku: ${match.spectators}`);
+  if (match.referee) footerParts.push(`Rozhodčí: ${match.referee}`);
+  if (match.venue) footerParts.push(`Hřiště: ${match.venue}`);
+  if (match.spectators != null) footerParts.push(`Diváků: ${match.spectators}`);
+
+  const hasDetails = goalEvents.length > 0 || cardEvents.length > 0 || dolanyStarters.length > 0 || oppStarters.length > 0 || footerParts.length > 0;
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <div className="rounded-xl bg-surface-muted border border-border overflow-hidden mb-8">
@@ -376,136 +378,158 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
       </div>
 
       {/* KONEC */}
-      <div className="text-center pb-4">
+      <div className="text-center pb-3">
         <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Konec</span>
       </div>
 
-      <div className="h-px bg-border" />
-
-      {/* Goals timeline */}
-      {goalEvents.length > 0 && (
-        <div className="px-4 py-3">
-          {hasHalftime ? (
-            <>
-              <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1">
-                <span>1. polocas</span>
-                <span className="tabular-nums">{match.halftime_home}:{match.halftime_away}</span>
-              </div>
-              {firstHalfGoals.length > 0 ? renderHalfGoals(firstHalfGoals) : (
-                <p className="text-xs text-text-muted py-2 text-center">Bez golu</p>
-              )}
-              {renderHalfCards(firstHalfCards)}
-
-              <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1 mt-3">
-                <span>2. polocas</span>
-                <span className="tabular-nums">{match.score_home - (match.halftime_home ?? 0)}:{match.score_away - (match.halftime_away ?? 0)}</span>
-              </div>
-              {secondHalfGoals.length > 0 ? renderHalfGoals(secondHalfGoals, match.halftime_home ?? 0, match.halftime_away ?? 0) : (
-                <p className="text-xs text-text-muted py-2 text-center">Bez golu</p>
-              )}
-              {renderHalfCards(secondHalfCards)}
-
-              {noMinuteGoals.length > 0 && renderHalfGoals(noMinuteGoals, match.score_home, match.score_away)}
-              {renderHalfCards(noMinuteCards)}
-            </>
-          ) : (
-            renderHalfGoals(goalEvents)
-          )}
-        </div>
-      )}
-
-      {/* Cards without goals (if no goals section rendered them) */}
-      {goalEvents.length === 0 && cardEvents.length > 0 && (
-        <div className="px-4 py-3">
-          {renderHalfCards(cardEvents)}
-        </div>
-      )}
-
-      {/* Lineups */}
-      {(dolanyStarters.length > 0 || oppStarters.length > 0) && (
+      {/* Collapsible "Více informací" */}
+      {hasDetails && (
         <>
           <div className="h-px bg-border" />
-          <div className="px-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Home team lineup */}
-              <div>
-                <h3 className="text-sm font-bold text-text mb-2">
-                  {match.is_home ? "TJ Dolany" : match.opponent}
-                </h3>
-                {(match.is_home ? dolanyStarters : oppStarters).length > 0 && (
-                  <>
-                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">Zakladni sestava</p>
-                    {(match.is_home ? dolanyStarters : oppStarters).map((p) => (
-                      <LineupRow
-                        key={"name" in p ? p.name : p.playerName}
-                        name={"name" in p ? p.name : p.playerName}
-                        number={p.number}
-                        isCaptain={p.is_captain}
-                      />
-                    ))}
-                  </>
-                )}
-                {(match.is_home ? dolanySubs : oppSubs).length > 0 && (
-                  <>
-                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mt-3 mb-1">Nahradnici</p>
-                    {(match.is_home ? dolanySubs : oppSubs).map((p) => (
-                      <LineupRow
-                        key={"name" in p ? p.name : p.playerName}
-                        name={"name" in p ? p.name : p.playerName}
-                        number={p.number}
-                        isCaptain={p.is_captain}
-                      />
-                    ))}
-                  </>
-                )}
-              </div>
+          <button
+            onClick={() => setDetailsOpen(!detailsOpen)}
+            className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-brand-red hover:text-brand-red/80 transition-colors"
+          >
+            <span>Více informací</span>
+            <ChevronDown size={14} className={`transition-transform ${detailsOpen ? "rotate-180" : ""}`} />
+          </button>
 
-              {/* Away team lineup */}
-              <div>
-                <h3 className="text-sm font-bold text-text mb-2">
-                  {match.is_home ? match.opponent : "TJ Dolany"}
-                </h3>
-                {(match.is_home ? oppStarters : dolanyStarters).length > 0 && (
-                  <>
-                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">Zakladni sestava</p>
-                    {(match.is_home ? oppStarters : dolanyStarters).map((p) => (
-                      <LineupRow
-                        key={"name" in p ? p.name : p.playerName}
-                        name={"name" in p ? p.name : p.playerName}
-                        number={p.number}
-                        isCaptain={p.is_captain}
-                      />
-                    ))}
-                  </>
-                )}
-                {(match.is_home ? oppSubs : dolanySubs).length > 0 && (
-                  <>
-                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mt-3 mb-1">Nahradnici</p>
-                    {(match.is_home ? oppSubs : dolanySubs).map((p) => (
-                      <LineupRow
-                        key={"name" in p ? p.name : p.playerName}
-                        name={"name" in p ? p.name : p.playerName}
-                        number={p.number}
-                        isCaptain={p.is_captain}
-                      />
-                    ))}
-                  </>
-                )}
-              </div>
+          {detailsOpen && (
+            <div>
+              {/* Goals timeline */}
+              {goalEvents.length > 0 && (
+                <>
+                  <div className="h-px bg-border" />
+                  <div className="px-4 py-3">
+                    {hasHalftime ? (
+                      <>
+                        <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1">
+                          <span>1. poločas</span>
+                          <span className="tabular-nums">{match.halftime_home}:{match.halftime_away}</span>
+                        </div>
+                        {firstHalfGoals.length > 0 ? renderHalfGoals(firstHalfGoals) : (
+                          <p className="text-xs text-text-muted py-2 text-center">Bez gólů</p>
+                        )}
+                        {renderHalfCards(firstHalfCards)}
+
+                        <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1 mt-3">
+                          <span>2. poločas</span>
+                          <span className="tabular-nums">{match.score_home - (match.halftime_home ?? 0)}:{match.score_away - (match.halftime_away ?? 0)}</span>
+                        </div>
+                        {secondHalfGoals.length > 0 ? renderHalfGoals(secondHalfGoals, match.halftime_home ?? 0, match.halftime_away ?? 0) : (
+                          <p className="text-xs text-text-muted py-2 text-center">Bez gólů</p>
+                        )}
+                        {renderHalfCards(secondHalfCards)}
+
+                        {noMinuteGoals.length > 0 && renderHalfGoals(noMinuteGoals, match.score_home, match.score_away)}
+                        {renderHalfCards(noMinuteCards)}
+                      </>
+                    ) : (
+                      renderHalfGoals(goalEvents)
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Cards without goals */}
+              {goalEvents.length === 0 && cardEvents.length > 0 && (
+                <>
+                  <div className="h-px bg-border" />
+                  <div className="px-4 py-3">
+                    {renderHalfCards(cardEvents)}
+                  </div>
+                </>
+              )}
+
+              {/* Lineups */}
+              {(dolanyStarters.length > 0 || oppStarters.length > 0) && (
+                <>
+                  <div className="h-px bg-border" />
+                  <div className="px-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Home team lineup */}
+                      <div>
+                        <h3 className="text-sm font-bold text-text mb-2">
+                          {match.is_home ? "TJ Dolany" : match.opponent}
+                        </h3>
+                        {(match.is_home ? dolanyStarters : oppStarters).length > 0 && (
+                          <>
+                            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">Základní sestava</p>
+                            {(match.is_home ? dolanyStarters : oppStarters).map((p) => (
+                              <LineupRow
+                                key={"name" in p ? p.name : p.playerName}
+                                name={"name" in p ? p.name : p.playerName}
+                                number={p.number}
+                                isCaptain={p.is_captain}
+                              />
+                            ))}
+                          </>
+                        )}
+                        {(match.is_home ? dolanySubs : oppSubs).length > 0 && (
+                          <>
+                            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mt-3 mb-1">Náhradníci</p>
+                            {(match.is_home ? dolanySubs : oppSubs).map((p) => (
+                              <LineupRow
+                                key={"name" in p ? p.name : p.playerName}
+                                name={"name" in p ? p.name : p.playerName}
+                                number={p.number}
+                                isCaptain={p.is_captain}
+                              />
+                            ))}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Away team lineup */}
+                      <div>
+                        <h3 className="text-sm font-bold text-text mb-2">
+                          {match.is_home ? match.opponent : "TJ Dolany"}
+                        </h3>
+                        {(match.is_home ? oppStarters : dolanyStarters).length > 0 && (
+                          <>
+                            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">Základní sestava</p>
+                            {(match.is_home ? oppStarters : dolanyStarters).map((p) => (
+                              <LineupRow
+                                key={"name" in p ? p.name : p.playerName}
+                                name={"name" in p ? p.name : p.playerName}
+                                number={p.number}
+                                isCaptain={p.is_captain}
+                              />
+                            ))}
+                          </>
+                        )}
+                        {(match.is_home ? oppSubs : dolanySubs).length > 0 && (
+                          <>
+                            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mt-3 mb-1">Náhradníci</p>
+                            {(match.is_home ? oppSubs : dolanySubs).map((p) => (
+                              <LineupRow
+                                key={"name" in p ? p.name : p.playerName}
+                                name={"name" in p ? p.name : p.playerName}
+                                number={p.number}
+                                isCaptain={p.is_captain}
+                              />
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Footer: referee, venue, spectators */}
+              {footerParts.length > 0 && (
+                <>
+                  <div className="h-px bg-border" />
+                  <div className="px-4 py-3">
+                    <p className="text-xs text-text-muted leading-relaxed">
+                      {footerParts.join(". ")}.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        </>
-      )}
-
-      {/* Footer: referee, delegate, venue, spectators */}
-      {footerParts.length > 0 && (
-        <>
-          <div className="h-px bg-border" />
-          <div className="px-4 py-3">
-            <p className="text-xs text-text-muted leading-relaxed">
-              {footerParts.join(". ")}.
-            </p>
-          </div>
+          )}
         </>
       )}
     </div>
@@ -542,19 +566,39 @@ export default function ArticleDetail({ article, matchData }: { article: Article
           <>
             <MatchScoreHeader match={matchData} />
 
-            {heroImage && (
-              <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-8">
-                <Image
-                  src={heroImage.url}
-                  alt={heroImage.alt || article.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 720px"
-                  priority
-                />
+            {/* Gallery right after match header */}
+            {article.article_images.length > 0 && (
+              <div className="mb-8">
+                {article.article_images.length === 1 && heroImage ? (
+                  <div className="relative aspect-[16/9] rounded-xl overflow-hidden">
+                    <Image
+                      src={heroImage.url}
+                      alt={heroImage.alt || article.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 720px"
+                      priority
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {article.article_images.map((img) => (
+                      <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden">
+                        <Image
+                          src={img.url}
+                          alt={img.alt || ""}
+                          fill
+                          className="object-cover hover:scale-105 transition-transform duration-500"
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
+            {/* Article text (referát) */}
             <div
               className="prose max-w-none"
               dangerouslySetInnerHTML={{ __html: html }}
@@ -586,7 +630,8 @@ export default function ArticleDetail({ article, matchData }: { article: Article
           </>
         )}
 
-        {article.article_images.length > 1 && (
+        {/* Gallery for non-match articles (match articles show gallery above text) */}
+        {!matchData && article.article_images.length > 1 && (
           <div className="mt-10">
             <h3 className="text-lg font-bold text-text mb-4">Fotogalerie</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
