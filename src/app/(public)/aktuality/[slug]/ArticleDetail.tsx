@@ -351,9 +351,9 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
       <div className="flex items-center justify-center gap-4 sm:gap-6 px-4 pb-2">
         <div className="flex flex-col items-center flex-1 min-w-0">
           {homeLogo ? (
-            <Image src={homeLogo} alt={home} width={56} height={56} className="rounded-full object-cover ring-2 ring-white/20 bg-white mb-2" />
+            <Image src={homeLogo} alt={home} width={56} height={56} className="object-contain drop-shadow-md mb-2" />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-surface ring-1 ring-border mb-2" />
+            <div className="w-14 h-14 rounded-lg bg-surface ring-1 ring-border mb-2" />
           )}
           <span className="text-sm sm:text-base font-bold text-text text-center truncate max-w-full">{home}</span>
         </div>
@@ -367,9 +367,9 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
         </div>
         <div className="flex flex-col items-center flex-1 min-w-0">
           {awayLogo ? (
-            <Image src={awayLogo} alt={away} width={56} height={56} className="rounded-full object-cover ring-2 ring-white/20 bg-white mb-2" />
+            <Image src={awayLogo} alt={away} width={56} height={56} className="object-contain drop-shadow-md mb-2" />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-surface ring-1 ring-border mb-2" />
+            <div className="w-14 h-14 rounded-lg bg-surface ring-1 ring-border mb-2" />
           )}
           <span className="text-sm sm:text-base font-bold text-text text-center truncate max-w-full">{away}</span>
         </div>

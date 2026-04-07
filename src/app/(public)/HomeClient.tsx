@@ -198,7 +198,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
           <div className="bg-brand-red text-white overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-3">
               {homeLogo && (
-                <Image src={homeLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-2 ring-white/30 bg-white" />
+                <Image src={homeLogo} alt="" width={24} height={24} className="object-contain shrink-0" />
               )}
               <span className="ticker-container text-sm font-semibold tracking-wide text-center relative">
                 <span className="ticker-ball">⚽</span>
@@ -213,7 +213,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 ))}
               </span>
               {awayLogo && (
-                <Image src={awayLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-2 ring-white/30 bg-white" />
+                <Image src={awayLogo} alt="" width={24} height={24} className="object-contain shrink-0" />
               )}
             </div>
           </div>
@@ -295,11 +295,11 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                       const awayLogo = clubBanner.lastMatch.is_home ? oppLogo : DOLANY_LOGO;
                       const matchContent = (
                         <span className="flex items-center gap-2 text-sm font-bold text-white group-hover:text-brand-red transition-colors">
-                          {homeLogo && <Image src={homeLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-2 ring-white/20 bg-white" />}
+                          {homeLogo && <Image src={homeLogo} alt="" width={20} height={20} className="object-contain" />}
                           <span>{clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}</span>
                           <span className="text-brand-yellow">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
                           <span>{clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}</span>
-                          {awayLogo && <Image src={awayLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-2 ring-white/20 bg-white" />}
+                          {awayLogo && <Image src={awayLogo} alt="" width={20} height={20} className="object-contain" />}
                         </span>
                       );
                       return clubBanner.lastMatch.articleSlug ? (
