@@ -189,7 +189,9 @@ function parseGoals(goalLines: string[], result: ParsedMatchReport): void {
         const nextMinuteMatch = nextLine.match(minuteRegex);
         if (nextMinuteMatch) {
           const minute = parseInt(nextMinuteMatch[1]);
-          const is_penalty = /\(penalta\)/i.test(line);
+          // Note: don't auto-detect "(penalta)" — two-column linearization can
+          // merge opponent annotations onto the wrong player's line
+          const is_penalty = false;
           const playerName = line.replace(/\s*\(penalta\)/i, "").trim();
 
           // Determine side by checking lineups

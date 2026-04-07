@@ -397,10 +397,14 @@ export default function AdminMatchesPage() {
     e.preventDefault();
     setSaving(true);
 
-    // Build date as local time → convert to ISO so Supabase stores correct UTC
-    const dateTime = form.time
-      ? new Date(`${form.date}T${form.time}`).toISOString()
-      : new Date(`${form.date}T00:00`).toISOString();
+    // Build date with explicit timezone offset so Supabase stores correct UTC
+    const timeStr = form.time || "00:00";
+    const tempDate = new Date(`${form.date}T${timeStr}`);
+    const offsetMin = tempDate.getTimezoneOffset(); // negative for east of UTC
+    const tzSign = offsetMin <= 0 ? "+" : "-";
+    const tzH = Math.floor(Math.abs(offsetMin) / 60).toString().padStart(2, "0");
+    const tzM = (Math.abs(offsetMin) % 60).toString().padStart(2, "0");
+    const dateTime = `${form.date}T${timeStr}:00${tzSign}${tzH}:${tzM}`;
     const isHome = form.home_team.toLowerCase().includes("dolany");
     const opponent = isHome ? form.away_team : form.home_team;
     const body = {
@@ -529,6 +533,37 @@ export default function AdminMatchesPage() {
     setOpponentLineup((prev) => prev.map((p, i) => ({ ...p, is_captain: i === idx })));
   };
 
+  // Players sorted by surname (last word of name) for dropdowns
+  const playersSorted = [...players].sort((a, b) => {
+    const surnameA = a.name.split(/\s+/).pop()?.toLowerCase() ?? "";
+    const surnameB = b.name.split(/\s+/).pop()?.toLowerCase() ?? "";
+    return surnameA.localeCompare(surnameB, "cs");
+  });
+
+  // Match parsed name (Surname Firstname) to DB player (Firstname Surname)
+  const findPlayer = (parsedName: string): Player | undefined => {
+    const nameLower = parsedName.toLowerCase();
+    const nameParts = nameLower.split(/\s+/);
+    // 1. Exact match
+    let player = players.find((p) => p.name.toLowerCase() === nameLower);
+    if (player) return player;
+    // 2. Reversed name match (parsed "Sedláček Pavel" → DB "Pavel Sedláček")
+    if (nameParts.length >= 2) {
+      const reversed = [...nameParts].reverse().join(" ");
+      player = players.find((p) => p.name.toLowerCase() === reversed);
+      if (player) return player;
+    }
+    // 3. Surname match — only if exactly one player matches
+    const surname = nameParts[0];
+    const surnameMatches = players.filter((p) => {
+      const pParts = p.name.toLowerCase().split(/\s+/);
+      return pParts[pParts.length - 1] === surname || pParts[0] === surname;
+    });
+    if (surnameMatches.length === 1) return surnameMatches[0];
+    // Ambiguous or no match
+    return undefined;
+  };
+
   const fillAllActive = () => {
     const activePlayers = players.filter((p) => p.active);
     setLineup(activePlayers.map((p) => ({ player_id: p.id, is_starter: true, is_captain: false, number: null })));
@@ -581,20 +616,10 @@ export default function AdminMatchesPage() {
       match_number: parsed.match_number || "",
     });
 
-    // Match Dolany lineup to players by name (case-insensitive, surname+firstname)
+    // Match Dolany lineup to players by name
     const matchedLineup: typeof lineup = [];
     for (const lp of dolanyLineup) {
-      // Try exact match first, then partial (surname)
-      const nameLower = lp.name.toLowerCase();
-      const nameParts = nameLower.split(/\s+/);
-      let player = players.find((p) => p.name.toLowerCase() === nameLower);
-      if (!player) {
-        // Try matching surname (first word in the parsed name = surname in Czech format)
-        player = players.find((p) => {
-          const pParts = p.name.toLowerCase().split(/\s+/);
-          return pParts[0] === nameParts[0] || pParts[pParts.length - 1] === nameParts[0];
-        });
-      }
+      const player = findPlayer(lp.name);
       if (player) {
         matchedLineup.push({
           player_id: player.id,
@@ -611,15 +636,7 @@ export default function AdminMatchesPage() {
       homeIsDolany ? g.side === "home" : g.side === "away"
     );
     const matchedScorers = dolanyGoals.map((g) => {
-      const nameLower = g.playerName.toLowerCase();
-      const nameParts = nameLower.split(/\s+/);
-      let player = players.find((p) => p.name.toLowerCase() === nameLower);
-      if (!player) {
-        player = players.find((p) => {
-          const pParts = p.name.toLowerCase().split(/\s+/);
-          return pParts[0] === nameParts[0] || pParts[pParts.length - 1] === nameParts[0];
-        });
-      }
+      const player = findPlayer(g.playerName);
       return {
         player_id: player?.id || "",
         goals: 1,
@@ -632,15 +649,7 @@ export default function AdminMatchesPage() {
     // Dolany cards — extract from lineup ŽK/ČK columns
     const dolanyCards: typeof cards = [];
     for (const lp of dolanyLineup) {
-      const nameLower = lp.name.toLowerCase();
-      const nameParts = nameLower.split(/\s+/);
-      let player = players.find((p) => p.name.toLowerCase() === nameLower);
-      if (!player) {
-        player = players.find((p) => {
-          const pParts = p.name.toLowerCase().split(/\s+/);
-          return pParts[0] === nameParts[0] || pParts[pParts.length - 1] === nameParts[0];
-        });
-      }
+      const player = findPlayer(lp.name);
       if (player) {
         if (lp.yellowMinute != null) {
           dolanyCards.push({ player_id: player.id, card_type: "yellow", minute: lp.yellowMinute.toString() });
@@ -994,7 +1003,7 @@ export default function AdminMatchesPage() {
                           <select value={l.player_id} onChange={(e) => { const u = [...lineup]; u[idx] = { ...u[idx], player_id: e.target.value }; setLineup(u); }}
                             className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
                             <option value="">Vyber hráče</option>
-                            {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            {playersSorted.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                           </select>
                           <button type="button" onClick={() => setCaptain(l.player_id)}
                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors shrink-0 ${
@@ -1024,7 +1033,7 @@ export default function AdminMatchesPage() {
                           <select value={l.player_id} onChange={(e) => { const u = [...lineup]; u[idx] = { ...u[idx], player_id: e.target.value }; setLineup(u); }}
                             className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
                             <option value="">Vyber hráče</option>
-                            {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            {playersSorted.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                           </select>
                           <button type="button" onClick={() => setLineup(lineup.filter((_, j) => j !== idx))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
                         </div>
@@ -1044,7 +1053,7 @@ export default function AdminMatchesPage() {
                         <select value={s.player_id} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], player_id: e.target.value }; setScorers(u); }}
                           className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
                           <option value="">Hráč</option>
-                          {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          {playersSorted.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
                         <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], minute: e.target.value }; setScorers(u); }}
                           className="w-16 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
@@ -1069,7 +1078,7 @@ export default function AdminMatchesPage() {
                         <select value={c.player_id} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], player_id: e.target.value }; setCards(u); }}
                           className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
                           <option value="">Hráč</option>
-                          {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          {playersSorted.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
                         <select value={c.card_type} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], card_type: e.target.value as "yellow" | "red" }; setCards(u); }}
                           className="w-16 px-1 py-1.5 bg-surface border border-border rounded-lg text-text text-sm">
