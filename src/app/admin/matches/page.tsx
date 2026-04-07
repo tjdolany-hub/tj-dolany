@@ -965,241 +965,225 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              {/* Lineup */}
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <p className="text-sm font-bold text-text flex items-center gap-2">
-                    <Users size={16} className="text-brand-red" /> Sestava ({lineup.length} hráčů — {lineup.filter((l) => l.is_starter).length} ZS, {lineup.filter((l) => !l.is_starter).length} N)
-                  </p>
-                  <button type="button" onClick={fillAllActive} className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
-                    <UserPlus size={12} /> Všichni aktivní
-                  </button>
-                  <button type="button" onClick={fillFromPrevious} className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
-                    <RotateCcw size={12} /> Z předchozího
-                  </button>
-                </div>
-                <p className="text-xs text-text-muted mb-3">ZS = základní sestava, N = náhradník. Zápas se počítá všem zaškrtnutým.</p>
+              {/* ═══ Two-column layout: Dolany | Soupeř ═══ */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <div className="space-y-3">
-                  {[
-                    { pos: "brankar", label: "Brankáři", dot: "bg-yellow-500" },
-                    { pos: "obrance", label: "Obránci", dot: "bg-blue-500" },
-                    { pos: "zaloznik", label: "Záložníci", dot: "bg-green-500" },
-                    { pos: "utocnik", label: "Útočníci", dot: "bg-red-500" },
-                  ].map(({ pos, label, dot }) => {
-                    const posPlayers = players.filter((p) => p.position === pos);
-                    if (posPlayers.length === 0) return null;
-                    return (
-                      <div key={pos}>
-                        <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${dot}`} /> {label}
-                        </p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {posPlayers.map((p) => {
-                            const inLineup = lineup.find((l) => l.player_id === p.id);
-                            const isStarter = inLineup?.is_starter;
-                            const isBench = inLineup && !inLineup.is_starter;
-                            const isCaptain = inLineup?.is_captain;
-                            return (
-                              <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
-                                isStarter
-                                  ? "border-green-500 bg-green-600/20 font-medium"
-                                  : isBench
-                                    ? "border-orange-400 bg-orange-500/20 font-medium"
-                                    : "border-border hover:border-brand-red/30"
-                              } ${!p.active ? "opacity-50" : ""}`}>
-                                <span className="flex-1 truncate text-text">{p.name}{isCaptain ? " [K]" : ""}</span>
-                                <label className={`flex items-center gap-1 cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                  isStarter ? "bg-green-600/30 text-green-400" : "text-text-muted hover:text-green-400"
-                                }`} title="Základní sestava">
-                                  <input type="checkbox" checked={!!isStarter} onChange={() => {
-                                    if (isStarter) { toggleLineup(p.id, true); }
-                                    else if (isBench) { setStarterStatus(p.id, true); }
-                                    else { toggleLineup(p.id, true); }
-                                  }} className="w-3 h-3 accent-green-500" />
-                                  ZS
-                                </label>
-                                <label className={`flex items-center gap-1 cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                  isBench ? "bg-orange-500/30 text-orange-400" : "text-text-muted hover:text-orange-400"
-                                }`} title="Náhradník">
-                                  <input type="checkbox" checked={!!isBench} onChange={() => {
-                                    if (isBench) { toggleLineup(p.id, false); }
-                                    else if (isStarter) { setStarterStatus(p.id, false); }
-                                    else { toggleLineup(p.id, false); }
-                                  }} className="w-3 h-3 accent-orange-500" />
-                                  N
-                                </label>
-                                {inLineup && (
-                                  <button type="button" onClick={() => setCaptain(p.id)}
-                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors ${
-                                      isCaptain ? "bg-brand-red/30 text-brand-red" : "text-text-muted hover:text-brand-red"
-                                    }`} title="Kapitán">
-                                    K
-                                  </button>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Scorers — each row = 1 goal, same player can appear multiple times */}
-              <div>
-                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-brand-red" /> Góly Dolany
-                  <span className="text-xs font-normal text-text-muted">(každý řádek = 1 gól, hráč může být vícekrát)</span>
-                </p>
-                {scorers.map((s, i) => (
-                  <div key={i} className="flex gap-2 mb-2 items-center">
-                    <select value={s.player_id} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], player_id: e.target.value }; setScorers(u); }}
-                      className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm">
-                      <option value="">Vyber hráče</option>
-                      {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                    <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], minute: e.target.value }; setScorers(u); }}
-                      className="w-20 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min." />
-                    <label className="flex items-center gap-1 text-xs text-text-muted whitespace-nowrap cursor-pointer">
-                      <input type="checkbox" checked={s.is_penalty || false} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], is_penalty: e.target.checked }; setScorers(u); }}
-                        className="w-3.5 h-3.5 accent-brand-red" />
-                      PK
-                    </label>
-                    <button type="button" onClick={() => setScorers(scorers.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
+                {/* ── LEFT: TJ Dolany ── */}
+                <div className="space-y-4 border border-green-500/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-text flex items-center gap-2">
+                      <Users size={16} className="text-brand-red" /> TJ Dolany
+                    </p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={fillFromPrevious} className="text-[10px] text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
+                        <RotateCcw size={10} /> Z předchozího
+                      </button>
+                    </div>
                   </div>
-                ))}
-                <button type="button" onClick={() => setScorers([...scorers, { player_id: "", goals: 1, minute: "", is_penalty: false }])}
-                  className="text-sm text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
-                  <Plus size={14} /> Přidat gól
-                </button>
-              </div>
 
-              {/* Cards */}
-              <div>
-                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
-                  <Square size={16} className="text-yellow-500" /> Karty
-                </p>
-                {cards.map((c, i) => (
-                  <div key={i} className="flex gap-2 mb-2">
-                    <select value={c.player_id} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], player_id: e.target.value }; setCards(u); }}
-                      className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm">
-                      <option value="">Vyber hráče</option>
-                      {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                    <select value={c.card_type} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], card_type: e.target.value as "yellow" | "red" }; setCards(u); }}
-                      className="w-28 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm">
-                      <option value="yellow">Žlutá</option>
-                      <option value="red">Červená</option>
-                    </select>
-                    <input type="number" min={1} max={120} value={c.minute} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], minute: e.target.value }; setCards(u); }}
-                      className="w-16 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
-                    <button type="button" onClick={() => setCards(cards.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => setCards([...cards, { player_id: "", card_type: "yellow", minute: "" }])}
-                  className="text-sm text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
-                  <Plus size={14} /> Přidat kartu
-                </button>
-              </div>
-
-              {/* Opponent scorers (structured) */}
-              <div>
-                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-blue-500" /> Góly soupeře
-                </p>
-                {opponentScorers.map((s, i) => (
-                  <div key={i} className="flex gap-2 mb-2 items-center">
-                    <input type="text" value={s.name} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], name: e.target.value }; setOpponentScorers(u); }}
-                      className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno hráče" />
-                    <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], minute: e.target.value }; setOpponentScorers(u); }}
-                      className="w-20 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min." />
-                    <label className="flex items-center gap-1 text-xs text-text-muted whitespace-nowrap cursor-pointer">
-                      <input type="checkbox" checked={s.is_penalty || false} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], is_penalty: e.target.checked }; setOpponentScorers(u); }}
-                        className="w-3.5 h-3.5 accent-blue-500" />
-                      PK
-                    </label>
-                    <button type="button" onClick={() => setOpponentScorers(opponentScorers.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => setOpponentScorers([...opponentScorers, { name: "", minute: "", is_penalty: false }])}
-                  className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1">
-                  <Plus size={14} /> Přidat gól soupeře
-                </button>
-              </div>
-
-              {/* Opponent cards (structured) */}
-              <div>
-                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
-                  <Square size={16} className="text-blue-500" /> Karty soupeře
-                </p>
-                {opponentCards.map((c, i) => (
-                  <div key={i} className="flex gap-2 mb-2 items-center">
-                    <input type="text" value={c.name} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], name: e.target.value }; setOpponentCards(u); }}
-                      className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno hráče" />
-                    <select value={c.card_type} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], card_type: e.target.value as "yellow" | "red" }; setOpponentCards(u); }}
-                      className="w-28 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm">
-                      <option value="yellow">Žlutá</option>
-                      <option value="red">Červená</option>
-                    </select>
-                    <input type="number" min={1} max={120} value={c.minute} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], minute: e.target.value }; setOpponentCards(u); }}
-                      className="w-16 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
-                    <button type="button" onClick={() => setOpponentCards(opponentCards.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => setOpponentCards([...opponentCards, { name: "", card_type: "yellow", minute: "" }])}
-                  className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1">
-                  <Plus size={14} /> Přidat kartu soupeře
-                </button>
-              </div>
-
-              {/* Opponent lineup */}
-              <div>
-                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
-                  <Users size={16} className="text-blue-500" /> Sestava soupeře
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Dolany starters */}
                   <div>
-                    <p className="text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Základní sestava</p>
-                    {opponentLineup.filter((p) => p.is_starter).map((p, i) => {
-                      const realIdx = opponentLineup.findIndex((x) => x === p);
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Základní sestava ({lineup.filter((l) => l.is_starter).length}/11)</p>
+                    {lineup.filter((l) => l.is_starter).map((l) => {
+                      const idx = lineup.indexOf(l);
+                      const p = players.find((p) => p.id === l.player_id);
                       return (
-                        <div key={i} className="flex gap-2 mb-1.5 items-center">
-                          <input type="number" min={1} max={99} value={p.number} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], number: e.target.value }; setOpponentLineup(u); }}
-                            className="w-14 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
-                          <input type="text" value={p.name} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], name: e.target.value }; setOpponentLineup(u); }}
-                            className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno" />
-                          <button type="button" onClick={() => setOpponentCaptain(realIdx)}
-                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors ${
-                              p.is_captain ? "bg-blue-500/30 text-blue-400" : "text-text-muted hover:text-blue-400"
-                            }`} title="Kapitán">K</button>
-                          <button type="button" onClick={() => setOpponentLineup(opponentLineup.filter((_, j) => j !== realIdx))} className="text-red-500 hover:text-red-700 p-1"><X size={14} /></button>
+                        <div key={idx} className="flex gap-1.5 mb-1.5 items-center">
+                          <input type="number" min={1} max={99} value={l.number ?? ""} onChange={(e) => { const u = [...lineup]; u[idx] = { ...u[idx], number: e.target.value ? parseInt(e.target.value) : null }; setLineup(u); }}
+                            className="w-12 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
+                          <select value={l.player_id} onChange={(e) => { const u = [...lineup]; u[idx] = { ...u[idx], player_id: e.target.value }; setLineup(u); }}
+                            className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
+                            <option value="">Vyber hráče</option>
+                            {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          </select>
+                          <button type="button" onClick={() => setCaptain(l.player_id)}
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors shrink-0 ${
+                              l.is_captain ? "bg-brand-red/30 text-brand-red" : "text-text-muted hover:text-brand-red"
+                            }`}>K</button>
+                          <button type="button" onClick={() => setLineup(lineup.filter((_, j) => j !== idx))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
                         </div>
                       );
                     })}
-                    <button type="button" onClick={() => setOpponentLineup([...opponentLineup, { name: "", number: "", position: "", is_starter: true, is_captain: false }])}
-                      className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1 mt-1">
-                      <Plus size={12} /> Přidat hráče
+                    {lineup.filter((l) => l.is_starter).length < 11 && (
+                      <button type="button" onClick={() => setLineup([...lineup, { player_id: "", is_starter: true, is_captain: false, number: null }])}
+                        className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1 mt-1">
+                        <Plus size={12} /> Přidat hráče
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dolany subs */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Náhradníci ({lineup.filter((l) => !l.is_starter).length})</p>
+                    {lineup.filter((l) => !l.is_starter).map((l) => {
+                      const idx = lineup.indexOf(l);
+                      return (
+                        <div key={idx} className="flex gap-1.5 mb-1.5 items-center">
+                          <input type="number" min={1} max={99} value={l.number ?? ""} onChange={(e) => { const u = [...lineup]; u[idx] = { ...u[idx], number: e.target.value ? parseInt(e.target.value) : null }; setLineup(u); }}
+                            className="w-12 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
+                          <select value={l.player_id} onChange={(e) => { const u = [...lineup]; u[idx] = { ...u[idx], player_id: e.target.value }; setLineup(u); }}
+                            className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
+                            <option value="">Vyber hráče</option>
+                            {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          </select>
+                          <button type="button" onClick={() => setLineup(lineup.filter((_, j) => j !== idx))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
+                        </div>
+                      );
+                    })}
+                    <button type="button" onClick={() => setLineup([...lineup, { player_id: "", is_starter: false, is_captain: false, number: null }])}
+                      className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1 mt-1">
+                      <Plus size={12} /> Přidat náhradníka
                     </button>
                   </div>
+
+                  {/* Dolany goals */}
                   <div>
-                    <p className="text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Náhradníci</p>
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Góly ({scorers.length})</p>
+                    {scorers.map((s, i) => (
+                      <div key={i} className="flex gap-1.5 mb-1.5 items-center">
+                        <select value={s.player_id} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], player_id: e.target.value }; setScorers(u); }}
+                          className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
+                          <option value="">Hráč</option>
+                          {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                        <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], minute: e.target.value }; setScorers(u); }}
+                          className="w-16 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
+                        <label className="flex items-center gap-1 text-[10px] text-text-muted cursor-pointer shrink-0">
+                          <input type="checkbox" checked={s.is_penalty || false} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], is_penalty: e.target.checked }; setScorers(u); }}
+                            className="w-3 h-3 accent-brand-red" />PK
+                        </label>
+                        <button type="button" onClick={() => setScorers(scorers.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setScorers([...scorers, { player_id: "", goals: 1, minute: "", is_penalty: false }])}
+                      className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1 mt-1">
+                      <Plus size={12} /> Přidat gól
+                    </button>
+                  </div>
+
+                  {/* Dolany cards */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Karty ({cards.length})</p>
+                    {cards.map((c, i) => (
+                      <div key={i} className="flex gap-1.5 mb-1.5 items-center">
+                        <select value={c.player_id} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], player_id: e.target.value }; setCards(u); }}
+                          className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm min-w-0">
+                          <option value="">Hráč</option>
+                          {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                        <select value={c.card_type} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], card_type: e.target.value as "yellow" | "red" }; setCards(u); }}
+                          className="w-16 px-1 py-1.5 bg-surface border border-border rounded-lg text-text text-sm">
+                          <option value="yellow">ŽK</option>
+                          <option value="red">ČK</option>
+                        </select>
+                        <input type="number" min={1} max={120} value={c.minute} onChange={(e) => { const u = [...cards]; u[i] = { ...u[i], minute: e.target.value }; setCards(u); }}
+                          className="w-14 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
+                        <button type="button" onClick={() => setCards(cards.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setCards([...cards, { player_id: "", card_type: "yellow", minute: "" }])}
+                      className="text-xs text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1 mt-1">
+                      <Plus size={12} /> Přidat kartu
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── RIGHT: Soupeř ── */}
+                <div className="space-y-4 border border-blue-500/30 rounded-xl p-4">
+                  <p className="text-sm font-bold text-text flex items-center gap-2">
+                    <Users size={16} className="text-blue-500" /> {form.away_team || form.home_team || "Soupeř"}
+                  </p>
+
+                  {/* Opponent starters */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Základní sestava ({opponentLineup.filter((p) => p.is_starter).length}/11)</p>
+                    {opponentLineup.filter((p) => p.is_starter).map((p, i) => {
+                      const realIdx = opponentLineup.findIndex((x) => x === p);
+                      return (
+                        <div key={i} className="flex gap-1.5 mb-1.5 items-center">
+                          <input type="number" min={1} max={99} value={p.number} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], number: e.target.value }; setOpponentLineup(u); }}
+                            className="w-12 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
+                          <input type="text" value={p.name} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], name: e.target.value }; setOpponentLineup(u); }}
+                            className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno" />
+                          <button type="button" onClick={() => setOpponentCaptain(realIdx)}
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors shrink-0 ${
+                              p.is_captain ? "bg-blue-500/30 text-blue-400" : "text-text-muted hover:text-blue-400"
+                            }`}>K</button>
+                          <button type="button" onClick={() => setOpponentLineup(opponentLineup.filter((_, j) => j !== realIdx))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
+                        </div>
+                      );
+                    })}
+                    {opponentLineup.filter((p) => p.is_starter).length < 11 && (
+                      <button type="button" onClick={() => setOpponentLineup([...opponentLineup, { name: "", number: "", position: "", is_starter: true, is_captain: false }])}
+                        className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1 mt-1">
+                        <Plus size={12} /> Přidat hráče
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Opponent subs */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Náhradníci ({opponentLineup.filter((p) => !p.is_starter).length})</p>
                     {opponentLineup.filter((p) => !p.is_starter).map((p, i) => {
                       const realIdx = opponentLineup.findIndex((x) => x === p);
                       return (
-                        <div key={i} className="flex gap-2 mb-1.5 items-center">
+                        <div key={i} className="flex gap-1.5 mb-1.5 items-center">
                           <input type="number" min={1} max={99} value={p.number} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], number: e.target.value }; setOpponentLineup(u); }}
-                            className="w-14 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
+                            className="w-12 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
                           <input type="text" value={p.name} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], name: e.target.value }; setOpponentLineup(u); }}
                             className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno" />
-                          <button type="button" onClick={() => setOpponentLineup(opponentLineup.filter((_, j) => j !== realIdx))} className="text-red-500 hover:text-red-700 p-1"><X size={14} /></button>
+                          <button type="button" onClick={() => setOpponentLineup(opponentLineup.filter((_, j) => j !== realIdx))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
                         </div>
                       );
                     })}
                     <button type="button" onClick={() => setOpponentLineup([...opponentLineup, { name: "", number: "", position: "", is_starter: false, is_captain: false }])}
                       className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1 mt-1">
                       <Plus size={12} /> Přidat náhradníka
+                    </button>
+                  </div>
+
+                  {/* Opponent goals */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Góly ({opponentScorers.length})</p>
+                    {opponentScorers.map((s, i) => (
+                      <div key={i} className="flex gap-1.5 mb-1.5 items-center">
+                        <input type="text" value={s.name} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], name: e.target.value }; setOpponentScorers(u); }}
+                          className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno" />
+                        <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], minute: e.target.value }; setOpponentScorers(u); }}
+                          className="w-16 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
+                        <label className="flex items-center gap-1 text-[10px] text-text-muted cursor-pointer shrink-0">
+                          <input type="checkbox" checked={s.is_penalty || false} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], is_penalty: e.target.checked }; setOpponentScorers(u); }}
+                            className="w-3 h-3 accent-blue-500" />PK
+                        </label>
+                        <button type="button" onClick={() => setOpponentScorers(opponentScorers.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setOpponentScorers([...opponentScorers, { name: "", minute: "", is_penalty: false }])}
+                      className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1 mt-1">
+                      <Plus size={12} /> Přidat gól
+                    </button>
+                  </div>
+
+                  {/* Opponent cards */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Karty ({opponentCards.length})</p>
+                    {opponentCards.map((c, i) => (
+                      <div key={i} className="flex gap-1.5 mb-1.5 items-center">
+                        <input type="text" value={c.name} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], name: e.target.value }; setOpponentCards(u); }}
+                          className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno" />
+                        <select value={c.card_type} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], card_type: e.target.value as "yellow" | "red" }; setOpponentCards(u); }}
+                          className="w-16 px-1 py-1.5 bg-surface border border-border rounded-lg text-text text-sm">
+                          <option value="yellow">ŽK</option>
+                          <option value="red">ČK</option>
+                        </select>
+                        <input type="number" min={1} max={120} value={c.minute} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], minute: e.target.value }; setOpponentCards(u); }}
+                          className="w-14 px-1.5 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
+                        <button type="button" onClick={() => setOpponentCards(opponentCards.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-0.5 shrink-0"><X size={14} /></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setOpponentCards([...opponentCards, { name: "", card_type: "yellow", minute: "" }])}
+                      className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1 mt-1">
+                      <Plus size={12} /> Přidat kartu
                     </button>
                   </div>
                 </div>

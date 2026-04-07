@@ -8,10 +8,11 @@
  */
 
 export interface ParsedGoal {
-  minute: number | null;
+  minute: number;
   playerName: string;
-  side: "home" | "away";
   is_penalty: boolean;
+  // Side is determined later by matching against lineups
+  side?: "home" | "away";
 }
 
 export interface ParsedLineupPlayer {
@@ -82,10 +83,7 @@ export function parseMatchReport(text: string): ParsedMatchReport {
     result.competition = competition?.trim() || null;
   }
 
-  // --- Phase 2: Team names ---
-  // Find lines with "logo" markers, team names follow
-  // Pattern: "logo\nTJ Dolany\nlogo\nFK Deštné..."
-  // Or just find score line and work backwards
+  // --- Phase 2: Team names + score ---
   const scoreLineIdx = lines.findIndex((l) => /^\d+:\d+$/.test(l));
   if (scoreLineIdx >= 0) {
     const scoreParts = lines[scoreLineIdx].match(/^(\d+):(\d+)$/);
@@ -98,7 +96,7 @@ export function parseMatchReport(text: string): ParsedMatchReport {
     const teamLines: string[] = [];
     for (let i = scoreLineIdx - 1; i >= 0; i--) {
       if (lines[i].toLowerCase() === "logo") continue;
-      if (headerMatch && i === 0) continue; // skip header
+      if (headerMatch && i === 0) continue;
       teamLines.unshift(lines[i]);
       if (teamLines.length === 2) break;
     }
@@ -107,7 +105,7 @@ export function parseMatchReport(text: string): ParsedMatchReport {
       result.away_team = teamLines[1];
     }
 
-    // Halftime: line after score, pattern "(1:4)"
+    // Halftime
     const htLine = lines[scoreLineIdx + 1];
     if (htLine) {
       const htMatch = htLine.match(/^\((\d+):(\d+)\)$/);
@@ -118,27 +116,33 @@ export function parseMatchReport(text: string): ParsedMatchReport {
     }
   }
 
-  // --- Phase 3: Goals section ---
-  // Goals appear between halftime and the "Číslo utkání" footer line
-  // Format alternates: home goals on left, away on right
-  // Home: "Karel Jaroslav\n18." or "Rýdl Matyáš (penalta)\n63."
-  // Away: "8.\nTuček Michal"
-  const htLineIdx = scoreLineIdx >= 0 ? scoreLineIdx + 2 : -1;
-  const footerIdx = lines.findIndex((l) => l.startsWith("Číslo utkání:") || l.startsWith("Rozhodčí:"));
-  // Also find where lineups start (first occurrence of "# P Jméno" or the team name repeated)
-  const lineupStartIdx = lines.findIndex(
+  // --- Phase 3: Lineups (parse BEFORE goals so we can determine sides) ---
+  const lineupHeaderIdx = lines.findIndex(
     (l, i) => i > scoreLineIdx && /^#\s+P\s+/i.test(l)
   );
+  if (lineupHeaderIdx >= 0) {
+    // Find the team name header before the first # P line
+    let lineupStartIdx = lineupHeaderIdx;
+    for (let i = lineupHeaderIdx - 1; i >= 0; i--) {
+      if (lines[i] === result.home_team || lines[i] === result.away_team) {
+        lineupStartIdx = i;
+        break;
+      }
+    }
+    parseLineups(lines, lineupStartIdx, result);
+  }
 
-  const goalsEndIdx = footerIdx >= 0 ? footerIdx : (lineupStartIdx >= 0 ? lineupStartIdx : lines.length);
+  // --- Phase 4: Goals ---
+  const footerIdx = lines.findIndex((l) => l.startsWith("Číslo utkání:") || l.startsWith("Rozhodčí:"));
+  const goalsEndIdx = footerIdx >= 0 ? footerIdx : (lineupHeaderIdx >= 0 ? lineupHeaderIdx - 1 : lines.length);
+  const htLineIdx = scoreLineIdx >= 0 ? scoreLineIdx + 2 : -1;
 
   if (htLineIdx > 0 && htLineIdx < goalsEndIdx) {
     const goalLines = lines.slice(htLineIdx, goalsEndIdx);
     parseGoals(goalLines, result);
   }
 
-  // --- Phase 4: Footer ---
-  // "Číslo utkání: 2025523A1A1605. Rozhodčí: Kašpar Adam – Šolc Petr Tata, Hejzlar Jakub. Delegát: Bárta David. Hřiště: TJ Dolany. Diváků: 40."
+  // --- Phase 5: Footer ---
   const footerLine = lines.find(
     (l) => l.startsWith("Číslo utkání:") || l.startsWith("Rozhodčí:")
   );
@@ -159,56 +163,27 @@ export function parseMatchReport(text: string): ParsedMatchReport {
     if (specMatch) result.spectators = parseInt(specMatch[1]);
   }
 
-  // --- Phase 5: Lineups ---
-  if (lineupStartIdx >= 0) {
-    parseLineups(lines, lineupStartIdx, result);
-  }
-
   return result;
 }
 
 function parseGoals(goalLines: string[], result: ParsedMatchReport): void {
-  // Goal patterns:
-  // Away goal: minute first: "8." then name "Tuček Michal"
-  // Home goal: name first: "Karel Jaroslav" then minute "18."
-  // Penalty: "Rýdl Matyáš (penalta)" then "63."
-  // Lines are individual, so we look for minute patterns and adjacent name lines
+  // In the copied text, goals appear as name/minute pairs (two-column layout linearized).
+  // All goals appear as: name then minute (e.g., "Tuček Michal\n8.")
+  // or with penalty: "Rýdl Matyáš (penalta)\n63."
+  // We parse all as neutral, then determine side by matching against lineups.
 
   const minuteRegex = /^(\d+)\.$/;
-  const nameRegex = /^[A-ZÁ-Ž]/; // Starts with uppercase letter
+  const nameRegex = /^[A-ZÁ-Ž]/;
+
+  // Build lookup sets from lineups to determine goal sides
+  const homeNames = new Set(result.homeLineup.map((p) => p.name.toLowerCase()));
+  const awayNames = new Set(result.awayLineup.map((p) => p.name.toLowerCase()));
 
   for (let i = 0; i < goalLines.length; i++) {
     const line = goalLines[i];
-    const minuteMatch = line.match(minuteRegex);
 
-    if (minuteMatch) {
-      const minute = parseInt(minuteMatch[1]);
-
-      // Check if previous line is a name (home goal: name then minute)
-      // Check if next line is a name (away goal: minute then name)
-      const prevLine = i > 0 ? goalLines[i - 1] : null;
-      const nextLine = i < goalLines.length - 1 ? goalLines[i + 1] : null;
-
-      // If previous line is a name and NOT a minute → home goal
-      if (prevLine && nameRegex.test(prevLine) && !minuteRegex.test(prevLine)) {
-        // Already added by the name handler below, skip
-        continue;
-      }
-
-      // If next line is a name → away goal
-      if (nextLine && nameRegex.test(nextLine) && !minuteRegex.test(nextLine)) {
-        const is_penalty = /\(penalta\)/i.test(nextLine);
-        const playerName = nextLine.replace(/\s*\(penalta\)/i, "").trim();
-        result.goals.push({
-          minute,
-          playerName,
-          side: "away",
-          is_penalty,
-        });
-        i++; // skip next line
-      }
-    } else if (nameRegex.test(line) && !minuteRegex.test(line)) {
-      // Name line — check if next line is a minute (home goal)
+    // Name line followed by minute
+    if (nameRegex.test(line) && !minuteRegex.test(line)) {
       const nextLine = i < goalLines.length - 1 ? goalLines[i + 1] : null;
       if (nextLine) {
         const nextMinuteMatch = nextLine.match(minuteRegex);
@@ -216,12 +191,27 @@ function parseGoals(goalLines: string[], result: ParsedMatchReport): void {
           const minute = parseInt(nextMinuteMatch[1]);
           const is_penalty = /\(penalta\)/i.test(line);
           const playerName = line.replace(/\s*\(penalta\)/i, "").trim();
-          result.goals.push({
-            minute,
-            playerName,
-            side: "home",
-            is_penalty,
-          });
+
+          // Determine side by checking lineups
+          const nameLower = playerName.toLowerCase();
+          let side: "home" | "away" = "home"; // default
+          if (awayNames.size > 0 || homeNames.size > 0) {
+            // Try exact match first
+            if (awayNames.has(nameLower)) {
+              side = "away";
+            } else if (homeNames.has(nameLower)) {
+              side = "home";
+            } else {
+              // Try surname match (first word)
+              const surname = nameLower.split(/\s+/)[0];
+              const inHome = [...homeNames].some((n) => n.split(/\s+/)[0] === surname);
+              const inAway = [...awayNames].some((n) => n.split(/\s+/)[0] === surname);
+              if (inAway && !inHome) side = "away";
+              else if (inHome && !inAway) side = "home";
+            }
+          }
+
+          result.goals.push({ minute, playerName, is_penalty, side });
           i++; // skip minute line
         }
       }
@@ -234,28 +224,8 @@ function parseLineups(
   startIdx: number,
   result: ParsedMatchReport
 ): void {
-  // Find team name headers — they appear before the "# P Jméno" rows
-  // Structure:
-  // "TJ Dolany"
-  // "#    P    Jméno    ŽK    ČK"
-  // rows...
-  // "#    P    Náhradníci    ŽK    ČK"
-  // rows...
-  // "FK Deštné/MFK N.Město B"
-  // "#    P    Jméno    ŽK    ČK"
-  // rows...
-
   let currentTeam: "home" | "away" | null = null;
   let isStarter = true;
-
-  // Find the first team header — it should be a line matching home or away team name
-  // that appears before or at the lineup start
-  for (let i = startIdx - 1; i >= 0; i--) {
-    if (lines[i] === result.home_team || lines[i] === result.away_team) {
-      startIdx = i;
-      break;
-    }
-  }
 
   for (let i = startIdx; i < lines.length; i++) {
     const line = lines[i];
@@ -284,31 +254,33 @@ function parseLineups(
 
     if (!currentTeam) continue;
 
-    // Player row: "31    B    Samek David            "
-    // Or with cards: "9    N    Rýdl Matyáš    13        "
-    // Or with card: "13    N    Zítko Daniel    89        "
-    // Tab/space separated: number, position, name, [yellow_minute], [red_minute], [goal_icon]
+    // Player row: "31    B    Samek David" or "9    N    Rýdl Matyáš    13"
+    // After trim, trailing empty columns are gone.
+    // Format: number \s+ position \s+ name [\s{2,} cardMinutes...]
     const playerMatch = line.match(
-      /^(\d+)\s+([BNbn])\s+(.+?)(?:\s{2,}|\t)(.*)$/
+      /^(\d+)\s+([BNbn])\s+(.+)$/
     );
 
     if (playerMatch) {
-      const [, numStr, pos, nameRaw, rest] = playerMatch;
+      const [, numStr, pos, rest] = playerMatch;
+
+      // Split the rest into name and card columns
+      // Cards are numeric values separated by 2+ spaces or tabs from the name
+      const parts = rest.split(/\s{2,}|\t/).filter(Boolean);
+      const nameRaw = parts[0] || rest;
+      const cardParts = parts.slice(1).filter((p) => /^\d+$/.test(p));
+
       const is_captain = /\[K\]/.test(nameRaw);
       const name = nameRaw.replace(/\s*\[K\]\s*/, "").trim();
 
-      // Parse remaining columns for cards (ŽK, ČK)
-      // Rest might look like "13        " (yellow at 13) or "    89    " or empty
-      const restParts = rest.trim().split(/\s{2,}|\t/).filter(Boolean);
       let yellowMinute: number | null = null;
       let redMinute: number | null = null;
 
-      // The order is ŽK then ČK
-      if (restParts.length >= 1 && /^\d+$/.test(restParts[0])) {
-        yellowMinute = parseInt(restParts[0]);
+      if (cardParts.length >= 1) {
+        yellowMinute = parseInt(cardParts[0]);
       }
-      if (restParts.length >= 2 && /^\d+$/.test(restParts[1])) {
-        redMinute = parseInt(restParts[1]);
+      if (cardParts.length >= 2) {
+        redMinute = parseInt(cardParts[1]);
       }
 
       const player: ParsedLineupPlayer = {
