@@ -112,7 +112,7 @@ export default async function HomePage() {
     ? (() => {
         const m = matchData[0] as unknown as { opponent: string; date: string; is_home: boolean; venue: string | null };
         const title = m.is_home ? `Dolany - ${m.opponent}` : `${m.opponent} - Dolany`;
-        return { title, date: m.date, location: m.venue ?? (m.is_home ? "Dolany" : null) };
+        return { title, date: m.date, location: m.venue ?? (m.is_home ? "Dolany" : null), opponent: m.opponent, is_home: m.is_home };
       })()
     : null;
 

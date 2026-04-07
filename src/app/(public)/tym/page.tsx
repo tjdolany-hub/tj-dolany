@@ -21,7 +21,7 @@ export default async function TymPage() {
   const currentSeasonYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
   const currentSeason = `${currentSeasonYear}/${currentSeasonYear + 1}`;
 
-  const [{ data: players }, { data: draws }, { data: matches }, { data: lineups }, { data: scorers }, { data: cards }] =
+  const [{ data: players }, { data: draws }, { data: matches }, { data: lineups }, { data: scorers }, { data: cards }, { data: matchScorersDetailed }, { data: matchCardsDetailed }, { data: oppScorers }, { data: oppCards }] =
     await Promise.all([
       supabase
         .from("players")
@@ -36,11 +36,16 @@ export default async function TymPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("match_results")
-        .select("*, articles(slug)")
+        .select("*, articles(slug), match_images(url, alt, sort_order)")
         .order("date", { ascending: true }),
       supabase.from("match_lineups").select("player_id, match_id"),
       supabase.from("match_scorers").select("player_id, goals, match_id"),
       supabase.from("match_cards").select("player_id, card_type, match_id"),
+      // Detailed scorers for timeline (with minute, penalty, player name)
+      supabase.from("match_scorers").select("match_id, minute, is_penalty, players(name)"),
+      supabase.from("match_cards").select("match_id, card_type, minute, players(name)"),
+      supabase.from("match_opponent_scorers").select("match_id, name, minute, is_penalty"),
+      supabase.from("match_opponent_cards").select("match_id, name, card_type, minute"),
     ]);
 
   // Build match_id -> season lookup
@@ -129,6 +134,65 @@ export default async function TymPage() {
   // Available seasons
   const availableSeasons = [...new Set(Object.values(matchMeta).map((m) => m.season))].sort().reverse();
 
+  // Build per-match event data for timeline display
+  type MatchEvent = {
+    type: "goal" | "yellow" | "red";
+    minute: number | null;
+    playerName: string;
+    is_penalty: boolean;
+    side: "home" | "away";
+  };
+  const matchEvents: Record<string, MatchEvent[]> = {};
+
+  for (const s of (matchScorersDetailed ?? []) as { match_id: string; minute: number | null; is_penalty: boolean; players: { name: string } | null }[]) {
+    if (!matchEvents[s.match_id]) matchEvents[s.match_id] = [];
+    // Determine side: Dolany scorers are always "our" team
+    const m = (matches ?? []).find((x) => x.id === s.match_id);
+    matchEvents[s.match_id].push({
+      type: "goal",
+      minute: s.minute,
+      playerName: s.players?.name || "?",
+      is_penalty: s.is_penalty ?? false,
+      side: m?.is_home ? "home" : "away",
+    });
+  }
+
+  for (const c of (matchCardsDetailed ?? []) as { match_id: string; card_type: string; minute: number | null; players: { name: string } | null }[]) {
+    if (!matchEvents[c.match_id]) matchEvents[c.match_id] = [];
+    const m = (matches ?? []).find((x) => x.id === c.match_id);
+    matchEvents[c.match_id].push({
+      type: c.card_type === "red" ? "red" : "yellow",
+      minute: c.minute,
+      playerName: c.players?.name || "?",
+      is_penalty: false,
+      side: m?.is_home ? "home" : "away",
+    });
+  }
+
+  for (const s of (oppScorers ?? []) as { match_id: string; name: string; minute: number | null; is_penalty: boolean }[]) {
+    if (!matchEvents[s.match_id]) matchEvents[s.match_id] = [];
+    const m = (matches ?? []).find((x) => x.id === s.match_id);
+    matchEvents[s.match_id].push({
+      type: "goal",
+      minute: s.minute,
+      playerName: s.name,
+      is_penalty: s.is_penalty ?? false,
+      side: m?.is_home ? "away" : "home",
+    });
+  }
+
+  for (const c of (oppCards ?? []) as { match_id: string; name: string; card_type: string; minute: number | null }[]) {
+    if (!matchEvents[c.match_id]) matchEvents[c.match_id] = [];
+    const m = (matches ?? []).find((x) => x.id === c.match_id);
+    matchEvents[c.match_id].push({
+      type: c.card_type === "red" ? "red" : "yellow",
+      minute: c.minute,
+      playerName: c.name,
+      is_penalty: false,
+      side: m?.is_home ? "away" : "home",
+    });
+  }
+
   return (
     <TymClient
       players={players ?? []}
@@ -138,6 +202,7 @@ export default async function TymPage() {
       standings={leagueStandings ?? []}
       statsEntries={statsEntries}
       availableSeasons={availableSeasons}
+      matchEvents={matchEvents}
     />
   );
 }

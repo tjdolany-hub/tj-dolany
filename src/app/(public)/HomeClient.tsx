@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, ImageIcon, Camera } from "lucide-react";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
+import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 
@@ -33,6 +34,8 @@ interface NextMatch {
   title: string;
   date: string;
   location: string | null;
+  opponent: string;
+  is_home: boolean;
 }
 
 interface SerializedAlbum {
@@ -188,9 +191,15 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
       {/* ── MATCH TICKER ── */}
       {nextMatch && (() => {
         const tickerText = `Příští zápas: ${formatMatchDate(nextMatch.date)} — ${nextMatch.title}${nextMatch.location ? ` | Hřiště: ${nextMatch.location}` : ""}`;
+        const oppLogo = getTeamLogo(nextMatch.opponent);
+        const homeLogo = nextMatch.is_home ? DOLANY_LOGO : oppLogo;
+        const awayLogo = nextMatch.is_home ? oppLogo : DOLANY_LOGO;
         return (
           <div className="bg-brand-red text-white overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-center gap-3">
+              {homeLogo && (
+                <Image src={homeLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-1 ring-white/30" />
+              )}
               <span className="ticker-container text-sm font-semibold tracking-wide text-center relative">
                 <span className="ticker-ball">⚽</span>
                 {tickerText.split("").map((char, i) => (
@@ -203,6 +212,9 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                   </span>
                 ))}
               </span>
+              {awayLogo && (
+                <Image src={awayLogo} alt="" width={24} height={24} className="rounded-full object-cover shrink-0 ring-1 ring-white/30" />
+              )}
             </div>
           </div>
         );
@@ -278,11 +290,16 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Poslední zápas</span>
                   {clubBanner.lastMatch ? (
                     (() => {
+                      const oppLogo = getTeamLogo(clubBanner.lastMatch.opponent);
+                      const homeLogo = clubBanner.lastMatch.is_home ? DOLANY_LOGO : oppLogo;
+                      const awayLogo = clubBanner.lastMatch.is_home ? oppLogo : DOLANY_LOGO;
                       const matchContent = (
-                        <span className="text-sm font-bold text-white group-hover:text-brand-red transition-colors">
-                          {clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}
-                          <span className="text-brand-yellow mx-1.5">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
-                          {clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}
+                        <span className="flex items-center gap-2 text-sm font-bold text-white group-hover:text-brand-red transition-colors">
+                          {homeLogo && <Image src={homeLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-1 ring-white/20" />}
+                          <span>{clubBanner.lastMatch.is_home ? "TJ Dolany" : clubBanner.lastMatch.opponent}</span>
+                          <span className="text-brand-yellow">{clubBanner.lastMatch.score_home}:{clubBanner.lastMatch.score_away}</span>
+                          <span>{clubBanner.lastMatch.is_home ? clubBanner.lastMatch.opponent : "TJ Dolany"}</span>
+                          {awayLogo && <Image src={awayLogo} alt="" width={20} height={20} className="rounded-full object-cover ring-1 ring-white/20" />}
                         </span>
                       );
                       return clubBanner.lastMatch.articleSlug ? (

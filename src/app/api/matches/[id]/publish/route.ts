@@ -23,7 +23,7 @@ export async function POST(
   const { data: match, error } = await admin
     .from("match_results")
     .select(
-      "*, match_lineups(player_id, is_starter, players(name)), match_scorers(player_id, goals, minute, players(name)), match_cards(player_id, card_type, minute, players(name)), match_images(url, alt, sort_order)"
+      "*, match_lineups(player_id, is_starter, is_captain, players(name)), match_scorers(player_id, goals, minute, is_penalty, players(name)), match_cards(player_id, card_type, minute, players(name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)"
     )
     .eq("id", id)
     .single();
@@ -67,7 +67,10 @@ export async function POST(
   if (starters.length > 0) {
     content += `\n\n**Základní sestava:** ${starters
       .map(
-        (l: { players: { name: string } | null }) => l.players?.name || "?"
+        (l: { players: { name: string } | null; is_captain?: boolean }) => {
+          const name = l.players?.name || "?";
+          return l.is_captain ? `${name} (K)` : name;
+        }
       )
       .join(", ")}`;
   }
@@ -79,31 +82,40 @@ export async function POST(
       .join(", ")}`;
   }
 
-  // Goals — group by player, show individual minutes
+  // Goals — group by player, show individual minutes + penalty
   if (match.match_scorers && match.match_scorers.length > 0) {
-    const goalMap = new Map<string, { name: string; minutes: (number | null)[] }>();
+    const goalMap = new Map<string, { name: string; entries: { minute: number | null; is_penalty: boolean }[] }>();
     match.match_scorers.forEach(
-      (s: { player_id: string; players: { name: string } | null; goals: number; minute: number | null }) => {
+      (s: { player_id: string; players: { name: string } | null; goals: number; minute: number | null; is_penalty?: boolean }) => {
         const existing = goalMap.get(s.player_id);
         if (existing) {
-          existing.minutes.push(s.minute);
+          existing.entries.push({ minute: s.minute, is_penalty: s.is_penalty ?? false });
         } else {
-          goalMap.set(s.player_id, { name: s.players?.name || "?", minutes: [s.minute] });
+          goalMap.set(s.player_id, { name: s.players?.name || "?", entries: [{ minute: s.minute, is_penalty: s.is_penalty ?? false }] });
         }
       }
     );
     const goalTexts = [...goalMap.values()].map((g) => {
       let txt = g.name;
-      if (g.minutes.length > 1) txt += ` ${g.minutes.length}×`;
-      const mins = g.minutes.filter((m): m is number => m != null).sort((a, b) => a - b);
-      if (mins.length > 0) txt += ` (${mins.map((m) => `${m}'`).join(", ")})`;
+      if (g.entries.length > 1) txt += ` ${g.entries.length}×`;
+      const sorted = g.entries.filter((e) => e.minute != null).sort((a, b) => a.minute! - b.minute!);
+      if (sorted.length > 0) txt += ` (${sorted.map((e) => `${e.minute}'${e.is_penalty ? " PK" : ""}`).join(", ")})`;
       return txt;
     });
     content += `\n\n**Góly Dolany:** ${goalTexts.join(", ")}`;
   }
 
-  // Opponent scorers (free text)
-  if (match.opponent_scorers) {
+  // Opponent scorers — prefer structured data, fallback to free text
+  const oppScorers = match.match_opponent_scorers as { name: string; minute: number | null; is_penalty: boolean }[] | null;
+  if (oppScorers && oppScorers.length > 0) {
+    const texts = oppScorers.map((s) => {
+      let txt = s.name;
+      if (s.is_penalty) txt += " (PK)";
+      if (s.minute) txt += ` (${s.minute}')`;
+      return txt;
+    });
+    content += `\n**Góly ${match.opponent}:** ${texts.join(", ")}`;
+  } else if (match.opponent_scorers) {
     content += `\n**Góly ${match.opponent}:** ${match.opponent_scorers}`;
   }
 
@@ -140,9 +152,32 @@ export async function POST(
       .join(", ")}`;
   }
 
-  // Opponent cards (free text)
-  if (match.opponent_cards) {
+  // Opponent cards — prefer structured data, fallback to free text
+  const oppCards = match.match_opponent_cards as { name: string; card_type: string; minute: number | null }[] | null;
+  if (oppCards && oppCards.length > 0) {
+    const oppYellows = oppCards.filter((c) => c.card_type === "yellow");
+    const oppReds = oppCards.filter((c) => c.card_type === "red");
+    if (oppYellows.length > 0) {
+      content += `\n**Žluté karty ${match.opponent}:** ${oppYellows.map((c) => { let txt = c.name; if (c.minute) txt += ` (${c.minute}')`; return txt; }).join(", ")}`;
+    }
+    if (oppReds.length > 0) {
+      content += `\n**Červené karty ${match.opponent}:** ${oppReds.map((c) => { let txt = c.name; if (c.minute) txt += ` (${c.minute}')`; return txt; }).join(", ")}`;
+    }
+  } else if (match.opponent_cards) {
     content += `\n**Karty ${match.opponent}:** ${match.opponent_cards}`;
+  }
+
+  // Opponent lineup
+  const oppLineup = match.match_opponent_lineup as { name: string; number: number | null; position: string | null; is_starter: boolean; is_captain?: boolean }[] | null;
+  if (oppLineup && oppLineup.length > 0) {
+    const oppStarters = oppLineup.filter((p) => p.is_starter);
+    const oppSubs = oppLineup.filter((p) => !p.is_starter);
+    if (oppStarters.length > 0) {
+      content += `\n\n**Sestava ${match.opponent}:** ${oppStarters.map((p) => p.is_captain ? `${p.name} (K)` : p.name).join(", ")}`;
+    }
+    if (oppSubs.length > 0) {
+      content += `\n**Náhradníci ${match.opponent}:** ${oppSubs.map((p) => p.name).join(", ")}`;
+    }
   }
 
   // Summary/report

@@ -19,10 +19,13 @@ const matchSchema = z.object({
   video_url: z.string().nullable().optional(),
   opponent_scorers: z.string().nullable().optional(),
   opponent_cards: z.string().nullable().optional(),
-  lineup: z.array(z.object({ player_id: z.string(), is_starter: z.boolean().default(true) })).optional(),
-  scorers: z.array(z.object({ player_id: z.string(), goals: z.number().default(1), minute: z.number().nullable().optional() })).optional(),
+  lineup: z.array(z.object({ player_id: z.string(), is_starter: z.boolean().default(true), is_captain: z.boolean().default(false) })).optional(),
+  scorers: z.array(z.object({ player_id: z.string(), goals: z.number().default(1), minute: z.number().nullable().optional(), is_penalty: z.boolean().default(false) })).optional(),
   cards: z.array(z.object({ player_id: z.string(), card_type: z.enum(["yellow", "red"]), minute: z.number().nullable().optional() })).optional(),
   images: z.array(z.object({ url: z.string(), alt: z.string().nullable().optional() })).optional(),
+  opponent_scorers_data: z.array(z.object({ name: z.string(), minute: z.number().nullable().optional(), is_penalty: z.boolean().default(false) })).optional(),
+  opponent_cards_data: z.array(z.object({ name: z.string(), card_type: z.enum(["yellow", "red"]), minute: z.number().nullable().optional() })).optional(),
+  opponent_lineup: z.array(z.object({ name: z.string(), number: z.number().nullable().optional(), position: z.string().nullable().optional(), is_starter: z.boolean().default(true), is_captain: z.boolean().default(false) })).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -33,7 +36,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("match_results")
-    .select("*, match_lineups(player_id, is_starter, players(id, name)), match_scorers(player_id, goals, minute, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order)")
+    .select("*, match_lineups(player_id, is_starter, is_captain, players(id, name)), match_scorers(player_id, goals, minute, is_penalty, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)")
     .is("deleted_at", null)
     .order("date", { ascending: false });
 
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const { lineup, scorers, cards, images, ...data } = parsed.data;
+  const { lineup, scorers, cards, images, opponent_scorers_data, opponent_cards_data, opponent_lineup, ...data } = parsed.data;
 
   const admin = await createServiceClient();
   const { data: match, error } = await admin
@@ -77,6 +80,7 @@ export async function POST(req: NextRequest) {
       match_id: match.id,
       player_id: l.player_id,
       is_starter: l.is_starter,
+      is_captain: l.is_captain,
     }));
     const { error: lineupError } = await admin
       .from("match_lineups")
@@ -92,6 +96,7 @@ export async function POST(req: NextRequest) {
       player_id: s.player_id,
       goals: s.goals,
       minute: s.minute ?? null,
+      is_penalty: s.is_penalty,
     }));
     const { error: scorerError } = await admin
       .from("match_scorers")
@@ -124,6 +129,41 @@ export async function POST(req: NextRequest) {
       sort_order: i,
     }));
     await admin.from("match_images").insert(imageRows);
+  }
+
+  if (opponent_scorers_data && opponent_scorers_data.length > 0) {
+    await admin.from("match_opponent_scorers").insert(
+      opponent_scorers_data.map((s) => ({
+        match_id: match.id,
+        name: s.name,
+        minute: s.minute ?? null,
+        is_penalty: s.is_penalty,
+      }))
+    );
+  }
+
+  if (opponent_cards_data && opponent_cards_data.length > 0) {
+    await admin.from("match_opponent_cards").insert(
+      opponent_cards_data.map((c) => ({
+        match_id: match.id,
+        name: c.name,
+        card_type: c.card_type,
+        minute: c.minute ?? null,
+      }))
+    );
+  }
+
+  if (opponent_lineup && opponent_lineup.length > 0) {
+    await admin.from("match_opponent_lineup").insert(
+      opponent_lineup.map((p) => ({
+        match_id: match.id,
+        name: p.name,
+        number: p.number ?? null,
+        position: p.position ?? null,
+        is_starter: p.is_starter,
+        is_captain: p.is_captain,
+      }))
+    );
   }
 
   if (match) {

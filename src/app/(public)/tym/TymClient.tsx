@@ -5,15 +5,18 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PlayerCard from "@/components/public/PlayerCard";
+import MatchGallery from "@/components/public/MatchGallery";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 import { formatDateShort, POSITION_LABELS } from "@/lib/utils";
+import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
 import type { Database } from "@/types/database";
 
 type Player = Database["public"]["Tables"]["players"]["Row"];
 type Draw = Database["public"]["Tables"]["season_draws"]["Row"];
 type MatchResult = Database["public"]["Tables"]["match_results"]["Row"] & {
   articles?: { slug: string } | null;
+  match_images?: { url: string; alt: string | null; sort_order: number }[];
 };
 
 type PlayerStats = Record<string, { matches: number; goals: number; yellows: number; reds: number }>;
@@ -42,9 +45,219 @@ function formatMatchTime(dateStr: string): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
-function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
+function MatchTimeline({ match, events }: { match: MatchResult; events: MatchEvent[] }) {
   const router = useRouter();
+  const hasArticle = !!match.articles?.slug;
+  const matchImages = (match.match_images ?? [])
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((img) => ({ url: img.url, alt: img.alt }));
+  const home = match.is_home ? "TJ Dolany" : match.opponent;
+  const away = match.is_home ? match.opponent : "TJ Dolany";
+  const matchTitleStr = `${home} vs ${away}`;
+
+  // Sort events by minute (null minutes at end)
+  const sorted = [...events].sort((a, b) => {
+    if (a.minute == null && b.minute == null) return 0;
+    if (a.minute == null) return 1;
+    if (b.minute == null) return -1;
+    return a.minute - b.minute;
+  });
+
+  const hasHalftime = match.halftime_home != null && match.halftime_away != null;
+  const firstHalf = hasHalftime ? sorted.filter((e) => e.minute != null && e.minute <= 45) : [];
+  const secondHalf = hasHalftime ? sorted.filter((e) => e.minute != null && e.minute > 45) : [];
+  const noMinute = sorted.filter((e) => e.minute == null);
+
+  // Compute running score for goals
+  function addRunningScore(evts: MatchEvent[]) {
+    let homeScore = 0;
+    let awayScore = 0;
+    // If this is second half, start from halftime score
+    if (hasHalftime && evts === secondHalf) {
+      homeScore = match.halftime_home!;
+      awayScore = match.halftime_away!;
+    }
+    return evts.map((e) => {
+      if (e.type === "goal") {
+        if (e.side === "home") homeScore++;
+        else awayScore++;
+      }
+      return { ...e, runningHome: homeScore, runningAway: awayScore };
+    });
+  }
+
+  const renderEvent = (e: MatchEvent & { runningHome: number; runningAway: number }) => {
+    const isHome = e.side === "home";
+    const minuteStr = e.minute != null ? `${e.minute}'` : "";
+
+    if (e.type === "goal") {
+      const scoreStr = `${e.runningHome}:${e.runningAway}`;
+      const penaltyStr = e.is_penalty ? " (PK)" : "";
+      if (isHome) {
+        return (
+          <div key={`${e.minute}-${e.playerName}-${e.side}`} className="flex items-center gap-2 py-1">
+            <span className="w-10 text-right text-xs text-text-muted tabular-nums">{minuteStr}</span>
+            <BallIcon className="w-4 h-4 text-text shrink-0" />
+            <span className="text-xs font-bold text-brand-red tabular-nums">{scoreStr}</span>
+            <span className="text-sm text-text font-medium">{e.playerName}{penaltyStr}</span>
+          </div>
+        );
+      } else {
+        return (
+          <div key={`${e.minute}-${e.playerName}-${e.side}`} className="flex items-center gap-2 py-1 justify-end">
+            <span className="text-sm text-text font-medium">{e.playerName}{penaltyStr}</span>
+            <span className="text-xs font-bold text-blue-500 tabular-nums">{scoreStr}</span>
+            <BallIcon className="w-4 h-4 text-text shrink-0" />
+            <span className="w-10 text-left text-xs text-text-muted tabular-nums">{minuteStr}</span>
+          </div>
+        );
+      }
+    }
+
+    // Card
+    const cardIcon = e.type === "yellow"
+      ? <YellowCard className="w-4 h-4 shrink-0" />
+      : <RedCard className="w-4 h-4 shrink-0" />;
+
+    if (isHome) {
+      return (
+        <div key={`${e.minute}-${e.playerName}-${e.side}-${e.type}`} className="flex items-center gap-2 py-1">
+          <span className="w-10 text-right text-xs text-text-muted tabular-nums">{minuteStr}</span>
+          {cardIcon}
+          <span className="text-sm text-text">{e.playerName}</span>
+        </div>
+      );
+    } else {
+      return (
+        <div key={`${e.minute}-${e.playerName}-${e.side}-${e.type}`} className="flex items-center gap-2 py-1 justify-end">
+          <span className="text-sm text-text">{e.playerName}</span>
+          {cardIcon}
+          <span className="w-10 text-left text-xs text-text-muted tabular-nums">{minuteStr}</span>
+        </div>
+      );
+    }
+  };
+
+  const renderHalfEvents = (evts: MatchEvent[]) => {
+    const withScore = addRunningScore(evts);
+    const homeEvents = withScore.filter((e) => e.side === "home");
+    const awayEvents = withScore.filter((e) => e.side === "away");
+
+    return (
+      <div className="grid grid-cols-2 gap-x-4 py-2">
+        <div>{homeEvents.map(renderEvent)}</div>
+        <div>{awayEvents.map(renderEvent)}</div>
+      </div>
+    );
+  };
+
+  // Logo-score-logo header (Livesport style)
+  const oppLogo = getTeamLogo(match.opponent);
+  const homeLogo = match.is_home ? DOLANY_LOGO : oppLogo;
+  const awayLogo = match.is_home ? oppLogo : DOLANY_LOGO;
+
+  const matchHeader = (
+    <div className="flex items-center justify-center gap-3 sm:gap-5 py-3 border-b border-border">
+      <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+        <span className="text-sm sm:text-base font-bold text-text text-right truncate">{home}</span>
+        {homeLogo ? (
+          <Image src={homeLogo} alt={home} width={32} height={32} className="rounded-full object-cover ring-1 ring-border shrink-0" />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-surface-muted ring-1 ring-border shrink-0" />
+        )}
+      </div>
+      <div className="flex flex-col items-center shrink-0">
+        <span className="text-xl sm:text-2xl font-extrabold text-text tabular-nums">{match.score_home}:{match.score_away}</span>
+        {hasHalftime && (
+          <span className="text-[10px] text-text-muted tabular-nums">({match.halftime_home}:{match.halftime_away})</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {awayLogo ? (
+          <Image src={awayLogo} alt={away} width={32} height={32} className="rounded-full object-cover ring-1 ring-border shrink-0" />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-surface-muted ring-1 ring-border shrink-0" />
+        )}
+        <span className="text-sm sm:text-base font-bold text-text truncate">{away}</span>
+      </div>
+    </div>
+  );
+
+  if (hasHalftime) {
+    const secondHalfHomeGoals = match.score_home - match.halftime_home!;
+    const secondHalfAwayGoals = match.score_away - match.halftime_away!;
+    return (
+      <div className="px-4 py-3 bg-surface-muted/50">
+        {matchHeader}
+        {/* 1st half header */}
+        <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1">
+          <span>1. poločas</span>
+          <span className="tabular-nums">{match.halftime_home}:{match.halftime_away}</span>
+        </div>
+        {firstHalf.length > 0 ? renderHalfEvents(firstHalf) : (
+          <p className="text-xs text-text-muted py-2 text-center">Bez událostí</p>
+        )}
+
+        {/* 2nd half header */}
+        <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1 mt-3">
+          <span>2. poločas</span>
+          <span className="tabular-nums">{secondHalfHomeGoals}:{secondHalfAwayGoals}</span>
+        </div>
+        {secondHalf.length > 0 ? renderHalfEvents(secondHalf) : (
+          <p className="text-xs text-text-muted py-2 text-center">Bez událostí</p>
+        )}
+
+        {noMinute.length > 0 && renderHalfEvents(noMinute)}
+
+        {/* Gallery */}
+        {matchImages.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <MatchGallery photos={matchImages} matchTitle={matchTitleStr} />
+          </div>
+        )}
+
+        {hasArticle && (
+          <div className="mt-2 pt-2 border-t border-border">
+            <button onClick={() => router.push(`/aktuality/${match.articles!.slug}`)}
+              className="text-xs text-brand-red hover:text-brand-red-dark font-medium">
+              Zobrazit referát &rarr;
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // No halftime data — show all events flat
+  return (
+    <div className="px-4 py-3 bg-surface-muted/50">
+      {matchHeader}
+      {sorted.length > 0 ? renderHalfEvents(sorted) : (
+        <p className="text-xs text-text-muted py-2 text-center">Bez detailních událostí</p>
+      )}
+
+      {/* Gallery */}
+      {matchImages.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <MatchGallery photos={matchImages} matchTitle={matchTitleStr} />
+        </div>
+      )}
+
+      {hasArticle && (
+        <div className="mt-2 pt-2 border-t border-border">
+          <button onClick={() => router.push(`/aktuality/${match.articles!.slug}`)}
+            className="text-xs text-brand-red hover:text-brand-red-dark font-medium">
+            Zobrazit referát &rarr;
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MatchResultsSection({ matches, matchEvents }: { matches: MatchResult[]; matchEvents?: Record<string, MatchEvent[]> }) {
   const now = new Date();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Determine default season: season where next month falls
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -138,8 +351,10 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
               <tbody>
                 {filteredMatches.map((match) => {
                   const played = isPlayed(match);
-                  const hasArticle = !!match.articles?.slug;
-                  const clickable = played && hasArticle;
+                  const events = matchEvents?.[match.id] ?? [];
+                  const hasImages = (match.match_images ?? []).length > 0;
+                  const hasEvents = played && (events.length > 0 || hasImages);
+                  const isExpanded = expandedId === match.id;
                   const isWin = played && (match.is_home
                     ? match.score_home > match.score_away
                     : match.score_away > match.score_home);
@@ -147,51 +362,68 @@ function MatchResultsSection({ matches }: { matches: MatchResult[] }) {
                   const time = formatMatchTime(match.date);
 
                   return (
-                    <tr
-                      key={match.id}
-                      onClick={clickable ? () => router.push(`/aktuality/${match.articles!.slug}`) : undefined}
-                      className={`border-b border-border last:border-0 transition-colors ${
-                        clickable ? "cursor-pointer" : ""
-                      } ${match.is_home ? "bg-brand-red/5 hover:bg-brand-red/10" : "hover:bg-surface-muted"}`}
-                    >
-                      <td className="px-2 py-3 text-center">
-                        <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          match.is_home
-                            ? "bg-brand-red/15 text-brand-red"
-                            : "bg-surface-muted text-text-muted"
-                        }`}>
-                          {match.is_home ? "D" : "V"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-text-muted whitespace-nowrap tabular-nums">
-                        {time || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-text-muted whitespace-nowrap">
-                        {formatDateShort(match.date)}
-                      </td>
-                      <td className="px-4 py-3 text-text font-medium">
-                        {match.is_home ? "TJ Dolany" : match.opponent}
-                        {" vs. "}
-                        {match.is_home ? match.opponent : "TJ Dolany"}
-                        {clickable && (
-                          <span className="ml-2 text-[10px] text-brand-red font-semibold">▸ referát</span>
+                    <tr key={match.id} className="border-b border-border last:border-0">
+                      <td colSpan={6} className="p-0">
+                        <div
+                          onClick={hasEvents ? () => setExpandedId(isExpanded ? null : match.id) : undefined}
+                          className={`flex items-center transition-colors ${
+                            hasEvents ? "cursor-pointer" : ""
+                          } ${match.is_home ? "bg-brand-red/5 hover:bg-brand-red/10" : "hover:bg-surface-muted"}`}
+                        >
+                          <div className="px-2 py-3 text-center w-10 shrink-0">
+                            <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              match.is_home
+                                ? "bg-brand-red/15 text-brand-red"
+                                : "bg-surface-muted text-text-muted"
+                            }`}>
+                              {match.is_home ? "D" : "V"}
+                            </span>
+                          </div>
+                          <div className="px-4 py-3 text-text-muted whitespace-nowrap tabular-nums w-16 shrink-0">
+                            {time || "—"}
+                          </div>
+                          <div className="px-4 py-3 text-text-muted whitespace-nowrap w-24 shrink-0">
+                            {formatDateShort(match.date)}
+                          </div>
+                          <div className="px-4 py-3 text-text font-medium flex-1 min-w-0 flex items-center gap-1.5">
+                            {(() => {
+                              const oLogo = getTeamLogo(match.opponent);
+                              const hLogo = match.is_home ? DOLANY_LOGO : oLogo;
+                              const aLogo = match.is_home ? oLogo : DOLANY_LOGO;
+                              return (
+                                <>
+                                  {hLogo && <Image src={hLogo} alt="" width={18} height={18} className="rounded-full object-cover ring-1 ring-border shrink-0" />}
+                                  <span>{match.is_home ? "TJ Dolany" : match.opponent}</span>
+                                  <span className="text-text-muted">–</span>
+                                  {aLogo && <Image src={aLogo} alt="" width={18} height={18} className="rounded-full object-cover ring-1 ring-border shrink-0" />}
+                                  <span>{match.is_home ? match.opponent : "TJ Dolany"}</span>
+                                </>
+                              );
+                            })()}
+                            {hasEvents && (
+                              <span className={`ml-2 text-[10px] text-text-muted transition-transform inline-block ${isExpanded ? "rotate-180" : ""}`}>&#9660;</span>
+                            )}
+                          </div>
+                          <div className="px-4 py-3 text-center w-20 shrink-0">
+                            {played ? (
+                              <span className={`inline-block px-3 py-1 rounded-lg font-bold text-sm ${
+                                isWin ? "bg-green-100 text-green-700" :
+                                isDraw ? "bg-yellow-100 text-yellow-700" :
+                                "bg-red-100 text-red-700"
+                              }`}>
+                                {match.score_home}:{match.score_away}
+                              </span>
+                            ) : (
+                              <span className="text-text-muted">—</span>
+                            )}
+                          </div>
+                          <div className="px-4 py-3 text-text-muted hidden md:block w-40 shrink-0">
+                            {match.competition || "—"}
+                          </div>
+                        </div>
+                        {isExpanded && hasEvents && (
+                          <MatchTimeline match={match} events={events} />
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {played ? (
-                          <span className={`inline-block px-3 py-1 rounded-lg font-bold text-sm ${
-                            isWin ? "bg-green-100 text-green-700" :
-                            isDraw ? "bg-yellow-100 text-yellow-700" :
-                            "bg-red-100 text-red-700"
-                          }`}>
-                            {match.score_home}:{match.score_away}
-                          </span>
-                        ) : (
-                          <span className="text-text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-text-muted hidden md:table-cell">
-                        {match.competition || "—"}
                       </td>
                     </tr>
                   );
@@ -448,6 +680,14 @@ type StatsEntry = {
   card_type: string | null;
 };
 
+type MatchEvent = {
+  type: "goal" | "yellow" | "red";
+  minute: number | null;
+  playerName: string;
+  is_penalty: boolean;
+  side: "home" | "away";
+};
+
 export default function TymClient({
   players,
   draws,
@@ -456,6 +696,7 @@ export default function TymClient({
   standings,
   statsEntries,
   availableSeasons,
+  matchEvents,
 }: {
   players: Player[];
   draws: Draw[];
@@ -464,6 +705,7 @@ export default function TymClient({
   standings?: LeagueStanding[];
   statsEntries?: StatsEntry[];
   availableSeasons?: string[];
+  matchEvents?: Record<string, MatchEvent[]>;
 }) {
   const grouped = POSITION_ORDER.map((pos) => ({
     position: pos,
@@ -580,7 +822,7 @@ export default function TymClient({
         <div className="bg-surface-alt py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div id="vysledky" className="scroll-mt-28">
-          <MatchResultsSection matches={matches} />
+          <MatchResultsSection matches={matches} matchEvents={matchEvents} />
         </div>
         </div>
         </div>

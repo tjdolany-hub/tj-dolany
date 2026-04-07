@@ -21,12 +21,14 @@ interface ScorerEntry {
   player_id: string;
   goals: number;
   minute: number | null;
+  is_penalty?: boolean;
   players?: { id: string; name: string };
 }
 
 interface LineupEntry {
   player_id: string;
   is_starter: boolean;
+  is_captain?: boolean;
   players?: { id: string; name: string };
 }
 
@@ -35,6 +37,26 @@ interface CardEntry {
   card_type: "yellow" | "red";
   minute: number | null;
   players?: { id: string; name: string };
+}
+
+interface OpponentScorerEntry {
+  name: string;
+  minute: number | null;
+  is_penalty: boolean;
+}
+
+interface OpponentCardEntry {
+  name: string;
+  card_type: "yellow" | "red";
+  minute: number | null;
+}
+
+interface OpponentLineupEntry {
+  name: string;
+  number: number | null;
+  position: string | null;
+  is_starter: boolean;
+  is_captain: boolean;
 }
 
 interface Match {
@@ -59,6 +81,9 @@ interface Match {
   match_scorers?: ScorerEntry[];
   match_cards?: CardEntry[];
   match_images?: { url: string; alt: string | null }[];
+  match_opponent_scorers?: OpponentScorerEntry[];
+  match_opponent_cards?: OpponentCardEntry[];
+  match_opponent_lineup?: (OpponentLineupEntry & { is_captain: boolean })[];
 }
 
 interface Draw {
@@ -106,10 +131,13 @@ export default function AdminMatchesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const [lineup, setLineup] = useState<{ player_id: string; is_starter: boolean }[]>([]);
-  const [scorers, setScorers] = useState<{ player_id: string; goals: number; minute: string }[]>([]);
+  const [lineup, setLineup] = useState<{ player_id: string; is_starter: boolean; is_captain: boolean }[]>([]);
+  const [scorers, setScorers] = useState<{ player_id: string; goals: number; minute: string; is_penalty: boolean }[]>([]);
   const [cards, setCards] = useState<{ player_id: string; card_type: "yellow" | "red"; minute: string }[]>([]);
   const [matchImages, setMatchImages] = useState<{ url: string; alt?: string }[]>([]);
+  const [opponentScorers, setOpponentScorers] = useState<{ name: string; minute: string; is_penalty: boolean }[]>([]);
+  const [opponentCards, setOpponentCards] = useState<{ name: string; card_type: "yellow" | "red"; minute: string }[]>([]);
+  const [opponentLineup, setOpponentLineup] = useState<{ name: string; number: string; position: string; is_starter: boolean; is_captain: boolean }[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
@@ -289,6 +317,9 @@ export default function AdminMatchesPage() {
     setScorers([]);
     setCards([]);
     setMatchImages([]);
+    setOpponentScorers([]);
+    setOpponentCards([]);
+    setOpponentLineup([]);
     setEditId(null);
     setShowForm(false);
     setSaved(false);
@@ -319,23 +350,26 @@ export default function AdminMatchesPage() {
       opponent_scorers: m.opponent_scorers || "",
       opponent_cards: m.opponent_cards || "",
     });
-    setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter })) || []);
+    setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter, is_captain: l.is_captain ?? false })) || []);
     // Expand each scorer entry into individual goal rows (1 per goal) for editing
-    const expandedScorers: { player_id: string; goals: number; minute: string }[] = [];
+    const expandedScorers: { player_id: string; goals: number; minute: string; is_penalty: boolean }[] = [];
     (m.match_scorers || []).forEach((s) => {
       if (s.goals > 1 && !s.minute) {
         // Legacy: single row with goals count, no minute — keep as one row
-        expandedScorers.push({ player_id: s.player_id, goals: s.goals, minute: "" });
+        expandedScorers.push({ player_id: s.player_id, goals: s.goals, minute: "", is_penalty: false });
       } else {
         // One row per goal
         for (let g = 0; g < s.goals; g++) {
-          expandedScorers.push({ player_id: s.player_id, goals: 1, minute: g === 0 && s.minute ? s.minute.toString() : "" });
+          expandedScorers.push({ player_id: s.player_id, goals: 1, minute: g === 0 && s.minute ? s.minute.toString() : "", is_penalty: g === 0 ? (s.is_penalty ?? false) : false });
         }
       }
     });
     setScorers(expandedScorers);
     setCards(m.match_cards?.map((c) => ({ player_id: c.player_id, card_type: c.card_type, minute: c.minute?.toString() ?? "" })) || []);
     setMatchImages(m.match_images?.map((img) => ({ url: img.url, alt: img.alt ?? undefined })) || []);
+    setOpponentScorers(m.match_opponent_scorers?.map((s) => ({ name: s.name, minute: s.minute?.toString() ?? "", is_penalty: s.is_penalty })) || []);
+    setOpponentCards(m.match_opponent_cards?.map((c) => ({ name: c.name, card_type: c.card_type, minute: c.minute?.toString() ?? "" })) || []);
+    setOpponentLineup(m.match_opponent_lineup?.map((p) => ({ name: p.name, number: p.number?.toString() ?? "", position: p.position || "", is_starter: p.is_starter, is_captain: p.is_captain ?? false })) || []);
     setEditId(m.id);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -365,14 +399,30 @@ export default function AdminMatchesPage() {
       summary_title: form.summary_title || null,
       summary: form.summary || null,
       video_url: form.video_url || null,
-      opponent_scorers: form.opponent_scorers || null,
-      opponent_cards: form.opponent_cards || null,
+      // Auto-generate text from structured data for backward compat
+      opponent_scorers: opponentScorers.length > 0
+        ? opponentScorers.filter((s) => s.name).map((s) => {
+            let txt = s.name;
+            if (s.is_penalty) txt += " (PK)";
+            if (s.minute) txt += ` (${s.minute}')`;
+            return txt;
+          }).join(", ")
+        : (form.opponent_scorers || null),
+      opponent_cards: opponentCards.length > 0
+        ? opponentCards.filter((c) => c.name).map((c) => {
+            let txt = c.card_type === "yellow" ? "ŽK" : "ČK";
+            txt += `: ${c.name}`;
+            if (c.minute) txt += ` (${c.minute}')`;
+            return txt;
+          }).join(", ")
+        : (form.opponent_cards || null),
       lineup,
       // Each row = 1 goal; same player can appear multiple times
       scorers: scorers.filter((s) => s.player_id).map((s) => ({
         player_id: s.player_id,
         goals: 1,
         minute: s.minute ? parseInt(s.minute) : null,
+        is_penalty: s.is_penalty || false,
       })),
       cards: cards.map((c) => ({
         player_id: c.player_id,
@@ -380,6 +430,23 @@ export default function AdminMatchesPage() {
         minute: c.minute ? parseInt(c.minute) : null,
       })),
       images: matchImages.map((img) => ({ url: img.url, alt: img.alt || null })),
+      opponent_scorers_data: opponentScorers.filter((s) => s.name).map((s) => ({
+        name: s.name,
+        minute: s.minute ? parseInt(s.minute) : null,
+        is_penalty: s.is_penalty || false,
+      })),
+      opponent_cards_data: opponentCards.filter((c) => c.name).map((c) => ({
+        name: c.name,
+        card_type: c.card_type,
+        minute: c.minute ? parseInt(c.minute) : null,
+      })),
+      opponent_lineup: opponentLineup.filter((p) => p.name).map((p) => ({
+        name: p.name,
+        number: p.number ? parseInt(p.number) : null,
+        position: p.position || null,
+        is_starter: p.is_starter,
+        is_captain: p.is_captain,
+      })),
     };
 
     const url = editId ? `/api/matches/${editId}` : "/api/matches";
@@ -423,7 +490,7 @@ export default function AdminMatchesPage() {
       if (existing) {
         return prev.filter((l) => l.player_id !== playerId);
       }
-      return [...prev, { player_id: playerId, is_starter: starter }];
+      return [...prev, { player_id: playerId, is_starter: starter, is_captain: false }];
     });
   };
 
@@ -431,9 +498,17 @@ export default function AdminMatchesPage() {
     setLineup((prev) => prev.map((l) => l.player_id === playerId ? { ...l, is_starter: isStarter } : l));
   };
 
+  const setCaptain = (playerId: string) => {
+    setLineup((prev) => prev.map((l) => ({ ...l, is_captain: l.player_id === playerId })));
+  };
+
+  const setOpponentCaptain = (idx: number) => {
+    setOpponentLineup((prev) => prev.map((p, i) => ({ ...p, is_captain: i === idx })));
+  };
+
   const fillAllActive = () => {
     const activePlayers = players.filter((p) => p.active);
-    setLineup(activePlayers.map((p) => ({ player_id: p.id, is_starter: true })));
+    setLineup(activePlayers.map((p) => ({ player_id: p.id, is_starter: true, is_captain: false })));
   };
 
   const fillFromPrevious = () => {
@@ -441,7 +516,7 @@ export default function AdminMatchesPage() {
     const sorted = [...matches].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const prev = sorted.find((m) => m.id !== editId && m.match_lineups && m.match_lineups.length > 0);
     if (prev?.match_lineups) {
-      setLineup(prev.match_lineups.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter })));
+      setLineup(prev.match_lineups.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter, is_captain: l.is_captain ?? false })));
     }
   };
 
@@ -708,6 +783,7 @@ export default function AdminMatchesPage() {
                             const inLineup = lineup.find((l) => l.player_id === p.id);
                             const isStarter = inLineup?.is_starter;
                             const isBench = inLineup && !inLineup.is_starter;
+                            const isCaptain = inLineup?.is_captain;
                             return (
                               <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
                                 isStarter
@@ -716,7 +792,7 @@ export default function AdminMatchesPage() {
                                     ? "border-orange-400 bg-orange-500/20 font-medium"
                                     : "border-border hover:border-brand-red/30"
                               } ${!p.active ? "opacity-50" : ""}`}>
-                                <span className="flex-1 truncate text-text">{p.name}</span>
+                                <span className="flex-1 truncate text-text">{p.name}{isCaptain ? " [K]" : ""}</span>
                                 <label className={`flex items-center gap-1 cursor-pointer text-[10px] font-bold px-1.5 py-0.5 rounded ${
                                   isStarter ? "bg-green-600/30 text-green-400" : "text-text-muted hover:text-green-400"
                                 }`} title="Základní sestava">
@@ -737,6 +813,14 @@ export default function AdminMatchesPage() {
                                   }} className="w-3 h-3 accent-orange-500" />
                                   N
                                 </label>
+                                {inLineup && (
+                                  <button type="button" onClick={() => setCaptain(p.id)}
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors ${
+                                      isCaptain ? "bg-brand-red/30 text-brand-red" : "text-text-muted hover:text-brand-red"
+                                    }`} title="Kapitán">
+                                    K
+                                  </button>
+                                )}
                               </div>
                             );
                           })}
@@ -750,11 +834,11 @@ export default function AdminMatchesPage() {
               {/* Scorers — each row = 1 goal, same player can appear multiple times */}
               <div>
                 <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-brand-red" /> Góly
+                  <Target size={16} className="text-brand-red" /> Góly Dolany
                   <span className="text-xs font-normal text-text-muted">(každý řádek = 1 gól, hráč může být vícekrát)</span>
                 </p>
                 {scorers.map((s, i) => (
-                  <div key={i} className="flex gap-2 mb-2">
+                  <div key={i} className="flex gap-2 mb-2 items-center">
                     <select value={s.player_id} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], player_id: e.target.value }; setScorers(u); }}
                       className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm">
                       <option value="">Vyber hráče</option>
@@ -762,10 +846,15 @@ export default function AdminMatchesPage() {
                     </select>
                     <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], minute: e.target.value }; setScorers(u); }}
                       className="w-20 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min." />
+                    <label className="flex items-center gap-1 text-xs text-text-muted whitespace-nowrap cursor-pointer">
+                      <input type="checkbox" checked={s.is_penalty || false} onChange={(e) => { const u = [...scorers]; u[i] = { ...u[i], is_penalty: e.target.checked }; setScorers(u); }}
+                        className="w-3.5 h-3.5 accent-brand-red" />
+                      PK
+                    </label>
                     <button type="button" onClick={() => setScorers(scorers.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
                   </div>
                 ))}
-                <button type="button" onClick={() => setScorers([...scorers, { player_id: "", goals: 1, minute: "" }])}
+                <button type="button" onClick={() => setScorers([...scorers, { player_id: "", goals: 1, minute: "", is_penalty: false }])}
                   className="text-sm text-brand-red hover:text-brand-red-dark font-medium flex items-center gap-1">
                   <Plus size={14} /> Přidat gól
                 </button>
@@ -799,19 +888,104 @@ export default function AdminMatchesPage() {
                 </button>
               </div>
 
-              {/* Opponent scorers & cards (free text, display only) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Góly soupeře <span className="text-xs font-normal text-text-muted">(volný text, jen pro referát)</span></label>
-                  <input type="text" value={form.opponent_scorers} onChange={(e) => updateMatchForm({ opponent_scorers: e.target.value })}
-                    placeholder='např. Novák 2× (15&apos;, 67&apos;), Dvořák (88&apos;)'
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Karty soupeře <span className="text-xs font-normal text-text-muted">(volný text, jen pro referát)</span></label>
-                  <input type="text" value={form.opponent_cards} onChange={(e) => updateMatchForm({ opponent_cards: e.target.value })}
-                    placeholder='např. ŽK: Horák (34&apos;), ČK: Malý (80&apos;)'
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red" />
+              {/* Opponent scorers (structured) */}
+              <div>
+                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
+                  <Target size={16} className="text-blue-500" /> Góly soupeře
+                </p>
+                {opponentScorers.map((s, i) => (
+                  <div key={i} className="flex gap-2 mb-2 items-center">
+                    <input type="text" value={s.name} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], name: e.target.value }; setOpponentScorers(u); }}
+                      className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno hráče" />
+                    <input type="number" min={1} max={120} value={s.minute} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], minute: e.target.value }; setOpponentScorers(u); }}
+                      className="w-20 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min." />
+                    <label className="flex items-center gap-1 text-xs text-text-muted whitespace-nowrap cursor-pointer">
+                      <input type="checkbox" checked={s.is_penalty || false} onChange={(e) => { const u = [...opponentScorers]; u[i] = { ...u[i], is_penalty: e.target.checked }; setOpponentScorers(u); }}
+                        className="w-3.5 h-3.5 accent-blue-500" />
+                      PK
+                    </label>
+                    <button type="button" onClick={() => setOpponentScorers(opponentScorers.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setOpponentScorers([...opponentScorers, { name: "", minute: "", is_penalty: false }])}
+                  className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1">
+                  <Plus size={14} /> Přidat gól soupeře
+                </button>
+              </div>
+
+              {/* Opponent cards (structured) */}
+              <div>
+                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
+                  <Square size={16} className="text-blue-500" /> Karty soupeře
+                </p>
+                {opponentCards.map((c, i) => (
+                  <div key={i} className="flex gap-2 mb-2 items-center">
+                    <input type="text" value={c.name} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], name: e.target.value }; setOpponentCards(u); }}
+                      className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno hráče" />
+                    <select value={c.card_type} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], card_type: e.target.value as "yellow" | "red" }; setOpponentCards(u); }}
+                      className="w-28 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm">
+                      <option value="yellow">Žlutá</option>
+                      <option value="red">Červená</option>
+                    </select>
+                    <input type="number" min={1} max={120} value={c.minute} onChange={(e) => { const u = [...opponentCards]; u[i] = { ...u[i], minute: e.target.value }; setOpponentCards(u); }}
+                      className="w-16 px-2 py-2 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Min" />
+                    <button type="button" onClick={() => setOpponentCards(opponentCards.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-700 p-2"><X size={16} /></button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setOpponentCards([...opponentCards, { name: "", card_type: "yellow", minute: "" }])}
+                  className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1">
+                  <Plus size={14} /> Přidat kartu soupeře
+                </button>
+              </div>
+
+              {/* Opponent lineup */}
+              <div>
+                <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
+                  <Users size={16} className="text-blue-500" /> Sestava soupeře
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Základní sestava</p>
+                    {opponentLineup.filter((p) => p.is_starter).map((p, i) => {
+                      const realIdx = opponentLineup.findIndex((x) => x === p);
+                      return (
+                        <div key={i} className="flex gap-2 mb-1.5 items-center">
+                          <input type="number" min={1} max={99} value={p.number} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], number: e.target.value }; setOpponentLineup(u); }}
+                            className="w-14 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
+                          <input type="text" value={p.name} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], name: e.target.value }; setOpponentLineup(u); }}
+                            className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno" />
+                          <button type="button" onClick={() => setOpponentCaptain(realIdx)}
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors ${
+                              p.is_captain ? "bg-blue-500/30 text-blue-400" : "text-text-muted hover:text-blue-400"
+                            }`} title="Kapitán">K</button>
+                          <button type="button" onClick={() => setOpponentLineup(opponentLineup.filter((_, j) => j !== realIdx))} className="text-red-500 hover:text-red-700 p-1"><X size={14} /></button>
+                        </div>
+                      );
+                    })}
+                    <button type="button" onClick={() => setOpponentLineup([...opponentLineup, { name: "", number: "", position: "", is_starter: true, is_captain: false }])}
+                      className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1 mt-1">
+                      <Plus size={12} /> Přidat hráče
+                    </button>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Náhradníci</p>
+                    {opponentLineup.filter((p) => !p.is_starter).map((p, i) => {
+                      const realIdx = opponentLineup.findIndex((x) => x === p);
+                      return (
+                        <div key={i} className="flex gap-2 mb-1.5 items-center">
+                          <input type="number" min={1} max={99} value={p.number} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], number: e.target.value }; setOpponentLineup(u); }}
+                            className="w-14 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm text-center" placeholder="#" />
+                          <input type="text" value={p.name} onChange={(e) => { const u = [...opponentLineup]; u[realIdx] = { ...u[realIdx], name: e.target.value }; setOpponentLineup(u); }}
+                            className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-text text-sm" placeholder="Jméno" />
+                          <button type="button" onClick={() => setOpponentLineup(opponentLineup.filter((_, j) => j !== realIdx))} className="text-red-500 hover:text-red-700 p-1"><X size={14} /></button>
+                        </div>
+                      );
+                    })}
+                    <button type="button" onClick={() => setOpponentLineup([...opponentLineup, { name: "", number: "", position: "", is_starter: false, is_captain: false }])}
+                      className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1 mt-1">
+                      <Plus size={12} /> Přidat náhradníka
+                    </button>
+                  </div>
                 </div>
               </div>
 

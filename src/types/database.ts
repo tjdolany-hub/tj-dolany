@@ -321,6 +321,7 @@ export interface Database {
           match_id: string;
           player_id: string;
           is_starter: boolean;
+          is_captain: boolean;
           created_at: string;
         };
         Insert: {
@@ -328,6 +329,7 @@ export interface Database {
           match_id: string;
           player_id: string;
           is_starter?: boolean;
+          is_captain?: boolean;
           created_at?: string;
         };
         Update: {
@@ -335,6 +337,7 @@ export interface Database {
           match_id?: string;
           player_id?: string;
           is_starter?: boolean;
+          is_captain?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -361,6 +364,7 @@ export interface Database {
           player_id: string;
           goals: number;
           minute: number | null;
+          is_penalty: boolean;
           created_at: string;
         };
         Insert: {
@@ -369,6 +373,7 @@ export interface Database {
           player_id: string;
           goals?: number;
           minute?: number | null;
+          is_penalty?: boolean;
           created_at?: string;
         };
         Update: {
@@ -377,6 +382,7 @@ export interface Database {
           player_id?: string;
           goals?: number;
           minute?: number | null;
+          is_penalty?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -642,6 +648,117 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: "match_images_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "match_results";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      match_opponent_scorers: {
+        Row: {
+          id: string;
+          match_id: string;
+          name: string;
+          minute: number | null;
+          is_penalty: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          name: string;
+          minute?: number | null;
+          is_penalty?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          name?: string;
+          minute?: number | null;
+          is_penalty?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_opponent_scorers_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "match_results";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      match_opponent_cards: {
+        Row: {
+          id: string;
+          match_id: string;
+          name: string;
+          card_type: "yellow" | "red";
+          minute: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          name: string;
+          card_type: "yellow" | "red";
+          minute?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          name?: string;
+          card_type?: "yellow" | "red";
+          minute?: number | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_opponent_cards_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "match_results";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      match_opponent_lineup: {
+        Row: {
+          id: string;
+          match_id: string;
+          name: string;
+          number: number | null;
+          position: string | null;
+          is_starter: boolean;
+          is_captain: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          name: string;
+          number?: number | null;
+          position?: string | null;
+          is_starter?: boolean;
+          is_captain?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          name?: string;
+          number?: number | null;
+          position?: string | null;
+          is_starter?: boolean;
+          is_captain?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_opponent_lineup_match_id_fkey";
             columns: ["match_id"];
             isOneToOne: false;
             referencedRelation: "match_results";
