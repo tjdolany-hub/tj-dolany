@@ -23,7 +23,7 @@ export async function POST(
   const { data: match, error } = await admin
     .from("match_results")
     .select(
-      "*, match_lineups(player_id, is_starter, is_captain, players(name)), match_scorers(player_id, goals, minute, is_penalty, players(name)), match_cards(player_id, card_type, minute, players(name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)"
+      "*, match_lineups(player_id, is_starter, is_captain, number, players(name)), match_scorers(player_id, goals, minute, is_penalty, players(name)), match_cards(player_id, card_type, minute, players(name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)"
     )
     .eq("id", id)
     .single();
@@ -49,8 +49,9 @@ export async function POST(
     content += ` (${match.halftime_home}:${match.halftime_away})`;
   }
   content += `\n\n**Datum:** ${dateStr}`;
-  if (match.competition) content += `\n**Soutěž:** ${match.competition}`;
-  if (match.venue) content += `\n**Hřiště:** ${match.venue}`;
+  if (match.competition) content += ` **Soutěž:** ${match.competition}`;
+  if (match.round) content += ` **Kolo:** ${match.round}`;
+  if (match.venue) content += ` **Hřiště:** ${match.venue}`;
 
   // Lineup
   const starters =
@@ -178,6 +179,15 @@ export async function POST(
     if (oppSubs.length > 0) {
       content += `\n**Náhradníci ${match.opponent}:** ${oppSubs.map((p) => p.name).join(", ")}`;
     }
+  }
+
+  // Match details footer
+  const footerParts: string[] = [];
+  if (match.referee) footerParts.push(`**Rozhodčí:** ${match.referee}`);
+  if (match.delegate) footerParts.push(`**Delegát:** ${match.delegate}`);
+  if (match.spectators != null) footerParts.push(`**Diváků:** ${match.spectators}`);
+  if (footerParts.length > 0) {
+    content += `\n\n${footerParts.join(" ")}`;
   }
 
   // Summary/report

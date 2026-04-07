@@ -7,6 +7,7 @@ import {
   BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera, CheckCircle, Video, Share2, Copy, ExternalLink,
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
+import { parseMatchReport } from "@/lib/match-parser";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -29,6 +30,7 @@ interface LineupEntry {
   player_id: string;
   is_starter: boolean;
   is_captain?: boolean;
+  number?: number | null;
   players?: { id: string; name: string };
 }
 
@@ -76,6 +78,11 @@ interface Match {
   video_url: string | null;
   opponent_scorers: string | null;
   opponent_cards: string | null;
+  round: string | null;
+  referee: string | null;
+  delegate: string | null;
+  spectators: number | null;
+  match_number: string | null;
   article_id: string | null;
   match_lineups?: LineupEntry[];
   match_scorers?: ScorerEntry[];
@@ -115,6 +122,11 @@ const emptyForm = {
   video_url: "",
   opponent_scorers: "",
   opponent_cards: "",
+  round: "",
+  referee: "",
+  delegate: "",
+  spectators: "",
+  match_number: "",
 };
 
 // ─── Component ───────────────────────────────────────────────
@@ -131,7 +143,8 @@ export default function AdminMatchesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const [lineup, setLineup] = useState<{ player_id: string; is_starter: boolean; is_captain: boolean }[]>([]);
+  const [lineup, setLineup] = useState<{ player_id: string; is_starter: boolean; is_captain: boolean; number: number | null }[]>([]);
+  const [pasteText, setPasteText] = useState("");
   const [scorers, setScorers] = useState<{ player_id: string; goals: number; minute: string; is_penalty: boolean }[]>([]);
   const [cards, setCards] = useState<{ player_id: string; card_type: "yellow" | "red"; minute: string }[]>([]);
   const [matchImages, setMatchImages] = useState<{ url: string; alt?: string }[]>([]);
@@ -349,8 +362,13 @@ export default function AdminMatchesPage() {
       video_url: m.video_url || "",
       opponent_scorers: m.opponent_scorers || "",
       opponent_cards: m.opponent_cards || "",
+      round: m.round || "",
+      referee: m.referee || "",
+      delegate: m.delegate || "",
+      spectators: m.spectators?.toString() ?? "",
+      match_number: m.match_number || "",
     });
-    setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter, is_captain: l.is_captain ?? false })) || []);
+    setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter, is_captain: l.is_captain ?? false, number: l.number ?? null })) || []);
     // Expand each scorer entry into individual goal rows (1 per goal) for editing
     const expandedScorers: { player_id: string; goals: number; minute: string; is_penalty: boolean }[] = [];
     (m.match_scorers || []).forEach((s) => {
@@ -399,6 +417,11 @@ export default function AdminMatchesPage() {
       summary_title: form.summary_title || null,
       summary: form.summary || null,
       video_url: form.video_url || null,
+      round: form.round || null,
+      referee: form.referee || null,
+      delegate: form.delegate || null,
+      spectators: form.spectators ? parseInt(form.spectators) : null,
+      match_number: form.match_number || null,
       // Auto-generate text from structured data for backward compat
       opponent_scorers: opponentScorers.length > 0
         ? opponentScorers.filter((s) => s.name).map((s) => {
@@ -490,7 +513,7 @@ export default function AdminMatchesPage() {
       if (existing) {
         return prev.filter((l) => l.player_id !== playerId);
       }
-      return [...prev, { player_id: playerId, is_starter: starter, is_captain: false }];
+      return [...prev, { player_id: playerId, is_starter: starter, is_captain: false, number: null }];
     });
   };
 
@@ -508,7 +531,7 @@ export default function AdminMatchesPage() {
 
   const fillAllActive = () => {
     const activePlayers = players.filter((p) => p.active);
-    setLineup(activePlayers.map((p) => ({ player_id: p.id, is_starter: true, is_captain: false })));
+    setLineup(activePlayers.map((p) => ({ player_id: p.id, is_starter: true, is_captain: false, number: null })));
   };
 
   const fillFromPrevious = () => {
@@ -516,8 +539,151 @@ export default function AdminMatchesPage() {
     const sorted = [...matches].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const prev = sorted.find((m) => m.id !== editId && m.match_lineups && m.match_lineups.length > 0);
     if (prev?.match_lineups) {
-      setLineup(prev.match_lineups.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter, is_captain: l.is_captain ?? false })));
+      setLineup(prev.match_lineups.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter, is_captain: l.is_captain ?? false, number: l.number ?? null })));
     }
+  };
+
+  const handlePasteReport = () => {
+    if (!pasteText.trim()) return;
+    const parsed = parseMatchReport(pasteText);
+
+    // Determine season from date
+    const dateObj = parsed.date ? new Date(parsed.date) : null;
+    let season = form.season;
+    if (dateObj) {
+      const y = dateObj.getMonth() >= 6 ? dateObj.getFullYear() : dateObj.getFullYear() - 1;
+      season = `${y}/${y + 1}`;
+    }
+
+    // Determine which team is Dolany
+    const homeIsDolany = parsed.home_team.toLowerCase().includes("dolany");
+    const dolanyTeam = homeIsDolany ? parsed.home_team : parsed.away_team;
+    const opponentTeam = homeIsDolany ? parsed.away_team : parsed.home_team;
+    const dolanyLineup = homeIsDolany ? parsed.homeLineup : parsed.awayLineup;
+    const opponentLineupParsed = homeIsDolany ? parsed.awayLineup : parsed.homeLineup;
+
+    updateMatchForm({
+      date: parsed.date,
+      time: parsed.time,
+      home_team: parsed.home_team,
+      away_team: parsed.away_team,
+      score_home: parsed.score_home,
+      score_away: parsed.score_away,
+      halftime_home: parsed.halftime_home?.toString() ?? "",
+      halftime_away: parsed.halftime_away?.toString() ?? "",
+      competition: parsed.competition || form.competition,
+      season,
+      venue: parsed.venue || (homeIsDolany ? dolanyTeam : opponentTeam),
+      round: parsed.round || "",
+      referee: parsed.referee || "",
+      delegate: parsed.delegate || "",
+      spectators: parsed.spectators?.toString() ?? "",
+      match_number: parsed.match_number || "",
+    });
+
+    // Match Dolany lineup to players by name (case-insensitive, surname+firstname)
+    const matchedLineup: typeof lineup = [];
+    for (const lp of dolanyLineup) {
+      // Try exact match first, then partial (surname)
+      const nameLower = lp.name.toLowerCase();
+      const nameParts = nameLower.split(/\s+/);
+      let player = players.find((p) => p.name.toLowerCase() === nameLower);
+      if (!player) {
+        // Try matching surname (first word in the parsed name = surname in Czech format)
+        player = players.find((p) => {
+          const pParts = p.name.toLowerCase().split(/\s+/);
+          return pParts[0] === nameParts[0] || pParts[pParts.length - 1] === nameParts[0];
+        });
+      }
+      if (player) {
+        matchedLineup.push({
+          player_id: player.id,
+          is_starter: lp.is_starter,
+          is_captain: lp.is_captain,
+          number: lp.number,
+        });
+      }
+    }
+    setLineup(matchedLineup);
+
+    // Dolany goals — match to players
+    const dolanyGoals = parsed.goals.filter((g) =>
+      homeIsDolany ? g.side === "home" : g.side === "away"
+    );
+    const matchedScorers = dolanyGoals.map((g) => {
+      const nameLower = g.playerName.toLowerCase();
+      const nameParts = nameLower.split(/\s+/);
+      let player = players.find((p) => p.name.toLowerCase() === nameLower);
+      if (!player) {
+        player = players.find((p) => {
+          const pParts = p.name.toLowerCase().split(/\s+/);
+          return pParts[0] === nameParts[0] || pParts[pParts.length - 1] === nameParts[0];
+        });
+      }
+      return {
+        player_id: player?.id || "",
+        goals: 1,
+        minute: g.minute?.toString() ?? "",
+        is_penalty: g.is_penalty,
+      };
+    });
+    setScorers(matchedScorers);
+
+    // Dolany cards — extract from lineup ŽK/ČK columns
+    const dolanyCards: typeof cards = [];
+    for (const lp of dolanyLineup) {
+      const nameLower = lp.name.toLowerCase();
+      const nameParts = nameLower.split(/\s+/);
+      let player = players.find((p) => p.name.toLowerCase() === nameLower);
+      if (!player) {
+        player = players.find((p) => {
+          const pParts = p.name.toLowerCase().split(/\s+/);
+          return pParts[0] === nameParts[0] || pParts[pParts.length - 1] === nameParts[0];
+        });
+      }
+      if (player) {
+        if (lp.yellowMinute != null) {
+          dolanyCards.push({ player_id: player.id, card_type: "yellow", minute: lp.yellowMinute.toString() });
+        }
+        if (lp.redMinute != null) {
+          dolanyCards.push({ player_id: player.id, card_type: "red", minute: lp.redMinute.toString() });
+        }
+      }
+    }
+    setCards(dolanyCards);
+
+    // Opponent goals
+    const oppGoals = parsed.goals.filter((g) =>
+      homeIsDolany ? g.side === "away" : g.side === "home"
+    );
+    setOpponentScorers(oppGoals.map((g) => ({
+      name: g.playerName,
+      minute: g.minute?.toString() ?? "",
+      is_penalty: g.is_penalty,
+    })));
+
+    // Opponent cards — from lineup
+    const oppCards: typeof opponentCards = [];
+    for (const lp of opponentLineupParsed) {
+      if (lp.yellowMinute != null) {
+        oppCards.push({ name: lp.name, card_type: "yellow", minute: lp.yellowMinute.toString() });
+      }
+      if (lp.redMinute != null) {
+        oppCards.push({ name: lp.name, card_type: "red", minute: lp.redMinute.toString() });
+      }
+    }
+    setOpponentCards(oppCards);
+
+    // Opponent lineup
+    setOpponentLineup(opponentLineupParsed.map((p) => ({
+      name: p.name,
+      number: p.number?.toString() ?? "",
+      position: p.position || "",
+      is_starter: p.is_starter,
+      is_captain: p.is_captain,
+    })));
+
+    setPasteText("");
   };
 
   const getResult = (m: Match) => {
@@ -681,6 +847,30 @@ export default function AdminMatchesPage() {
                 <button type="button" onClick={resetForm} className="text-text-muted hover:text-text"><X size={20} /></button>
               </div>
 
+              {/* Paste match report */}
+              {!editId && (
+                <div className="border border-dashed border-border rounded-lg p-4 bg-surface-muted/30">
+                  <p className="text-sm font-bold text-text mb-2 flex items-center gap-2">
+                    <BookOpen size={16} className="text-brand-red" /> Vložit zápis z webu svazu
+                  </p>
+                  <textarea
+                    value={pasteText}
+                    onChange={(e) => setPasteText(e.target.value)}
+                    placeholder="Sem vlož zkopírovaný text zápisu ze stránky svazu..."
+                    rows={4}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-brand-red mb-2 resize-y"
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePasteReport}
+                    disabled={!pasteText.trim()}
+                    className="px-4 py-2 bg-brand-red text-white rounded-lg text-sm font-medium hover:bg-brand-red-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  >
+                    <Upload size={14} /> Načíst data
+                  </button>
+                </div>
+              )}
+
               {/* Basic fields */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
@@ -719,8 +909,36 @@ export default function AdminMatchesPage() {
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
                 <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Kolo</label>
+                  <input type="text" value={form.round} onChange={(e) => updateMatchForm({ round: e.target.value })}
+                    placeholder="16. kolo" className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+                <div>
                   <label className="block text-sm font-semibold text-text mb-1">Hřiště</label>
                   <input type="text" value={form.venue} onChange={(e) => updateMatchForm({ venue: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Diváků</label>
+                  <input type="number" min={0} value={form.spectators} onChange={(e) => updateMatchForm({ spectators: e.target.value })}
+                    placeholder="—" className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Rozhodčí</label>
+                  <input type="text" value={form.referee} onChange={(e) => updateMatchForm({ referee: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Delegát</label>
+                  <input type="text" value={form.delegate} onChange={(e) => updateMatchForm({ delegate: e.target.value })}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Číslo utkání</label>
+                  <input type="text" value={form.match_number} onChange={(e) => updateMatchForm({ match_number: e.target.value })}
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                 </div>
               </div>

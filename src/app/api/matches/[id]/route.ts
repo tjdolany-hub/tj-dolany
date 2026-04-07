@@ -20,7 +20,12 @@ const updateSchema = z.object({
   video_url: z.string().nullable().optional(),
   opponent_scorers: z.string().nullable().optional(),
   opponent_cards: z.string().nullable().optional(),
-  lineup: z.array(z.object({ player_id: z.string(), is_starter: z.boolean().default(true), is_captain: z.boolean().default(false) })).optional(),
+  round: z.string().nullable().optional(),
+  referee: z.string().nullable().optional(),
+  delegate: z.string().nullable().optional(),
+  spectators: z.number().nullable().optional(),
+  match_number: z.string().nullable().optional(),
+  lineup: z.array(z.object({ player_id: z.string(), is_starter: z.boolean().default(true), is_captain: z.boolean().default(false), number: z.number().nullable().optional() })).optional(),
   scorers: z.array(z.object({ player_id: z.string(), goals: z.number().default(1), minute: z.number().nullable().optional(), is_penalty: z.boolean().default(false) })).optional(),
   cards: z.array(z.object({ player_id: z.string(), card_type: z.enum(["yellow", "red"]), minute: z.number().nullable().optional() })).optional(),
   images: z.array(z.object({ url: z.string(), alt: z.string().nullable().optional() })).optional(),
@@ -38,7 +43,7 @@ export async function GET(
 
   const { data: match, error } = await supabase
     .from("match_results")
-    .select("*, match_lineups(player_id, is_starter, is_captain, players(id, name)), match_scorers(player_id, goals, minute, is_penalty, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)")
+    .select("*, match_lineups(player_id, is_starter, is_captain, number, players(id, name)), match_scorers(player_id, goals, minute, is_penalty, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)")
     .eq("id", id)
     .single();
 
@@ -91,6 +96,7 @@ export async function PUT(
         player_id: l.player_id,
         is_starter: l.is_starter,
         is_captain: l.is_captain,
+        number: l.number ?? null,
       }));
       const { error: lineupError } = await admin
         .from("match_lineups")
@@ -181,7 +187,7 @@ export async function PUT(
   // Return updated match with relations
   const { data: updated } = await admin
     .from("match_results")
-    .select("*, match_lineups(player_id, is_starter, is_captain, players(id, name)), match_scorers(player_id, goals, minute, is_penalty, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)")
+    .select("*, match_lineups(player_id, is_starter, is_captain, number, players(id, name)), match_scorers(player_id, goals, minute, is_penalty, players(id, name)), match_cards(player_id, card_type, minute, players(id, name)), match_images(url, alt, sort_order), match_opponent_scorers(name, minute, is_penalty), match_opponent_cards(name, card_type, minute), match_opponent_lineup(name, number, position, is_starter, is_captain)")
     .eq("id", id)
     .single();
 

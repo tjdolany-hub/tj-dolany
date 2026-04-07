@@ -260,6 +260,11 @@ export interface Database {
           video_url: string | null;
           opponent_scorers: string | null;
           opponent_cards: string | null;
+          round: string | null;
+          referee: string | null;
+          delegate: string | null;
+          spectators: number | null;
+          match_number: string | null;
           created_at: string;
           deleted_at: string | null;
         };
@@ -281,6 +286,11 @@ export interface Database {
           video_url?: string | null;
           opponent_scorers?: string | null;
           opponent_cards?: string | null;
+          round?: string | null;
+          referee?: string | null;
+          delegate?: string | null;
+          spectators?: number | null;
+          match_number?: string | null;
           created_at?: string;
           deleted_at?: string | null;
         };
@@ -302,6 +312,11 @@ export interface Database {
           video_url?: string | null;
           opponent_scorers?: string | null;
           opponent_cards?: string | null;
+          round?: string | null;
+          referee?: string | null;
+          delegate?: string | null;
+          spectators?: number | null;
+          match_number?: string | null;
           created_at?: string;
           deleted_at?: string | null;
         };
@@ -322,6 +337,7 @@ export interface Database {
           player_id: string;
           is_starter: boolean;
           is_captain: boolean;
+          number: number | null;
           created_at: string;
         };
         Insert: {
@@ -330,6 +346,7 @@ export interface Database {
           player_id: string;
           is_starter?: boolean;
           is_captain?: boolean;
+          number?: number | null;
           created_at?: string;
         };
         Update: {
@@ -338,6 +355,7 @@ export interface Database {
           player_id?: string;
           is_starter?: boolean;
           is_captain?: boolean;
+          number?: number | null;
           created_at?: string;
         };
         Relationships: [
