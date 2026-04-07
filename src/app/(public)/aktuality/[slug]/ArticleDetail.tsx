@@ -9,6 +9,7 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
 import { BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
+import MatchGallery from "@/components/public/MatchGallery";
 
 interface ArticleImage {
   id: string;
@@ -221,11 +222,12 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
   const hasHalftime = match.halftime_home != null && match.halftime_away != null;
 
   const allEvents = buildMatchEvents(match);
-  const goalEvents = allEvents.filter((e) => e.type === "goal");
-  const cardEvents = allEvents.filter((e) => e.type !== "goal");
-  const firstHalfGoals = hasHalftime ? goalEvents.filter((e) => e.minute != null && e.minute <= 45) : [];
-  const secondHalfGoals = hasHalftime ? goalEvents.filter((e) => e.minute != null && e.minute > 45) : [];
-  const noMinuteGoals = goalEvents.filter((e) => e.minute == null);
+  const hasEvents = allEvents.length > 0;
+
+  // Split events by half (all types mixed chronologically)
+  const firstHalfEvents = hasHalftime ? allEvents.filter((e) => e.minute != null && e.minute <= 45) : [];
+  const secondHalfEvents = hasHalftime ? allEvents.filter((e) => e.minute != null && e.minute > 45) : [];
+  const noMinuteEvents = allEvents.filter((e) => e.minute == null);
 
   // Dolany lineup
   const dolanyStarters = match.lineups.filter((l) => l.is_starter);
@@ -289,34 +291,21 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
     );
   };
 
-  const renderHalfGoals = (goals: MatchEvent[], startH = 0, startA = 0) => {
-    const withScore = addRunningScores(goals, startH, startA);
-    const homeEvts = withScore.filter((e) => e.side === "home");
-    const awayEvts = withScore.filter((e) => e.side === "away");
-
+  // Render all events for a half chronologically (goals + cards interleaved)
+  const renderHalfEvents = (events: MatchEvent[], startH = 0, startA = 0) => {
+    if (events.length === 0) return null;
+    const withScore = addRunningScores(events, startH, startA);
     return (
-      <div className="grid grid-cols-2 gap-x-4 py-2">
-        <div>{homeEvts.map((e, i) => renderEventRow(e, i))}</div>
-        <div>{awayEvts.map((e, i) => renderEventRow(e, i + 100))}</div>
-      </div>
-    );
-  };
-
-  // Card events split by half
-  const firstHalfCards = hasHalftime ? cardEvents.filter((e) => e.minute != null && e.minute <= 45) : [];
-  const secondHalfCards = hasHalftime ? cardEvents.filter((e) => e.minute != null && e.minute > 45) : [];
-  const noMinuteCards = cardEvents.filter((e) => e.minute == null);
-
-  const renderHalfCards = (evts: MatchEvent[]) => {
-    if (evts.length === 0) return null;
-    // Cards don't have running score — use dummy
-    const withDummy = evts.map((e) => ({ ...e, runningHome: 0, runningAway: 0 }));
-    const homeEvts = withDummy.filter((e) => e.side === "home");
-    const awayEvts = withDummy.filter((e) => e.side === "away");
-    return (
-      <div className="grid grid-cols-2 gap-x-4">
-        <div>{homeEvts.map((e, i) => renderEventRow(e, i + 200))}</div>
-        <div>{awayEvts.map((e, i) => renderEventRow(e, i + 300))}</div>
+      <div className="py-2 space-y-0">
+        {withScore.map((e, i) => {
+          const isHome = e.side === "home";
+          return (
+            <div key={`evt-${i}`} className="grid grid-cols-2 gap-x-4">
+              <div>{isHome ? renderEventRow(e, i) : null}</div>
+              <div>{!isHome ? renderEventRow(e, i) : null}</div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -335,7 +324,7 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
   if (match.venue) footerParts.push(`Hřiště: ${match.venue}`);
   if (match.spectators != null) footerParts.push(`Diváků: ${match.spectators}`);
 
-  const hasDetails = goalEvents.length > 0 || cardEvents.length > 0 || dolanyStarters.length > 0 || oppStarters.length > 0 || footerParts.length > 0;
+  const hasDetails = hasEvents || dolanyStarters.length > 0 || oppStarters.length > 0 || footerParts.length > 0;
 
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -396,8 +385,8 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
 
           {detailsOpen && (
             <div>
-              {/* Goals timeline */}
-              {goalEvents.length > 0 && (
+              {/* Chronological event timeline */}
+              {hasEvents && (
                 <>
                   <div className="h-px bg-border" />
                   <div className="px-4 py-3">
@@ -407,36 +396,23 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
                           <span>1. poločas</span>
                           <span className="tabular-nums">{match.halftime_home}:{match.halftime_away}</span>
                         </div>
-                        {firstHalfGoals.length > 0 ? renderHalfGoals(firstHalfGoals) : (
-                          <p className="text-xs text-text-muted py-2 text-center">Bez gólů</p>
+                        {firstHalfEvents.length > 0 ? renderHalfEvents(firstHalfEvents) : (
+                          <p className="text-xs text-text-muted py-2 text-center">Bez událostí</p>
                         )}
-                        {renderHalfCards(firstHalfCards)}
 
                         <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1 mt-3">
                           <span>2. poločas</span>
                           <span className="tabular-nums">{match.score_home - (match.halftime_home ?? 0)}:{match.score_away - (match.halftime_away ?? 0)}</span>
                         </div>
-                        {secondHalfGoals.length > 0 ? renderHalfGoals(secondHalfGoals, match.halftime_home ?? 0, match.halftime_away ?? 0) : (
-                          <p className="text-xs text-text-muted py-2 text-center">Bez gólů</p>
+                        {secondHalfEvents.length > 0 ? renderHalfEvents(secondHalfEvents, match.halftime_home ?? 0, match.halftime_away ?? 0) : (
+                          <p className="text-xs text-text-muted py-2 text-center">Bez událostí</p>
                         )}
-                        {renderHalfCards(secondHalfCards)}
 
-                        {noMinuteGoals.length > 0 && renderHalfGoals(noMinuteGoals, match.score_home, match.score_away)}
-                        {renderHalfCards(noMinuteCards)}
+                        {noMinuteEvents.length > 0 && renderHalfEvents(noMinuteEvents, match.score_home, match.score_away)}
                       </>
                     ) : (
-                      renderHalfGoals(goalEvents)
+                      renderHalfEvents(allEvents)
                     )}
-                  </div>
-                </>
-              )}
-
-              {/* Cards without goals */}
-              {goalEvents.length === 0 && cardEvents.length > 0 && (
-                <>
-                  <div className="h-px bg-border" />
-                  <div className="px-4 py-3">
-                    {renderHalfCards(cardEvents)}
                   </div>
                 </>
               )}
@@ -566,35 +542,13 @@ export default function ArticleDetail({ article, matchData }: { article: Article
           <>
             <MatchScoreHeader match={matchData} />
 
-            {/* Gallery right after match header */}
+            {/* Gallery with lightbox */}
             {article.article_images.length > 0 && (
               <div className="mb-8">
-                {article.article_images.length === 1 && heroImage ? (
-                  <div className="relative aspect-[16/9] rounded-xl overflow-hidden">
-                    <Image
-                      src={heroImage.url}
-                      alt={heroImage.alt || article.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 720px"
-                      priority
-                    />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {article.article_images.map((img) => (
-                      <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden">
-                        <Image
-                          src={img.url}
-                          alt={img.alt || ""}
-                          fill
-                          className="object-cover hover:scale-105 transition-transform duration-500"
-                          sizes="(max-width: 768px) 50vw, 33vw"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <MatchGallery
+                  photos={article.article_images.map((img) => ({ url: img.url, alt: img.alt }))}
+                  matchTitle={article.title}
+                />
               </div>
             )}
 
@@ -630,23 +584,14 @@ export default function ArticleDetail({ article, matchData }: { article: Article
           </>
         )}
 
-        {/* Gallery for non-match articles (match articles show gallery above text) */}
+        {/* Gallery for non-match articles */}
         {!matchData && article.article_images.length > 1 && (
           <div className="mt-10">
             <h3 className="text-lg font-bold text-text mb-4">Fotogalerie</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {article.article_images.slice(1).map((img) => (
-                <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden">
-                  <Image
-                    src={img.url}
-                    alt={img.alt || ""}
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                  />
-                </div>
-              ))}
-            </div>
+            <MatchGallery
+              photos={article.article_images.slice(1).map((img) => ({ url: img.url, alt: img.alt }))}
+              matchTitle={article.title}
+            />
           </div>
         )}
       </motion.div>
