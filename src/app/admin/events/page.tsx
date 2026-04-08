@@ -93,6 +93,7 @@ const DEFAULT_FORM = {
   time: "",
   time_to: "",
   allDay: false,
+  multiDay: false,
   event_type: "akce" as EventTypeValue,
   locationAll: false,
   locations: [] as string[],
@@ -215,12 +216,14 @@ export default function AdminPlanAkciPage() {
     // Parse end_date for time_to and end_date
     let endDateStr = "";
     let timeTo = "";
+    let isMultiDay = false;
     if (e.end_date) {
       const ed = new Date(e.end_date);
       const edDate = e.end_date.slice(0, 10);
       const startDate = e.date.slice(0, 10);
       if (edDate !== startDate) {
         endDateStr = edDate;
+        isMultiDay = true;
       }
       if (!isAllDay) {
         timeTo = formatTimePrague(ed);
@@ -235,6 +238,7 @@ export default function AdminPlanAkciPage() {
       time: isAllDay ? "" : `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
       time_to: timeTo,
       allDay: isAllDay,
+      multiDay: isMultiDay,
       event_type: e.event_type as EventTypeValue,
       locationAll: isAll,
       locations,
@@ -520,36 +524,89 @@ export default function AdminPlanAkciPage() {
                 <button type="button" onClick={resetForm} className="text-text-muted hover:text-text"><X size={20} /></button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Datum od</label>
-                  <input type="date" value={form.date} onChange={(e) => updateEventForm({ date: e.target.value })} required
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Datum do <span className="font-normal text-text-muted">(vícedenní)</span></label>
-                  <input type="date" value={form.end_date} onChange={(e) => updateEventForm({ end_date: e.target.value })}
-                    min={form.date}
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Čas</label>
-                  {form.allDay ? (
-                    <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">Celý den</div>
-                  ) : (
-                    <div className="flex gap-2 items-center">
-                      <input type="time" value={form.time} onChange={(e) => updateEventForm({ time: e.target.value })} placeholder="Od"
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
-                      <span className="text-text-muted text-sm">–</span>
-                      <input type="time" value={form.time_to} onChange={(e) => updateEventForm({ time_to: e.target.value })} placeholder="Do"
+              {/* Duration toggle */}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => updateEventForm({ multiDay: false, end_date: "" })}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${!form.multiDay ? "bg-brand-red text-white" : "bg-surface border border-border text-text-muted hover:text-text"}`}>
+                  Jednodenní
+                </button>
+                <button type="button" onClick={() => updateEventForm({ multiDay: true })}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${form.multiDay ? "bg-brand-red text-white" : "bg-surface border border-border text-text-muted hover:text-text"}`}>
+                  Vícedenní
+                </button>
+              </div>
+
+              {!form.multiDay ? (
+                <>
+                  {/* Single-day: Datum | Čas od – do | Celý den */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-1">Datum</label>
+                      <input type="date" value={form.date} onChange={(e) => updateEventForm({ date: e.target.value })} required
                         className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
                     </div>
-                  )}
-                  <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-semibold text-text mb-1">Čas</label>
+                      {form.allDay ? (
+                        <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">Celý den</div>
+                      ) : (
+                        <div className="flex gap-2 items-center">
+                          <input type="time" value={form.time} onChange={(e) => updateEventForm({ time: e.target.value })}
+                            className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                          <span className="text-text-muted text-sm">–</span>
+                          <input type="time" value={form.time_to} onChange={(e) => updateEventForm({ time_to: e.target.value })}
+                            className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                        </div>
+                      )}
+                      <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                        <input type="checkbox" checked={form.allDay} onChange={(e) => updateEventForm({ allDay: e.target.checked, time: "", time_to: "" })} className="w-3.5 h-3.5" />
+                        <span className="text-xs text-text-muted">Celý den</span>
+                      </label>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Multi-day: Datum od + Čas od | Datum do + Čas do | Celé dny */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-1">Datum od</label>
+                      <input type="date" value={form.date} onChange={(e) => updateEventForm({ date: e.target.value })} required
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-1">Čas od</label>
+                      {form.allDay ? (
+                        <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">—</div>
+                      ) : (
+                        <input type="time" value={form.time} onChange={(e) => updateEventForm({ time: e.target.value })}
+                          className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-1">Datum do</label>
+                      <input type="date" value={form.end_date} onChange={(e) => updateEventForm({ end_date: e.target.value })} required
+                        min={form.date}
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-1">Čas do</label>
+                      {form.allDay ? (
+                        <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">—</div>
+                      ) : (
+                        <input type="time" value={form.time_to} onChange={(e) => updateEventForm({ time_to: e.target.value })}
+                          className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                      )}
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={form.allDay} onChange={(e) => updateEventForm({ allDay: e.target.checked, time: "", time_to: "" })} className="w-3.5 h-3.5" />
-                    <span className="text-xs text-text-muted">Celý den</span>
+                    <span className="text-xs text-text-muted">Celé dny</span>
                   </label>
-                </div>
+                </>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Typ</label>
                   <select value={form.event_type} onChange={(e) => {

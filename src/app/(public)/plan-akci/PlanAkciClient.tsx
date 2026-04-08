@@ -222,15 +222,16 @@ export default function PlanAkciClient({
   });
 
   // Merge real events + schedule virtual events for the current month
+  const monthStartStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-01`;
+  const monthEndStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(totalDays).padStart(2, "0")}`;
   const allMonthEvents = [
     ...filteredCalEvents.filter((e) => {
-      const d = new Date(e.date);
-      const ed = e.end_date ? new Date(e.end_date) : null;
-      // Include if event starts in this month OR spans into this month
-      const monthStart = new Date(calYear, calMonth, 1);
-      const monthEnd = new Date(calYear, calMonth + 1, 0);
-      const startsInMonth = d.getMonth() === calMonth && d.getFullYear() === calYear;
-      const spansIntoMonth = ed && d < monthStart && ed >= monthStart;
+      // Use date-only strings to avoid timezone comparison issues
+      const startStr = e.date.slice(0, 10);
+      const endStr = e.end_date ? e.end_date.slice(0, 10) : startStr;
+      // Include if event starts in this month OR spans into/across this month
+      const startsInMonth = startStr >= monthStartStr && startStr <= monthEndStr;
+      const spansIntoMonth = startStr < monthStartStr && endStr >= monthStartStr;
       return startsInMonth || spansIntoMonth;
     }),
     ...(calFilter === "all" || calFilter === "akce" ? scheduleVirtualEvents : []),
@@ -238,19 +239,22 @@ export default function PlanAkciClient({
 
   const eventsByDay: Record<number, CalEvent[]> = {};
   for (const e of allMonthEvents) {
-    const startDate = new Date(e.date);
-    const endDate = e.end_date ? new Date(e.end_date) : startDate;
-    // For multi-day events, add to each day in the range within this month
-    const monthStart = new Date(calYear, calMonth, 1);
-    const monthEnd = new Date(calYear, calMonth + 1, 0);
-    const rangeStart = startDate < monthStart ? monthStart : startDate;
-    const rangeEnd = endDate > monthEnd ? monthEnd : endDate;
-    const current = new Date(rangeStart);
-    while (current <= rangeEnd) {
-      if (current.getMonth() === calMonth && current.getFullYear() === calYear) {
+    // Use date-only strings to avoid time-of-day comparison issues
+    const startDateStr = e.date.slice(0, 10);
+    const endDateStr = e.end_date ? e.end_date.slice(0, 10) : startDateStr;
+    const monthStartStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-01`;
+    const monthEndStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(totalDays).padStart(2, "0")}`;
+    const rangeStartStr = startDateStr < monthStartStr ? monthStartStr : startDateStr;
+    const rangeEndStr = endDateStr > monthEndStr ? monthEndStr : endDateStr;
+    // Iterate days in range
+    const current = new Date(rangeStartStr + "T00:00:00");
+    const rangeEndDate = new Date(rangeEndStr + "T00:00:00");
+    while (current <= rangeEndDate) {
+      const cMonth = current.getMonth();
+      const cYear = current.getFullYear();
+      if (cMonth === calMonth && cYear === calYear) {
         const day = current.getDate();
         if (!eventsByDay[day]) eventsByDay[day] = [];
-        // Avoid duplicates for same event on same day
         if (!eventsByDay[day].some((x) => x.id === e.id)) {
           eventsByDay[day].push(e);
         }
