@@ -18,6 +18,7 @@ interface ScheduleEntry {
   day_of_week: number;
   title: string;
   time_from: string;
+  time_to: string | null;
   valid_from: string | null;
   valid_to: string | null;
 }
@@ -68,11 +69,23 @@ export default function RentalRequestForm({
   const isCustomOrganizer = form.organizer === "__custom__";
   const contactRequired = form.event_type === "pronajem" || isCustomOrganizer;
 
-  // Check for conflicts on selected date
+  // Check for conflicts on selected date+time
   const dateConflicts = useMemo(() => {
     if (!form.date) return [];
     const conflicts: string[] = [];
     const selectedDate = form.date;
+    const reqFrom = form.time || null;
+    const reqTo = form.time_to || null;
+    const reqAllDay = form.allDay;
+
+    // Helper: do two time ranges overlap? (HH:MM strings)
+    const timesOverlap = (aFrom: string | null, aTo: string | null, bFrom: string | null, bTo: string | null): boolean => {
+      // If either side is all-day (no times), it always overlaps
+      if (!aFrom || !bFrom) return true;
+      const aEnd = aTo || "23:59";
+      const bEnd = bTo || "23:59";
+      return aFrom < bEnd && bFrom < aEnd;
+    };
 
     // Check calendar events
     for (const e of allEvents) {
@@ -80,24 +93,37 @@ export default function RentalRequestForm({
       const endDate = e.end_date ? e.end_date.slice(0, 10) : eventDate;
       if (selectedDate >= eventDate && selectedDate <= endDate) {
         const d = new Date(e.date);
-        const isAllDay = e.all_day || (isMidnightPrague(d) && e.event_type !== "trenink");
-        if (isAllDay || e.event_type === "zapas") {
+        const isEventAllDay = e.all_day || (isMidnightPrague(d) && e.event_type !== "trenink");
+        if (isEventAllDay || e.event_type === "zapas") {
           conflicts.push(e.title);
+        } else if (!reqAllDay) {
+          // Both have times — check overlap
+          const evFrom = e.date.slice(11, 16);
+          const evTo = e.end_date ? e.end_date.slice(11, 16) : null;
+          if (timesOverlap(reqFrom, reqTo, evFrom, evTo)) {
+            conflicts.push(e.title);
+          }
         }
       }
     }
 
-    // Check weekly schedule
+    // Check weekly schedule — only if times overlap
     const dow = new Date(selectedDate).getDay();
     for (const s of schedule) {
       if (s.day_of_week !== dow) continue;
       if (s.valid_from && selectedDate < s.valid_from) continue;
       if (s.valid_to && selectedDate > s.valid_to) continue;
-      conflicts.push(s.title);
+      if (reqAllDay) {
+        conflicts.push(s.title);
+      } else {
+        if (timesOverlap(reqFrom, reqTo, s.time_from, s.time_to)) {
+          conflicts.push(s.title);
+        }
+      }
     }
 
     return conflicts;
-  }, [form.date, allEvents, schedule]);
+  }, [form.date, form.time, form.time_to, form.allDay, allEvents, schedule]);
 
   const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
