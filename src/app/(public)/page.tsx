@@ -23,6 +23,7 @@ export default async function HomePage() {
       .select("id, title, description, date, event_type")
       .eq("event_type", "akce")
       .eq("is_public", true)
+      .is("deleted_at", null)
       .lt("date", now)
       .order("date", { ascending: false })
       .limit(1),
@@ -31,12 +32,14 @@ export default async function HomePage() {
       .select("id, title, description, date, event_type")
       .eq("event_type", "akce")
       .eq("is_public", true)
+      .is("deleted_at", null)
       .gte("date", now)
       .order("date", { ascending: true })
       .limit(2),
     supabase
       .from("match_results")
       .select("opponent, date, is_home, competition, venue")
+      .is("deleted_at", null)
       .gte("date", now)
       .order("date", { ascending: true })
       .limit(1),
@@ -50,6 +53,7 @@ export default async function HomePage() {
     supabase
       .from("match_results")
       .select("id, date, opponent, score_home, score_away, is_home, competition, season, article_id, articles(slug)")
+      .is("deleted_at", null)
       .lt("date", now)
       .order("date", { ascending: false })
       .limit(5),

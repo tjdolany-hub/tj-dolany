@@ -214,6 +214,7 @@ export async function GET(request: Request) {
     const { data: calEvents } = await supabase
       .from("calendar_events")
       .select("id, title, date, end_date, all_day, event_type, location, organizer")
+      .is("deleted_at", null)
       .gte("date", startStr)
       .lte("date", endStr)
       .order("date", { ascending: true });

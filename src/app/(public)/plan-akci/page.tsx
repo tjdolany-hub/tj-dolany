@@ -24,6 +24,7 @@ export default async function PlanAkciPage() {
       .select("id, title, description, date, event_type, location, organizer")
       .in("event_type", ["akce", "zapas"])
       .eq("is_public", true)
+      .is("deleted_at", null)
       .gte("date", now)
       .order("date", { ascending: true })
       .limit(5),
@@ -31,6 +32,7 @@ export default async function PlanAkciPage() {
     supabase
       .from("calendar_events")
       .select("id, title, description, date, end_date, all_day, event_type, location, organizer, is_public")
+      .is("deleted_at", null)
       .order("date", { ascending: true }),
     // Weekly schedule
     supabase
