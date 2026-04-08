@@ -157,11 +157,12 @@ export default function RentalRequestsTab({
             </thead>
             <tbody>
               {filtered.map((r) => {
-                const createdDate = new Date(r.created_at).toLocaleDateString("cs-CZ");
+                const createdDate = new Date(r.created_at).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" });
                 const eventDate = new Date(r.date).toLocaleDateString("cs-CZ", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
+                  timeZone: "Europe/Prague",
                 });
                 const timeStr = r.all_day
                   ? "Celý den"

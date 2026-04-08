@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, ImageIcon, Camera } from "lucide-react";
-import { formatDateCzech, CATEGORIES } from "@/lib/utils";
+import { formatDateCzech, CATEGORIES, formatTimePrague } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
@@ -87,11 +87,11 @@ interface HomeClientProps {
 
 function formatMatchDate(dateStr: string): string {
   const d = new Date(dateStr);
-  const days = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
-  const day = days[d.getDay()];
-  const date = `${d.getDate()}.${d.getMonth() + 1}.`;
-  const time = `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-  return `${day} ${date} — ${time}`;
+  const dayName = d.toLocaleDateString("cs-CZ", { weekday: "long", timeZone: "Europe/Prague" });
+  const capitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+  const date = d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", timeZone: "Europe/Prague" });
+  const time = formatTimePrague(d);
+  return `${capitalized} ${date} — ${time}`;
 }
 
 const MEDAL_COLORS = ["text-yellow-500", "text-gray-400", "text-amber-700"];

@@ -8,7 +8,7 @@ import PlayerCard from "@/components/public/PlayerCard";
 import MatchGallery from "@/components/public/MatchGallery";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
-import { formatDateShort, POSITION_LABELS } from "@/lib/utils";
+import { formatDateShort, POSITION_LABELS, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
 import type { Database } from "@/types/database";
 
@@ -39,10 +39,8 @@ function getHalfForDate(d: Date): "podzim" | "jaro" {
 
 function formatMatchTime(dateStr: string): string {
   const d = new Date(dateStr);
-  const h = d.getHours();
-  const m = d.getMinutes();
-  if (h === 0 && m === 0) return "";
-  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  if (isMidnightPrague(d)) return "";
+  return formatTimePrague(d);
 }
 
 function MatchTimeline({ match, events }: { match: MatchResult; events: MatchEvent[] }) {
@@ -697,6 +695,7 @@ export default function TymClient({
   statsEntries,
   availableSeasons,
   matchEvents,
+  trainingLeaderboard = [],
 }: {
   players: Player[];
   draws: Draw[];
@@ -706,6 +705,7 @@ export default function TymClient({
   statsEntries?: StatsEntry[];
   availableSeasons?: string[];
   matchEvents?: Record<string, MatchEvent[]>;
+  trainingLeaderboard?: { player_id: string; jde: number; nejde: number; neodpovedel: number; total: number; rate: number }[];
 }) {
   const grouped = POSITION_ORDER.map((pos) => ({
     position: pos,
@@ -727,6 +727,7 @@ export default function TymClient({
     ...(matches.length > 0 ? [{ id: "vysledky", label: "Zápasy" }] : []),
     ...(standings && standings.length > 0 ? [{ id: "tabulka", label: "Tabulka" }] : []),
     ...(statsEntries && statsEntries.length > 0 ? [{ id: "statistiky", label: "Statistiky" }] : []),
+    ...(trainingLeaderboard.length > 0 ? [{ id: "dochazka", label: "Docházka" }] : []),
     ...(draws.length > 0 ? [{ id: "los", label: "Los" }] : []),
   ];
 
@@ -856,6 +857,58 @@ export default function TymClient({
         </div>
         </div>
         </div>
+      )}
+
+      {/* Training attendance leaderboard */}
+      {trainingLeaderboard.length > 0 && (
+        <>
+        <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
+        <div className="bg-surface py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div id="dochazka" className="scroll-mt-28">
+          <AnimatedSection>
+            <h2 className="text-2xl font-bold text-text tracking-tight mb-6 flex items-center justify-center gap-3">
+              <span className="w-8 h-0.5 bg-brand-red rounded-full" />
+              Docházka na tréninky
+            </h2>
+            <div className="bg-surface-alt rounded-xl border border-border overflow-hidden max-w-2xl mx-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-surface-muted">
+                    <th className="px-3 py-3 text-center font-semibold text-text-muted w-10">#</th>
+                    <th className="px-4 py-3 text-left font-semibold text-text-muted">Hráč</th>
+                    <th className="px-3 py-3 text-center font-semibold text-green-500" title="Jde">✓</th>
+                    <th className="px-3 py-3 text-center font-semibold text-red-500" title="Nejde">✗</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-400" title="Neodpověděl">?</th>
+                    <th className="px-3 py-3 text-center font-semibold text-text-muted">Účast</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trainingLeaderboard.slice(0, 6).map((s, i) => {
+                    const name = players.find((p) => p.id === s.player_id)?.name ?? "?";
+                    return (
+                      <tr key={s.player_id} className={`border-b border-border last:border-0 ${i < 3 ? "bg-brand-red/5" : ""}`}>
+                        <td className="px-3 py-2.5 text-center font-bold text-text-muted text-xs">{i + 1}.</td>
+                        <td className="px-4 py-2.5 font-medium text-text">{name}</td>
+                        <td className="px-3 py-2.5 text-center text-green-500 font-semibold">{s.jde}</td>
+                        <td className="px-3 py-2.5 text-center text-red-500 font-semibold">{s.nejde}</td>
+                        <td className="px-3 py-2.5 text-center text-gray-400">{s.neodpovedel}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`font-bold ${s.rate >= 70 ? "text-green-500" : s.rate >= 40 ? "text-yellow-500" : "text-red-500"}`}>
+                            {s.rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </AnimatedSection>
+        </div>
+        </div>
+        </div>
+        </>
       )}
 
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />

@@ -24,6 +24,7 @@ const matchSchema = z.object({
   delegate: z.string().nullable().optional(),
   spectators: z.number().nullable().optional(),
   match_number: z.string().nullable().optional(),
+  match_type: z.enum(["mistrovsky", "pratelsky"]).default("mistrovsky"),
   lineup: z.array(z.object({ player_id: z.string(), is_starter: z.boolean().default(true), is_captain: z.boolean().default(false), number: z.number().nullable().optional() })).optional(),
   scorers: z.array(z.object({ player_id: z.string(), goals: z.number().default(1), minute: z.number().nullable().optional(), is_penalty: z.boolean().default(false) })).optional(),
   cards: z.array(z.object({ player_id: z.string(), card_type: z.enum(["yellow", "red"]), minute: z.number().nullable().optional() })).optional(),
@@ -173,6 +174,26 @@ export async function POST(req: NextRequest) {
   }
 
   if (match) {
+    // Auto-assign match number if match has a result (score > 0 or lineup present)
+    // and doesn't already have a match_number
+    if (!match.match_number && (match.score_home > 0 || match.score_away > 0)) {
+      const { data: maxRow } = await admin
+        .from("match_results")
+        .select("match_number")
+        .not("match_number", "is", null)
+        .is("deleted_at", null)
+        .order("match_number", { ascending: false })
+        .limit(1)
+        .single();
+      const currentMax = maxRow?.match_number ? parseInt(maxRow.match_number) : 2174;
+      const nextNumber = (isNaN(currentMax) ? 2174 : currentMax) + 1;
+      await admin
+        .from("match_results")
+        .update({ match_number: nextNumber.toString() })
+        .eq("id", match.id);
+      match.match_number = nextNumber.toString();
+    }
+
     await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "create", entityType: "match", entityId: match.id, entityTitle: `${match.is_home ? "TJ Dolany" : match.opponent} vs ${match.is_home ? match.opponent : "TJ Dolany"}` });
 
     // Auto-create calendar event for home matches

@@ -42,6 +42,7 @@ export async function sendNewRequestNotification(data: RentalRequestData) {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Europe/Prague",
   });
   const timeStr = data.allDay
     ? "Celý den"
@@ -49,7 +50,7 @@ export async function sendNewRequestNotification(data: RentalRequestData) {
       ? `${data.time} – ${data.timeTo}`
       : (data.time || "—");
   const endDateStr = data.endDate
-    ? new Date(data.endDate).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" })
+    ? new Date(data.endDate).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Prague" })
     : null;
 
   const html = `
@@ -94,6 +95,7 @@ export async function sendRequestStatusNotification(
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Europe/Prague",
   });
 
   const isApproved = status === "approved";

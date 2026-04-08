@@ -113,7 +113,7 @@ export default function AdminTrashPage() {
                       {TYPE_LABELS[item.type] ?? item.type}
                     </span>
                     <span>
-                      Smazáno {new Date(item.deleted_at).toLocaleDateString("cs-CZ")}
+                      Smazáno {new Date(item.deleted_at).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" })}
                     </span>
                     <span className={days <= 7 ? "text-red-500 font-semibold" : ""}>
                       {days > 0 ? `${days} dní do smazání` : "K trvalému smazání"}

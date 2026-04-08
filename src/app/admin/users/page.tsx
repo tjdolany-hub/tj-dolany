@@ -79,7 +79,7 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-text-muted">
-                    {new Date(u.created_at).toLocaleDateString("cs-CZ")}
+                    {new Date(u.created_at).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" })}
                   </td>
                 </tr>
               ))}

@@ -193,6 +193,31 @@ export default async function TymPage() {
     });
   }
 
+  // Fetch training attendance stats for current season
+  const { data: trainingAtt } = await supabase
+    .from("training_attendance")
+    .select("player_id, response, trainings!inner(season)")
+    .eq("trainings.season", currentSeason);
+
+  const trainingStatsMap: Record<string, { jde: number; nejde: number; neodpovedel: number; total: number }> = {};
+  for (const a of trainingAtt ?? []) {
+    if (!trainingStatsMap[a.player_id]) {
+      trainingStatsMap[a.player_id] = { jde: 0, nejde: 0, neodpovedel: 0, total: 0 };
+    }
+    trainingStatsMap[a.player_id].total++;
+    if (a.response === "jde") trainingStatsMap[a.player_id].jde++;
+    else if (a.response === "nejde") trainingStatsMap[a.player_id].nejde++;
+    else trainingStatsMap[a.player_id].neodpovedel++;
+  }
+
+  const trainingLeaderboard = Object.entries(trainingStatsMap)
+    .map(([player_id, stats]) => ({
+      player_id,
+      ...stats,
+      rate: stats.total > 0 ? Math.round((stats.jde / stats.total) * 100) : 0,
+    }))
+    .sort((a, b) => b.rate - a.rate || b.jde - a.jde);
+
   return (
     <TymClient
       players={players ?? []}
@@ -203,6 +228,7 @@ export default async function TymPage() {
       statsEntries={statsEntries}
       availableSeasons={availableSeasons}
       matchEvents={matchEvents}
+      trainingLeaderboard={trainingLeaderboard}
     />
   );
 }

@@ -265,6 +265,7 @@ export interface Database {
           delegate: string | null;
           spectators: number | null;
           match_number: string | null;
+          match_type: "mistrovsky" | "pratelsky";
           created_at: string;
           deleted_at: string | null;
         };
@@ -291,6 +292,7 @@ export interface Database {
           delegate?: string | null;
           spectators?: number | null;
           match_number?: string | null;
+          match_type?: "mistrovsky" | "pratelsky";
           created_at?: string;
           deleted_at?: string | null;
         };
@@ -317,6 +319,7 @@ export interface Database {
           delegate?: string | null;
           spectators?: number | null;
           match_number?: string | null;
+          match_type?: "mistrovsky" | "pratelsky";
           created_at?: string;
           deleted_at?: string | null;
         };
@@ -896,6 +899,72 @@ export interface Database {
             columns: ["calendar_event_id"];
             isOneToOne: false;
             referencedRelation: "calendar_events";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      trainings: {
+        Row: {
+          id: string;
+          date: string;
+          title: string;
+          type: "trenink" | "zapas";
+          season: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          date: string;
+          title: string;
+          type?: "trenink" | "zapas";
+          season?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          date?: string;
+          title?: string;
+          type?: "trenink" | "zapas";
+          season?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      training_attendance: {
+        Row: {
+          id: string;
+          training_id: string;
+          player_id: string;
+          response: "jde" | "nejde" | "neodpovedel";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          training_id: string;
+          player_id: string;
+          response?: "jde" | "nejde" | "neodpovedel";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          training_id?: string;
+          player_id?: string;
+          response?: "jde" | "nejde" | "neodpovedel";
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "training_attendance_training_id_fkey";
+            columns: ["training_id"];
+            isOneToOne: false;
+            referencedRelation: "trainings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "training_attendance_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
             referencedColumns: ["id"];
           }
         ];

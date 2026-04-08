@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
+import { formatTimePrague, getHoursPrague, getMinutesPrague } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -83,6 +84,7 @@ interface Match {
   delegate: string | null;
   spectators: number | null;
   match_number: string | null;
+  match_type: "mistrovsky" | "pratelsky";
   article_id: string | null;
   match_lineups?: LineupEntry[];
   match_scorers?: ScorerEntry[];
@@ -127,6 +129,7 @@ const emptyForm = {
   delegate: "",
   spectators: "",
   match_number: "",
+  match_type: "mistrovsky" as "mistrovsky" | "pratelsky",
 };
 
 // ─── Component ───────────────────────────────────────────────
@@ -347,7 +350,7 @@ export default function AdminMatchesPage() {
     const d = new Date(m.date);
     setForm({
       date: m.date.slice(0, 10),
-      time: `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`,
+      time: formatTimePrague(d),
       home_team: m.is_home ? "Dolany" : m.opponent,
       away_team: m.is_home ? m.opponent : "Dolany",
       score_home: m.score_home,
@@ -367,6 +370,7 @@ export default function AdminMatchesPage() {
       delegate: m.delegate || "",
       spectators: m.spectators?.toString() ?? "",
       match_number: m.match_number || "",
+      match_type: m.match_type || "mistrovsky",
     });
     setLineup(m.match_lineups?.map((l) => ({ player_id: l.player_id, is_starter: l.is_starter, is_captain: l.is_captain ?? false, number: l.number ?? null })) || []);
     // Expand each scorer entry into individual goal rows (1 per goal) for editing
@@ -426,6 +430,7 @@ export default function AdminMatchesPage() {
       delegate: form.delegate || null,
       spectators: form.spectators ? parseInt(form.spectators) : null,
       match_number: form.match_number || null,
+      match_type: form.match_type,
       // Auto-generate text from structured data for backward compat
       opponent_scorers: opponentScorers.length > 0
         ? opponentScorers.filter((s) => s.name).map((s) => {
@@ -614,6 +619,7 @@ export default function AdminMatchesPage() {
       delegate: parsed.delegate || "",
       spectators: parsed.spectators?.toString() ?? "",
       match_number: parsed.match_number || "",
+      match_type: "mistrovsky",
     });
 
     // Match Dolany lineup to players by name
@@ -932,7 +938,7 @@ export default function AdminMatchesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Rozhodčí</label>
                   <input type="text" value={form.referee} onChange={(e) => updateMatchForm({ referee: e.target.value })}
@@ -946,7 +952,17 @@ export default function AdminMatchesPage() {
                 <div>
                   <label className="block text-sm font-semibold text-text mb-1">Číslo utkání</label>
                   <input type="text" value={form.match_number} onChange={(e) => updateMatchForm({ match_number: e.target.value })}
+                    placeholder="Auto po vložení výsledku"
                     className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+                  <p className="text-[10px] text-text-muted mt-0.5">Automaticky po uložení výsledku</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-1">Typ zápasu</label>
+                  <select value={form.match_type} onChange={(e) => updateMatchForm({ match_type: e.target.value as "mistrovsky" | "pratelsky" })}
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
+                    <option value="mistrovsky">Mistrovský</option>
+                    <option value="pratelsky">Přátelský</option>
+                  </select>
                 </div>
               </div>
 
@@ -1281,7 +1297,9 @@ export default function AdminMatchesPage() {
                           )}
                         </div>
                         <span className="text-xs text-text-muted">
-                          {d.toLocaleDateString("cs-CZ")} {d.getHours() > 0 && `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`} • {m.competition} {m.venue && `• ${m.venue}`}
+                          {m.match_number && <span className="font-bold text-brand-yellow mr-1">#{m.match_number}</span>}
+                          {d.toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" })} {getHoursPrague(d) > 0 && formatTimePrague(d)} • {m.competition} {m.venue && `• ${m.venue}`}
+                          {m.match_type === "pratelsky" && <span className="ml-1 text-[10px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">přátelský</span>}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">

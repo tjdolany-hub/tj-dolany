@@ -25,23 +25,37 @@ function formatLocation(loc: string | null): string {
   return loc.split(",").map((v) => LOCATION_LABELS[v.trim()] || v.trim()).join(", ");
 }
 
+const PRAGUE_TZ = "Europe/Prague";
+
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });
+  return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", timeZone: PRAGUE_TZ });
+}
+
+function getHoursPrague(d: Date): number {
+  return parseInt(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: PRAGUE_TZ }).format(d), 10);
+}
+
+function getMinutesPrague(d: Date): number {
+  return parseInt(new Intl.DateTimeFormat("en-US", { minute: "numeric", timeZone: PRAGUE_TZ }).format(d), 10);
+}
+
+function fmtTime(d: Date): string {
+  return `${getHoursPrague(d).toString().padStart(2, "0")}:${getMinutesPrague(d).toString().padStart(2, "0")}`;
 }
 
 function formatTime(dateStr: string, endDateStr?: string | null, allDay?: boolean): string {
   const d = new Date(dateStr);
-  const h = d.getHours();
-  const m = d.getMinutes();
+  const h = getHoursPrague(d);
+  const m = getMinutesPrague(d);
   if (allDay || (h === 0 && m === 0)) return "Celý den";
-  const from = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  const from = fmtTime(d);
   if (endDateStr) {
     const ed = new Date(endDateStr);
     const edDate = endDateStr.slice(0, 10);
     const startDate = dateStr.slice(0, 10);
     if (edDate === startDate) {
-      return `${from} - ${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
+      return `${from} - ${fmtTime(ed)}`;
     }
   }
   return from;
@@ -171,7 +185,7 @@ function generatePDF(events: CalEvent[], periodLabel: string): Promise<Buffer> {
     // Footer
     doc.moveDown(2);
     doc.fontSize(7).fillColor("#999")
-      .text(`Vygenerovano: ${new Date().toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, { align: "right" });
+      .text(`Vygenerovano: ${new Date().toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: PRAGUE_TZ })}`, { align: "right" });
 
     doc.end();
   });

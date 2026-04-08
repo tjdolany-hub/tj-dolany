@@ -113,9 +113,22 @@ Published articles and matches show a share button (Share2 icon) that opens a di
 
 Articles have OG meta tags (`og:title`, `og:description`, `og:image`) for rich Facebook previews.
 
-### Match Opponent Stats
+### Match Report Parser
 
-`match_results` has `opponent_scorers` and `opponent_cards` (free text fields) for display in published articles only — not linked to player stats. Also `video_url` for YouTube embeds.
+`src/lib/match-parser.ts` — pure regex parser that takes text copied from the district FA website and returns structured data (date, time, round, competition, teams, score, halftime, goals with minutes, lineups with jersey numbers/positions/cards, referee, venue, spectators). The admin match form has a "Vložit zápis" textarea that calls `parseMatchReport()` and pre-fills all fields. Key design: lineups are parsed BEFORE goals so goal side (home/away) can be determined by cross-referencing scorer names against lineup names. Penalty auto-detection is disabled (two-column text linearization makes it unreliable).
+
+### Match Opponent Data
+
+Opponent match data stored in structured tables (not free text):
+- `match_opponent_lineup` — name, number, position, is_starter, is_captain
+- `match_opponent_scorers` — name, minute, is_penalty
+- `match_opponent_cards` — name, card_type, minute
+
+Legacy free-text fields `opponent_scorers` and `opponent_cards` on `match_results` still exist as fallback. Also `video_url` for YouTube embeds.
+
+### Team Logos
+
+`src/lib/team-logos.ts` maps opponent names to logo files in `public/logos/`. `getTeamLogo(opponentName)` does keyword matching. `DOLANY_LOGO` = `/logo.png`. Logos rendered with `object-contain` (not `rounded-full`) to preserve shield/crest shapes.
 
 ### YouTube Video Embed
 
@@ -127,11 +140,11 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Key Tables
 
-`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`
+`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `match_opponent_lineup`, `match_opponent_scorers`, `match_opponent_cards`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–015). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked "SQL"`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–018). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked "SQL"`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
 
 ### Image Upload
 
@@ -157,7 +170,7 @@ Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna`
 
 ### Custom CSS & Components
 
-- Custom CSS classes in `globals.css`: `.glass`, `.card-hover`, `.gradient-text`, `.gradient-border`, `.ticker-container`, `.ticker-ball`, `.ticker-char`, `.ticker-space`
+- Custom CSS classes in `globals.css`: `.glass`, `.card-hover`, `.gradient-text`, `.gradient-border`
 - Shared constants in `src/lib/utils.ts`: positions, event types, locations, organizers, date formatters, `CATEGORIES`
 - Stat icons in `src/components/ui/StatIcons.tsx`: `JerseyIcon`, `BallIcon`, `YellowCard`, `RedCard`
 
@@ -219,7 +232,11 @@ Two event types in form:
 
 ### Timezone Handling
 
-All datetimes stored as UTC in TIMESTAMPTZ columns. Admin forms (client-side) use `new Date().toISOString()` to convert browser local time to UTC before sending. Server-side code (API routes) uses Europe/Prague offset detection for timezone-aware conversion. Display uses `getHours()`/`getMinutes()` which automatically converts UTC to browser local time.
+All datetimes stored as UTC in TIMESTAMPTZ columns. Admin match form constructs dates with **explicit timezone offset** (e.g. `2026-04-12T16:00:00+02:00`) using the browser's `getTimezoneOffset()` — never rely on `new Date("...T16:00").toISOString()` which can misinterpret local vs UTC. Display uses `getHours()`/`getMinutes()` which automatically converts UTC to browser local time. User is in Europe/Prague (CET +01:00 / CEST +02:00).
+
+### Match Gallery & Lightbox
+
+`src/components/public/MatchGallery.tsx` — reusable gallery with hero image, thumbnail strip, and fullscreen lightbox. Features: keyboard nav (←→, Esc), swipe-down-to-close on mobile, mouse wheel navigation, auto-scrolling thumbnails. Used in article detail pages for both match and non-match articles.
 
 ## Environment Variables
 

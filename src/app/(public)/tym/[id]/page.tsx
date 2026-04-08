@@ -138,12 +138,46 @@ export default async function PlayerDetailPage({
     reds: matchHistory.reduce((s, m) => s + m.reds, 0),
   };
 
+  // Fetch training attendance stats
+  const { data: trainingAttendance } = await supabase
+    .from("training_attendance")
+    .select("response, trainings!inner(season)")
+    .eq("player_id", id);
+
+  // Group training stats by season
+  const trainingStatsMap: Record<string, { jde: number; nejde: number; neodpovedel: number; total: number }> = {};
+  for (const a of trainingAttendance ?? []) {
+    const trainingSeason = (a.trainings as unknown as { season: string | null })?.season || "Bez sezóny";
+    if (!trainingStatsMap[trainingSeason]) {
+      trainingStatsMap[trainingSeason] = { jde: 0, nejde: 0, neodpovedel: 0, total: 0 };
+    }
+    trainingStatsMap[trainingSeason].total++;
+    if (a.response === "jde") trainingStatsMap[trainingSeason].jde++;
+    else if (a.response === "nejde") trainingStatsMap[trainingSeason].nejde++;
+    else trainingStatsMap[trainingSeason].neodpovedel++;
+  }
+
+  const trainingStats = Object.entries(trainingStatsMap).map(([season, stats]) => ({
+    season,
+    ...stats,
+    rate: stats.total > 0 ? Math.round((stats.jde / stats.total) * 100) : 0,
+  })).sort((a, b) => b.season.localeCompare(a.season));
+
+  const trainingTotals = {
+    jde: trainingStats.reduce((s, t) => s + t.jde, 0),
+    nejde: trainingStats.reduce((s, t) => s + t.nejde, 0),
+    neodpovedel: trainingStats.reduce((s, t) => s + t.neodpovedel, 0),
+    total: trainingStats.reduce((s, t) => s + t.total, 0),
+  };
+
   return (
     <PlayerDetailClient
       player={player}
       seasonStats={seasonStats}
       matchHistory={matchHistory}
       totals={totals}
+      trainingStats={trainingStats}
+      trainingTotals={trainingTotals}
     />
   );
 }

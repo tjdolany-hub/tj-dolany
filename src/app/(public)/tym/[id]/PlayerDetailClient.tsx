@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ClipboardList } from "lucide-react";
 import { POSITION_COLORS, POSITION_LABELS, formatDateShort } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -32,6 +32,15 @@ interface MatchEntry {
   is_starter: boolean;
 }
 
+interface TrainingStat {
+  season: string;
+  jde: number;
+  nejde: number;
+  neodpovedel: number;
+  total: number;
+  rate: number;
+}
+
 function calcAge(birthDate: string): number {
   return Math.floor(
     (Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
@@ -43,11 +52,15 @@ export default function PlayerDetailClient({
   seasonStats,
   matchHistory,
   totals,
+  trainingStats = [],
+  trainingTotals = { jde: 0, nejde: 0, neodpovedel: 0, total: 0 },
 }: {
   player: Player;
   seasonStats: SeasonStats[];
   matchHistory: MatchEntry[];
   totals: { matches: number; goals: number; yellows: number; reds: number };
+  trainingStats?: TrainingStat[];
+  trainingTotals?: { jde: number; nejde: number; neodpovedel: number; total: number };
 }) {
   const posColor = POSITION_COLORS[player.position] || "bg-gray-500 text-white";
   const posLabel = POSITION_LABELS[player.position] || player.position;
@@ -148,6 +161,70 @@ export default function PlayerDetailClient({
           </div>
         ))}
       </motion.div>
+
+      {/* Training attendance stats */}
+      {trainingTotals.total > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-10"
+        >
+          <h2 className="text-xl font-bold text-text mb-4 flex items-center gap-2">
+            <ClipboardList size={20} className="text-brand-red" /> Docházka na tréninky
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-surface rounded-xl border border-border p-4 text-center">
+              <p className="text-2xl font-extrabold tracking-tight text-green-500">{trainingTotals.jde}</p>
+              <p className="text-xs text-text-muted font-semibold uppercase tracking-wider mt-1">Jde</p>
+            </div>
+            <div className="bg-surface rounded-xl border border-border p-4 text-center">
+              <p className="text-2xl font-extrabold tracking-tight text-red-500">{trainingTotals.nejde}</p>
+              <p className="text-xs text-text-muted font-semibold uppercase tracking-wider mt-1">Nejde</p>
+            </div>
+            <div className="bg-surface rounded-xl border border-border p-4 text-center">
+              <p className="text-2xl font-extrabold tracking-tight text-gray-400">{trainingTotals.neodpovedel}</p>
+              <p className="text-xs text-text-muted font-semibold uppercase tracking-wider mt-1">Neodpověděl</p>
+            </div>
+            <div className="bg-surface rounded-xl border border-border p-4 text-center">
+              <p className="text-2xl font-extrabold tracking-tight text-brand-yellow">
+                {trainingTotals.total > 0 ? Math.round((trainingTotals.jde / trainingTotals.total) * 100) : 0}%
+              </p>
+              <p className="text-xs text-text-muted font-semibold uppercase tracking-wider mt-1">Účast</p>
+            </div>
+          </div>
+          {trainingStats.length > 1 && (
+            <div className="bg-surface rounded-xl border border-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-surface-muted">
+                    <th className="text-left px-4 py-3 font-semibold text-text-muted">Sezóna</th>
+                    <th className="text-center px-4 py-3 font-semibold text-text-muted">Jde</th>
+                    <th className="text-center px-4 py-3 font-semibold text-text-muted">Nejde</th>
+                    <th className="text-center px-4 py-3 font-semibold text-text-muted">Neodp.</th>
+                    <th className="text-center px-4 py-3 font-semibold text-text-muted">Účast</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trainingStats.map((t) => (
+                    <tr key={t.season} className="border-b border-border last:border-0">
+                      <td className="px-4 py-3 font-medium text-text">{t.season}</td>
+                      <td className="px-4 py-3 text-center text-green-500 font-bold">{t.jde}</td>
+                      <td className="px-4 py-3 text-center text-red-500 font-bold">{t.nejde}</td>
+                      <td className="px-4 py-3 text-center text-gray-400">{t.neodpovedel}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`font-bold ${t.rate >= 70 ? "text-green-500" : t.rate >= 40 ? "text-yellow-500" : "text-red-500"}`}>
+                          {t.rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Season stats table */}
       {seasonStats.length > 0 && (

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Send, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
+import { isMidnightPrague } from "@/lib/utils";
 
 interface CalEvent {
   id: string;
@@ -78,7 +79,7 @@ export default function RentalRequestForm({
       const endDate = e.end_date ? e.end_date.slice(0, 10) : eventDate;
       if (selectedDate >= eventDate && selectedDate <= endDate) {
         const d = new Date(e.date);
-        const isAllDay = e.all_day || (d.getHours() === 0 && d.getMinutes() === 0 && e.event_type !== "trenink");
+        const isAllDay = e.all_day || (isMidnightPrague(d) && e.event_type !== "trenink");
         if (isAllDay || e.event_type === "zapas") {
           conflicts.push(e.title);
         }

@@ -2,6 +2,64 @@ export function cn(...classes: (string | boolean | undefined | null)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
+// ── Timezone-safe helpers (Europe/Prague) ──
+// These use Intl.DateTimeFormat so they return correct Prague time
+// on both Vercel server (UTC) and in browser (local time).
+
+const PRAGUE_TZ = "Europe/Prague";
+
+/** Get hour in Europe/Prague timezone */
+export function getHoursPrague(date: Date): number {
+  return parseInt(
+    new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: PRAGUE_TZ }).format(date),
+    10,
+  );
+}
+
+/** Get minutes in Europe/Prague timezone */
+export function getMinutesPrague(date: Date): number {
+  return parseInt(
+    new Intl.DateTimeFormat("en-US", { minute: "numeric", timeZone: PRAGUE_TZ }).format(date),
+    10,
+  );
+}
+
+/** Format time as "HH:MM" in Europe/Prague timezone */
+export function formatTimePrague(date: Date): string {
+  const h = getHoursPrague(date);
+  const m = getMinutesPrague(date);
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+}
+
+/** Check if a date is midnight (00:00) in Prague timezone — used for all-day detection */
+export function isMidnightPrague(date: Date): boolean {
+  return getHoursPrague(date) === 0 && getMinutesPrague(date) === 0;
+}
+
+/** Get day of month in Europe/Prague timezone */
+export function getDayPrague(date: Date): number {
+  return parseInt(
+    new Intl.DateTimeFormat("en-US", { day: "numeric", timeZone: PRAGUE_TZ }).format(date),
+    10,
+  );
+}
+
+/** Get month (0-based) in Europe/Prague timezone */
+export function getMonthPrague(date: Date): number {
+  return parseInt(
+    new Intl.DateTimeFormat("en-US", { month: "numeric", timeZone: PRAGUE_TZ }).format(date),
+    10,
+  ) - 1;
+}
+
+/** Get full year in Europe/Prague timezone */
+export function getYearPrague(date: Date): number {
+  return parseInt(
+    new Intl.DateTimeFormat("en-US", { year: "numeric", timeZone: PRAGUE_TZ }).format(date),
+    10,
+  );
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -17,6 +75,7 @@ export function formatDateCzech(dateStr: string): string {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: PRAGUE_TZ,
   });
 }
 
@@ -26,6 +85,7 @@ export function formatDateShort(dateStr: string): string {
     day: "numeric",
     month: "numeric",
     year: "numeric",
+    timeZone: PRAGUE_TZ,
   });
 }
 
@@ -58,7 +118,7 @@ export function getSupabasePublicUrl(path: string): string {
 
 export function formatDateTimeCzech(dateStr: string): string {
   const d = new Date(dateStr);
-  return `${formatDateCzech(dateStr)} ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  return `${formatDateCzech(dateStr)} ${formatTimePrague(d)}`;
 }
 
 export const POSITION_LABELS: Record<string, string> = {

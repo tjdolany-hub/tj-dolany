@@ -37,7 +37,7 @@ async function getMatchData(articleId: string): Promise<MatchData | null> {
   // Find match linked to this article
   const { data: match } = await supabase
     .from("match_results")
-    .select("id, date, opponent, score_home, score_away, is_home, competition, season, halftime_home, halftime_away, venue, video_url, opponent_scorers, opponent_cards, round, referee, delegate, spectators, match_number")
+    .select("id, date, opponent, score_home, score_away, is_home, competition, season, halftime_home, halftime_away, venue, video_url, opponent_scorers, opponent_cards, round, referee, delegate, spectators, match_number, match_type")
     .eq("article_id", articleId)
     .is("deleted_at", null)
     .single();

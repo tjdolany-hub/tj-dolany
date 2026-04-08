@@ -38,6 +38,7 @@ export async function POST(
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Europe/Prague",
   });
   const home = match.is_home ? "TJ Dolany" : match.opponent;
   const away = match.is_home ? match.opponent : "TJ Dolany";

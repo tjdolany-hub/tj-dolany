@@ -25,6 +25,7 @@ const updateSchema = z.object({
   delegate: z.string().nullable().optional(),
   spectators: z.number().nullable().optional(),
   match_number: z.string().nullable().optional(),
+  match_type: z.enum(["mistrovsky", "pratelsky"]).optional(),
   lineup: z.array(z.object({ player_id: z.string(), is_starter: z.boolean().default(true), is_captain: z.boolean().default(false), number: z.number().nullable().optional() })).optional(),
   scorers: z.array(z.object({ player_id: z.string(), goals: z.number().default(1), minute: z.number().nullable().optional(), is_penalty: z.boolean().default(false) })).optional(),
   cards: z.array(z.object({ player_id: z.string(), card_type: z.enum(["yellow", "red"]), minute: z.number().nullable().optional() })).optional(),
@@ -192,13 +193,32 @@ export async function PUT(
     .single();
 
   if (updated) {
+    // Auto-assign match number if match now has a result and doesn't have a number yet
+    if (!updated.match_number && (updated.score_home > 0 || updated.score_away > 0)) {
+      const { data: maxRow } = await admin
+        .from("match_results")
+        .select("match_number")
+        .not("match_number", "is", null)
+        .is("deleted_at", null)
+        .order("match_number", { ascending: false })
+        .limit(1)
+        .single();
+      const currentMax = maxRow?.match_number ? parseInt(maxRow.match_number) : 2174;
+      const nextNumber = (isNaN(currentMax) ? 2174 : currentMax) + 1;
+      await admin
+        .from("match_results")
+        .update({ match_number: nextNumber.toString() })
+        .eq("id", id);
+      updated.match_number = nextNumber.toString();
+    }
+
     await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "update", entityType: "match", entityId: id, entityTitle: `${updated.is_home ? "TJ Dolany" : updated.opponent} vs ${updated.is_home ? updated.opponent : "TJ Dolany"}` });
 
     // Auto-sync to linked article if it exists
     if (updated.article_id) {
       try {
         const d = new Date(updated.date);
-        const dateStr = d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" });
+        const dateStr = d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Prague" });
         const home = updated.is_home ? "TJ Dolany" : updated.opponent;
         const away = updated.is_home ? updated.opponent : "TJ Dolany";
         const title = `${home} - ${away} ${updated.score_home}:${updated.score_away}`;

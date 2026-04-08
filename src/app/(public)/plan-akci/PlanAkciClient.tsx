@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, X, MapPin, Clock, Sun } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import { formatDateCzech } from "@/lib/utils";
+import { formatDateCzech, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague } from "@/lib/utils";
 import RentalRequestForm from "./RentalRequestForm";
 
 interface CalEvent {
@@ -269,11 +269,11 @@ export default function PlanAkciClient({
           .filter((e) => new Date(e.date).getDate() === selectedDay.getDate());
         const dayRealEvents = filteredCalEvents.filter((e) => {
           const d = new Date(e.date);
-          return (
-            d.getDate() === selectedDay.getDate() &&
-            d.getMonth() === selectedDay.getMonth() &&
-            d.getFullYear() === selectedDay.getFullYear()
-          );
+          const ed = e.end_date ? new Date(e.end_date) : d;
+          // Event is on this day if it starts on this day OR spans across this day
+          const dayStart = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), selectedDay.getDate());
+          const dayEnd = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), selectedDay.getDate(), 23, 59, 59);
+          return d <= dayEnd && ed >= dayStart;
         });
         const merged = [
           ...dayRealEvents,
@@ -344,8 +344,8 @@ export default function PlanAkciClient({
           <div className="flex flex-wrap justify-center gap-4">
             {upcoming.map((event, idx) => {
               const d = new Date(event.date);
-              const h = d.getHours();
-              const m = d.getMinutes();
+              const h = getHoursPrague(d);
+              const m = getMinutesPrague(d);
               const isAllDay = h === 0 && m === 0;
               const isFirst = idx === 0;
               return (
@@ -465,8 +465,11 @@ export default function PlanAkciClient({
               // Check if day is occupied (all-day event or match)
               const isOccupied = dayEvents.some((e) => {
                 const ed = new Date(e.date);
-                const isAllDay = e.all_day || (ed.getHours() === 0 && ed.getMinutes() === 0 && e.event_type !== "trenink");
-                return isAllDay || e.event_type === "zapas";
+                const isEventAllDay = e.all_day || (isMidnightPrague(ed) && e.event_type !== "trenink");
+                // Multi-day events: middle days are always occupied
+                const isMultiDayEvent = e.end_date && e.end_date.slice(0, 10) !== e.date.slice(0, 10);
+                const isMiddle = isMultiDayEvent && ed.getDate() !== day;
+                return isEventAllDay || isMiddle || e.event_type === "zapas";
               });
 
               return (
@@ -493,11 +496,25 @@ export default function PlanAkciClient({
                     <div className="mt-1 space-y-0.5">
                       {dayEvents.slice(0, 3).map((e) => {
                         const locBadges = formatLocationBadges(e.location, e.event_type);
-                        const ed = new Date(e.date);
-                        const eh = ed.getHours();
-                        const em = ed.getMinutes();
+                        const eventStart = new Date(e.date);
+                        const eventEnd = e.end_date ? new Date(e.end_date) : null;
+                        const eh = getHoursPrague(eventStart);
+                        const em = getMinutesPrague(eventStart);
                         const isAllDay = e.all_day || (eh === 0 && em === 0);
-                        const timeStr = isAllDay ? "" : `${eh.toString().padStart(2, "0")}:${em.toString().padStart(2, "0")} `;
+                        const isMultiDay = eventEnd && e.end_date && e.end_date.slice(0, 10) !== e.date.slice(0, 10);
+                        const isFirstDay = eventStart.getDate() === day && eventStart.getMonth() === calMonth && eventStart.getFullYear() === calYear;
+                        const isLastDay = eventEnd && eventEnd.getDate() === day && eventEnd.getMonth() === calMonth && eventEnd.getFullYear() === calYear;
+                        let timeStr = "";
+                        if (isMultiDay && !isAllDay) {
+                          if (isFirstDay) {
+                            timeStr = `od ${formatTimePrague(eventStart)} `;
+                          } else if (isLastDay && eventEnd) {
+                            timeStr = `do ${formatTimePrague(eventEnd)} `;
+                          }
+                          // Middle days: no time shown (treated as all-day)
+                        } else if (!isAllDay) {
+                          timeStr = `${formatTimePrague(eventStart)} `;
+                        }
                         return (
                           <div key={e.id} className="flex items-center gap-1">
                             <div className={`w-0.5 h-3 shrink-0 rounded-full ${EVENT_DOT_COLORS[e.event_type] ?? "bg-gray-400"}`} />
@@ -549,27 +566,35 @@ export default function PlanAkciClient({
               <div className="space-y-4">
                 {selectedEvents.map((event) => {
                   const d = new Date(event.date);
-                  const h = d.getHours();
-                  const m = d.getMinutes();
+                  const h = getHoursPrague(d);
+                  const m = getMinutesPrague(d);
                   const isAllDay = event.all_day || (h === 0 && m === 0);
-                  const timeFrom = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+                  const timeFrom = formatTimePrague(d);
+                  const isMultiDay = event.end_date && event.end_date.slice(0, 10) !== event.date.slice(0, 10);
+
                   let timeDisplay = timeFrom;
-                  if (event.end_date) {
-                    const ed = new Date(event.end_date);
-                    const edDate = event.end_date.slice(0, 10);
+                  if (isMultiDay && selectedDay) {
+                    const ed = new Date(event.end_date!);
+                    const selDate = `${selectedDay.getFullYear()}-${String(selectedDay.getMonth() + 1).padStart(2, "0")}-${String(selectedDay.getDate()).padStart(2, "0")}`;
                     const startDate = event.date.slice(0, 10);
-                    if (edDate === startDate && !isAllDay) {
-                      // Same day, time range
-                      timeDisplay = `${timeFrom} – ${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
-                    } else if (edDate !== startDate) {
-                      // Multi-day
-                      timeDisplay = isAllDay
-                        ? `${formatDateCzech(event.date)} – ${formatDateCzech(event.end_date)}`
-                        : `${timeFrom} – ${formatDateCzech(event.end_date)}`;
+                    const endDate = event.end_date!.slice(0, 10);
+                    if (isAllDay) {
+                      timeDisplay = `${formatDateCzech(event.date)} – ${formatDateCzech(event.end_date!)}`;
+                    } else if (selDate === startDate) {
+                      // First day: show "od HH:MM"
+                      timeDisplay = `od ${timeFrom} – ${formatDateCzech(event.end_date!)}`;
+                    } else if (selDate === endDate) {
+                      // Last day: show "do HH:MM"
+                      timeDisplay = `${formatDateCzech(event.date)} – do ${formatTimePrague(ed)}`;
+                    } else {
+                      // Middle day: show date range only
+                      timeDisplay = `${formatDateCzech(event.date)} – ${formatDateCzech(event.end_date!)}`;
                     }
+                  } else if (event.end_date && !isMultiDay && !isAllDay) {
+                    const ed = new Date(event.end_date);
+                    timeDisplay = `${timeFrom} – ${formatTimePrague(ed)}`;
                   }
                   const locBadges = formatLocationBadges(event.location, event.event_type);
-                  const isMultiDay = event.end_date && event.end_date.slice(0, 10) !== event.date.slice(0, 10);
                   return (
                     <div
                       key={event.id}
@@ -583,13 +608,19 @@ export default function PlanAkciClient({
                       <div className="flex-1">
                         <h4 className="font-semibold text-text">{event.title}</h4>
                         <div className="flex flex-wrap gap-3 mt-1 text-xs text-text-muted">
-                          {isAllDay && !isMultiDay ? (
-                            <span className="flex items-center gap-1"><Sun size={12} /> Celý den</span>
-                          ) : isMultiDay && isAllDay ? (
-                            <span className="flex items-center gap-1"><Calendar size={12} /> {timeDisplay}</span>
-                          ) : (
-                            <span className="flex items-center gap-1"><Clock size={12} /> {timeDisplay}</span>
-                          )}
+                          {(() => {
+                            const isMiddleDay = isMultiDay && !isAllDay && selectedDay && (() => {
+                              const selDate = `${selectedDay.getFullYear()}-${String(selectedDay.getMonth() + 1).padStart(2, "0")}-${String(selectedDay.getDate()).padStart(2, "0")}`;
+                              return selDate !== event.date.slice(0, 10) && selDate !== event.end_date!.slice(0, 10);
+                            })();
+                            if (isAllDay && !isMultiDay) {
+                              return <span className="flex items-center gap-1"><Sun size={12} /> Celý den</span>;
+                            } else if (isMultiDay && (isAllDay || isMiddleDay)) {
+                              return <span className="flex items-center gap-1"><Calendar size={12} /> {timeDisplay}{isMiddleDay && " (celý den)"}</span>;
+                            } else {
+                              return <span className="flex items-center gap-1"><Clock size={12} /> {timeDisplay}</span>;
+                            }
+                          })()}
                           {locBadges && (
                             <span className="flex items-center gap-1.5">
                               <MapPin size={12} />

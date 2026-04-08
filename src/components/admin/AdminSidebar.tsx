@@ -16,6 +16,8 @@ import {
   Trash2,
   Menu,
   X,
+  BookOpen,
+  ClipboardList,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,8 @@ const NAV = [
   { href: "/admin/players", label: "Hráči", icon: Users },
   { href: "/admin/events", label: "Plán akcí", icon: CalendarDays },
   { href: "/admin/matches", label: "Zápasy", icon: Trophy },
+  { href: "/admin/treninky", label: "Tréninky", icon: ClipboardList },
+  { href: "/admin/kronika", label: "Kronika", icon: BookOpen },
   { href: "/admin/users", label: "Uživatelé", icon: Shield },
   { href: "/admin/audit", label: "Historie změn", icon: History },
   { href: "/admin/trash", label: "Koš", icon: Trash2 },

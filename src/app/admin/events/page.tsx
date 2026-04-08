@@ -12,7 +12,7 @@ import {
   FileText,
   CheckCircle,
 } from "lucide-react";
-import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS } from "@/lib/utils";
+import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague } from "@/lib/utils";
 import RentalRequestsTab from "./RentalRequestsTab";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -205,8 +205,8 @@ export default function AdminPlanAkciPage() {
 
   const startEdit = (e: CalendarEvent) => {
     const d = new Date(e.date);
-    const h = d.getHours();
-    const m = d.getMinutes();
+    const h = getHoursPrague(d);
+    const m = getMinutesPrague(d);
     const isAllDay = e.all_day;
     const isPreset = ORGANIZERS.includes(e.organizer as typeof ORGANIZERS[number]);
     const isAll = !e.location || e.location === "cely_areal";
@@ -223,7 +223,7 @@ export default function AdminPlanAkciPage() {
         endDateStr = edDate;
       }
       if (!isAllDay) {
-        timeTo = `${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
+        timeTo = formatTimePrague(ed);
       }
     }
 
@@ -251,24 +251,31 @@ export default function AdminPlanAkciPage() {
     ev.preventDefault();
     setSaving(true);
 
+    // Use explicit timezone offset so the ISO string represents the correct Prague time
+    const tzOffset = -new Date().getTimezoneOffset();
+    const tzSign = tzOffset >= 0 ? "+" : "-";
+    const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
+    const tzM = String(Math.abs(tzOffset) % 60).padStart(2, "0");
+    const tz = `${tzSign}${tzH}:${tzM}`;
+
     const dateTime = form.allDay
-      ? new Date(`${form.date}T00:00`).toISOString()
+      ? new Date(`${form.date}T00:00:00${tz}`).toISOString()
       : form.time
-        ? new Date(`${form.date}T${form.time}`).toISOString()
-        : new Date(`${form.date}T00:00`).toISOString();
+        ? new Date(`${form.date}T${form.time}:00${tz}`).toISOString()
+        : new Date(`${form.date}T00:00:00${tz}`).toISOString();
 
     // Build end_date
     let endDateTime: string | null = null;
     if (form.end_date) {
       // Multi-day event
       endDateTime = form.allDay
-        ? new Date(`${form.end_date}T23:59`).toISOString()
+        ? new Date(`${form.end_date}T23:59:00${tz}`).toISOString()
         : form.time_to
-          ? new Date(`${form.end_date}T${form.time_to}`).toISOString()
-          : new Date(`${form.end_date}T23:59`).toISOString();
+          ? new Date(`${form.end_date}T${form.time_to}:00${tz}`).toISOString()
+          : new Date(`${form.end_date}T23:59:00${tz}`).toISOString();
     } else if (!form.allDay && form.time_to) {
       // Same day, time range
-      endDateTime = new Date(`${form.date}T${form.time_to}`).toISOString();
+      endDateTime = new Date(`${form.date}T${form.time_to}:00${tz}`).toISOString();
     }
 
     const organizer = form.organizer === "__custom__" ? form.customOrganizer : form.organizer;
@@ -661,17 +668,17 @@ export default function AdminPlanAkciPage() {
                   {filteredItems.map((item, idx) => {
                     const isNext = idx === nextIdx;
                     const d = new Date(item.data.date);
-                    const h = d.getHours();
-                    const m = d.getMinutes();
+                    const h = getHoursPrague(d);
+                    const m = getMinutesPrague(d);
                     const isEvent = item.type === "event";
                     const isAllDay = isEvent ? item.data.all_day : (h === 0 && m === 0);
                     let dateStr = isAllDay
-                      ? d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" })
+                      ? d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Prague" })
                       : formatDateTimeCzech(item.data.date);
                     // Show time range for events with end_date
                     if (isEvent && item.data.end_date && !isAllDay) {
                       const ed = new Date(item.data.end_date);
-                      dateStr += ` – ${ed.getHours().toString().padStart(2, "0")}:${ed.getMinutes().toString().padStart(2, "0")}`;
+                      dateStr += ` – ${formatTimePrague(ed)}`;
                     }
                     // Show date range for multi-day events
                     if (isEvent && item.data.end_date) {
@@ -679,7 +686,7 @@ export default function AdminPlanAkciPage() {
                       const startDate = item.data.date.slice(0, 10);
                       if (edDate !== startDate) {
                         const ed = new Date(item.data.end_date);
-                        dateStr += ` → ${ed.toLocaleDateString("cs-CZ", { day: "numeric", month: "long" })}`;
+                        dateStr += ` → ${ed.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", timeZone: "Europe/Prague" })}`;
                       }
                     }
 

@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { marked } from "marked";
 import { ArrowLeft, ChevronDown } from "lucide-react";
-import { formatDateCzech, CATEGORIES } from "@/lib/utils";
+import { formatDateCzech, CATEGORIES, isMidnightPrague, formatTimePrague } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
 import { BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 import MatchGallery from "@/components/public/MatchGallery";
@@ -49,6 +49,7 @@ export interface MatchData {
   delegate: string | null;
   spectators: number | null;
   match_number: string | null;
+  match_type: "mistrovsky" | "pratelsky";
   lineups: {
     playerName: string;
     is_starter: boolean;
@@ -103,13 +104,9 @@ function renderContentWithVideo(html: string): string {
 
 function formatMatchDate(dateStr: string): string {
   const d = new Date(dateStr);
-  const day = d.getDate().toString().padStart(2, "0");
-  const month = (d.getMonth() + 1).toString().padStart(2, "0");
-  const year = d.getFullYear();
-  const h = d.getHours();
-  const m = d.getMinutes();
-  const time = h === 0 && m === 0 ? "" : ` ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-  return `${day}.${month}.${year}${time}`;
+  const dateFormatted = d.toLocaleDateString("cs-CZ", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Prague" });
+  const time = isMidnightPrague(d) ? "" : ` ${formatTimePrague(d)}`;
+  return `${dateFormatted}${time}`;
 }
 
 // ─── Goals timeline events ───
