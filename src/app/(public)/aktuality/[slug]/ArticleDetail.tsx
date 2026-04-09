@@ -234,10 +234,11 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
   const oppStarters = match.opponentLineup.filter((l) => l.is_starter);
   const oppSubs = match.opponentLineup.filter((l) => !l.is_starter);
 
-  // Header info line
-  const headerParts: string[] = [];
-  if (match.round) headerParts.push(match.round);
-  if (match.competition) headerParts.push(match.competition);
+  // Header info items (label: value pairs shown below date)
+  const headerItems: { label: string; value: string }[] = [];
+  if (match.competition) headerItems.push({ label: "Soutěž", value: match.competition });
+  if (match.venue) headerItems.push({ label: "Hřiště", value: match.venue });
+  if (match.spectators != null) headerItems.push({ label: "Diváků", value: String(match.spectators) });
 
   const renderEventRow = (e: MatchEvent & { runningHome: number; runningAway: number }, idx: number) => {
     const minuteStr = e.minute != null ? `${e.minute}'` : "";
@@ -315,12 +316,10 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
     </div>
   );
 
-  // Footer info
+  // Footer info (venue + spectators already in header, so only referee + delegate here)
   const footerParts: string[] = [];
   if (match.referee) footerParts.push(`Rozhodčí: ${match.referee}`);
   if (match.delegate) footerParts.push(`Delegát: ${match.delegate}`);
-  if (match.venue) footerParts.push(`Hřiště: ${match.venue}`);
-  if (match.spectators != null) footerParts.push(`Diváků: ${match.spectators}`);
 
   const hasDetails = hasEvents || dolanyStarters.length > 0 || oppStarters.length > 0 || footerParts.length > 0;
 
@@ -328,12 +327,14 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
 
   return (
     <div className="rounded-xl bg-surface-muted border border-border overflow-hidden mb-8">
-      {/* Date + time + round + competition */}
-      <div className="text-center pt-5 pb-2">
-        <span className="text-xs text-text-muted">
-          {formatMatchDate(match.date)}
-          {headerParts.length > 0 && `, ${headerParts.join(", ")}`}
-        </span>
+      {/* Date + competition + venue + spectators */}
+      <div className="text-center pt-5 pb-2 px-4">
+        <div className="text-xs text-text-muted">
+          <span className="font-semibold text-text">Datum:</span> {formatMatchDate(match.date)}
+          {headerItems.map((item, i) => (
+            <span key={i}> <span className="font-semibold text-text">{item.label}:</span> {item.value}</span>
+          ))}
+        </div>
       </div>
 
       {/* Logo above Name - Score - Logo above Name (Livesport style) */}

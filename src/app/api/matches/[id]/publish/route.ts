@@ -45,18 +45,75 @@ export async function POST(
   const title = `${home} - ${away} ${match.score_home}:${match.score_away}`;
   const slug = slugify(`${title}-${d.toISOString().slice(0, 10)}`);
 
-  // Article markdown only contains the summary/report text and video.
-  // All structured match data (score, lineups, goals, cards, referee, etc.)
-  // is displayed by the MatchScoreHeader component from DB data.
-  let content = "";
+  // Build article markdown: summary + structured footer (goals, cards, referee, spectators, lineup)
+  const contentParts: string[] = [];
 
   if (match.summary) {
-    content += match.summary;
+    contentParts.push(match.summary);
+  }
+
+  // Structured match info line
+  const infoParts: string[] = [];
+
+  // Goals: "Branky: Dolany scorers - Opponent scorers" (no minutes)
+  const dolanyScorers = (match.match_scorers as { goals: number; is_penalty: boolean; players: { name: string } }[] | null) ?? [];
+  const oppScorers = (match.match_opponent_scorers as { name: string; is_penalty: boolean }[] | null) ?? [];
+  if (dolanyScorers.length > 0 || oppScorers.length > 0) {
+    const dolanyNames = dolanyScorers.map((s) => {
+      const base = s.players.name;
+      const suffix = s.is_penalty ? " z pen." : "";
+      return s.goals > 1 ? `${base}${suffix} ${s.goals}` : `${base}${suffix}`;
+    });
+    const oppNames = oppScorers.map((s) => {
+      const suffix = s.is_penalty ? " z pen." : "";
+      return `${s.name}${suffix}`;
+    });
+    const dolanyStr = dolanyNames.length > 0 ? dolanyNames.join(", ") : "—";
+    const oppStr = oppNames.length > 0 ? oppNames.join(", ") : "—";
+    infoParts.push(`**Branky:** ${dolanyStr} - ${oppStr}`);
+  }
+
+  // Referee
+  if (match.referee) {
+    // Use just surname for brevity
+    infoParts.push(`**Rozhodčí:** ${match.referee}`);
+  }
+
+  // Cards summary: ŽK X:Y, ČK X:Y
+  const dolanyCards = (match.match_cards as { card_type: string }[] | null) ?? [];
+  const oppCards = (match.match_opponent_cards as { card_type: string }[] | null) ?? [];
+  const dolanyYellow = dolanyCards.filter((c) => c.card_type === "yellow").length;
+  const dolanyRed = dolanyCards.filter((c) => c.card_type === "red").length;
+  const oppYellow = oppCards.filter((c) => c.card_type === "yellow").length;
+  const oppRed = oppCards.filter((c) => c.card_type === "red").length;
+  infoParts.push(`ŽK ${dolanyYellow}:${oppYellow}, ČK ${dolanyRed}:${oppRed}`);
+
+  // Spectators
+  if (match.spectators != null) {
+    infoParts.push(`**Diváků:** ${match.spectators}`);
+  }
+
+  // Lineup
+  const lineups = (match.match_lineups as { is_starter: boolean; players: { name: string } }[] | null) ?? [];
+  if (lineups.length > 0) {
+    const starters = lineups.filter((l) => l.is_starter).map((l) => l.players.name);
+    const subs = lineups.filter((l) => !l.is_starter).map((l) => l.players.name);
+    let lineupStr = `**Sestava:** ${starters.join(", ")}`;
+    if (subs.length > 0) {
+      lineupStr += `. **Střídající:** ${subs.join(", ")}`;
+    }
+    infoParts.push(lineupStr);
+  }
+
+  if (infoParts.length > 0) {
+    contentParts.push(infoParts.join(". ") + ".");
   }
 
   if (match.video_url) {
-    content += `${content ? "\n\n" : ""}${match.video_url}`;
+    contentParts.push(match.video_url);
   }
+
+  const content = contentParts.join("\n\n");
 
   // Helper: sync match images to article_images
   const syncImages = async (articleId: string) => {
