@@ -11,7 +11,7 @@ export default async function HomePage() {
   const [
     articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult,
     recentMatchesResult, allScorersResult, allCardsResult, standingsResult, allStandingsResult, allLineupsResult,
-    teamsResult,
+    teamsResult, allMatchIdsResult,
   ] = await Promise.all([
     supabase
       .from("articles")
@@ -59,8 +59,8 @@ export default async function HomePage() {
       .lt("date", now)
       .order("date", { ascending: false })
       .limit(5),
-    supabase.from("match_scorers").select("player_id, goals, players(name)"),
-    supabase.from("match_cards").select("player_id, card_type, players(name)"),
+    supabase.from("match_scorers").select("player_id, goals, match_id, players(name)"),
+    supabase.from("match_cards").select("player_id, card_type, match_id, players(name)"),
     supabase
       .from("league_standings")
       .select("position, team_name, points")
@@ -71,8 +71,9 @@ export default async function HomePage() {
       .from("league_standings")
       .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
       .order("position", { ascending: true }),
-    supabase.from("match_lineups").select("player_id, players(name)"),
+    supabase.from("match_lineups").select("player_id, match_id, players(name)"),
     supabase.from("teams").select("keywords, logo_url").order("name"),
+    supabase.from("match_results").select("id, date, season").is("deleted_at", null),
   ]);
 
   const articles = ((articlesResult.data ?? []) as unknown as {
@@ -132,18 +133,33 @@ export default async function HomePage() {
   const allStandings = allStandingsResult.data;
   const allLineups = allLineupsResult.data;
 
-  // Compute top scorer
+  // Determine current season and build set of valid match IDs
+  const nowDate = new Date();
+  const currentSeasonYear = nowDate.getMonth() >= 7 ? nowDate.getFullYear() : nowDate.getFullYear() - 1;
+  const currentSeason = `${currentSeasonYear}/${currentSeasonYear + 1}`;
+
+  const currentSeasonMatchIds = new Set<string>();
+  for (const m of allMatchIdsResult.data ?? []) {
+    const d = new Date(m.date);
+    const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
+    const season = m.season || `${y}/${y + 1}`;
+    if (season === currentSeason) currentSeasonMatchIds.add(m.id);
+  }
+
+  // Compute top scorer (current season only, excluding deleted matches)
   const scorerMap = new Map<string, { name: string; goals: number }>();
-  (allScorers ?? []).forEach((s: { player_id: string; goals: number; players: { name: string } | null }) => {
+  (allScorers ?? []).forEach((s: { player_id: string; goals: number; match_id: string; players: { name: string } | null }) => {
+    if (!currentSeasonMatchIds.has(s.match_id)) return;
     const existing = scorerMap.get(s.player_id);
     if (existing) existing.goals += s.goals;
     else scorerMap.set(s.player_id, { name: s.players?.name || "?", goals: s.goals });
   });
   const topScorer = [...scorerMap.values()].sort((a, b) => b.goals - a.goals)[0] ?? null;
 
-  // Compute most cards (red = 2 points, yellow = 1)
+  // Compute most cards (current season only, red = 2 points, yellow = 1)
   const cardMap = new Map<string, { name: string; yellows: number; reds: number; score: number }>();
-  (allCards ?? []).forEach((c: { player_id: string; card_type: string; players: { name: string } | null }) => {
+  (allCards ?? []).forEach((c: { player_id: string; card_type: string; match_id: string; players: { name: string } | null }) => {
+    if (!currentSeasonMatchIds.has(c.match_id)) return;
     const existing = cardMap.get(c.player_id) || { name: c.players?.name || "?", yellows: 0, reds: 0, score: 0 };
     if (c.card_type === "red") { existing.reds++; existing.score += 2; }
     else { existing.yellows++; existing.score += 1; }
@@ -181,9 +197,10 @@ export default async function HomePage() {
   // Top 6 scorers
   const top5Scorers = [...scorerMap.values()].sort((a, b) => b.goals - a.goals).slice(0, 6);
 
-  // Top 6 appearances
+  // Top 6 appearances (current season only)
   const appearanceMap = new Map<string, { name: string; count: number }>();
-  (allLineups ?? []).forEach((l: { player_id: string; players: { name: string } | null }) => {
+  (allLineups ?? []).forEach((l: { player_id: string; match_id: string; players: { name: string } | null }) => {
+    if (!currentSeasonMatchIds.has(l.match_id)) return;
     const existing = appearanceMap.get(l.player_id);
     if (existing) existing.count++;
     else appearanceMap.set(l.player_id, { name: l.players?.name || "?", count: 1 });

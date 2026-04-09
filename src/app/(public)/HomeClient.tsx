@@ -172,7 +172,17 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               transition={{ duration: 0.5, delay: 0.15 }}
               className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight"
             >
-              TJ <span className="gradient-text">Dolany</span>
+              <span className="ticker-container">
+                <span className="ticker-ball">⚽</span>
+                {"TJ ".split("").map((ch, i) =>
+                  ch === " " ? <span key={i} className="ticker-space" style={{ "--char-index": i } as React.CSSProperties} /> : <span key={i} className="ticker-char" style={{ "--char-index": i } as React.CSSProperties}>{ch}</span>
+                )}
+                <span className="gradient-text">
+                  {"Dolany".split("").map((ch, i) =>
+                    <span key={i + 3} className="ticker-char" style={{ "--char-index": i + 3 } as React.CSSProperties}>{ch}</span>
+                  )}
+                </span>
+              </span>
             </motion.h1>
 
             <motion.p
