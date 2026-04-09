@@ -26,6 +26,7 @@ No test framework is configured.
 - **Sharp** — server-side image optimization (WebP, resize)
 - **Resend** — transactional email (rental request notifications, calendar backup)
 - **PDFKit** — server-side PDF generation (calendar backup)
+- **docx** — Word document generation (kronika/chronicle export)
 - **Framer Motion** — animations, **Lucide React** — icons, **Marked** — Markdown rendering
 
 ## Architecture
@@ -64,6 +65,8 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 - **Hráči** (`/admin/players`) — player management with stats computed from match data, active/inactive filter tabs
 - **Články** (`/admin/articles`) — article CRUD with markdown editor, image upload, editable publish date
 - **Uživatelé** (`/admin/users`) — read-only list of users with roles (admin/editor)
+- **Tréninky** (`/admin/treninky`) — training attendance import from Excel/text paste, auto player matching, per-season stats, TOP 6 leaderboard
+- **Kronika** (`/admin/kronika`) — generate Word (.docx) document with all articles + photos for selected year/month, includes match numbers
 - **Historie změn** (`/admin/audit`) — chronological audit log, filterable by entity type
 - **Koš** (`/admin/trash`) — soft-deleted items with restore and permanent delete, 30-day countdown
 
@@ -100,6 +103,16 @@ Articles, matches, and calendar events use soft delete (`deleted_at` TIMESTAMPTZ
 ### Match Form Logic
 
 The match form uses "Domácí" and "Hosté" fields instead of a separate "Soupeř" + "Hrajeme doma" checkbox. If "Domácí" contains "Dolany" → `is_home = true`. Venue auto-fills with the home team name. **Only home matches create calendar events** (event_type "zapas"). The calendar and admin events page filter out away matches.
+
+### Match Numbering & Types
+
+Matches have `match_type` (`mistrovsky` = league, `pratelsky` = friendly) and `match_number` (auto-assigned after result entry). Auto-numbering: after saving a match with a score, the API queries the max existing `match_number` and assigns `max + 1`. Starting number was 2174 (last match from old site). Cancelled matches (no score) don't get numbers.
+
+### Calendar Event Form
+
+The admin event form and public rental request form use a **Jednodenní / Vícedenní** toggle:
+- **Jednodenní**: shows Datum + Čas od–do + "Celý den" checkbox
+- **Vícedenní**: shows Datum od + Čas od | Datum do + Čas do + "Celé dny" checkbox
 
 ### Publish-to-Article Flow
 
@@ -140,11 +153,11 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Key Tables
 
-`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `match_opponent_lineup`, `match_opponent_scorers`, `match_opponent_cards`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`
+`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `match_opponent_lineup`, `match_opponent_scorers`, `match_opponent_cards`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`, `trainings`, `training_attendance`
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–018). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked "SQL"`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–020). Run via Supabase CLI: `npx supabase db query --linked "SQL"` (requires `SUPABASE_ACCESS_TOKEN` env var). Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated. Note: `supabase db push` fails because early migrations were applied manually — run new migrations individually with `db query`.
 
 ### Image Upload
 
@@ -226,13 +239,25 @@ Two event types in form:
 - **Soukromá akce** (`pronajem`): No title, no description, no "Veřejná" checkbox. Has organizer name + note ("pro administrátora"). Contact always required.
 - **Ostatní** (`volne`): Has event name, organizer dropdown (ORGANIZERS + custom), optional "Veřejná" checkbox. When veřejná, shows "Popis akce" field (carries to calendar description on approval). Contact required only for custom organizer.
 
+### Training Attendance
+
+`/api/trainings` handles import of training attendance from Excel/text paste. Player matching uses multi-strategy name resolution (exact, reversed, surname-only, first-name-only). Responses: `jde`, `nejde`, `neodpovedel`. Stats shown on player detail pages and as TOP 6 leaderboard on the team page. Data grouped by season.
+
 ### Cron Jobs
 
 `src/app/api/cron/calendar-backup/route.ts` — weekly PDF backup of calendar events. Generates a table of current month + next 4 weeks events, sends PDF via Resend to `tjdolany@gmail.com`. Triggered by Vercel Cron (Monday 8:00 UTC, configured in `vercel.json`). Requires `CRON_SECRET` env var for bearer token auth.
 
 ### Timezone Handling
 
-All datetimes stored as UTC in TIMESTAMPTZ columns. Admin match form constructs dates with **explicit timezone offset** (e.g. `2026-04-12T16:00:00+02:00`) using the browser's `getTimezoneOffset()` — never rely on `new Date("...T16:00").toISOString()` which can misinterpret local vs UTC. Display uses `getHours()`/`getMinutes()` which automatically converts UTC to browser local time. User is in Europe/Prague (CET +01:00 / CEST +02:00).
+All datetimes stored as UTC in TIMESTAMPTZ columns. User is in Europe/Prague (CET +01:00 / CEST +02:00).
+
+**Critical rules — never use bare JS date methods for display:**
+- **Never** use `getHours()`/`getMinutes()`/`getDate()`/`getMonth()` — these return UTC on Vercel server during SSR but local time in browser, causing hydration mismatches and wrong times in production.
+- **Always** use the Prague-timezone-safe utilities from `src/lib/utils.ts`: `getHoursPrague()`, `getMinutesPrague()`, `formatTimePrague()`, `isMidnightPrague()`, `getDayPrague()`, `getMonthPrague()`, `getYearPrague()`. These use `Intl.DateTimeFormat` with `timeZone: "Europe/Prague"` and work identically on server and client.
+- **Always** pass `timeZone: "Europe/Prague"` to `toLocaleDateString()`/`toLocaleTimeString()` calls.
+- **Admin forms** must use `toPragueISO(dateStr, timeStr)` from `src/lib/utils.ts` to construct ISO strings with the correct Europe/Prague offset. This function uses `Intl.DateTimeFormat` to detect CET/CEST — never relies on `getTimezoneOffset()` or the browser/server timezone. Never rely on `new Date("...T16:00").toISOString()`.
+- **All-day detection**: use `isMidnightPrague(date)` instead of `getHours() === 0 && getMinutes() === 0`.
+- **Date-only comparisons** (e.g., calendar day bucketing): use `e.date.slice(0, 10)` string comparison to avoid time-of-day issues.
 
 ### Match Gallery & Lightbox
 

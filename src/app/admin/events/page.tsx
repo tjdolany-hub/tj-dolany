@@ -12,7 +12,7 @@ import {
   FileText,
   CheckCircle,
 } from "lucide-react";
-import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague } from "@/lib/utils";
+import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague, toPragueISO } from "@/lib/utils";
 import RentalRequestsTab from "./RentalRequestsTab";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -255,31 +255,25 @@ export default function AdminPlanAkciPage() {
     ev.preventDefault();
     setSaving(true);
 
-    // Use explicit timezone offset so the ISO string represents the correct Prague time
-    const tzOffset = -new Date().getTimezoneOffset();
-    const tzSign = tzOffset >= 0 ? "+" : "-";
-    const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
-    const tzM = String(Math.abs(tzOffset) % 60).padStart(2, "0");
-    const tz = `${tzSign}${tzH}:${tzM}`;
-
+    // Use toPragueISO to construct correct Prague-offset ISO strings
     const dateTime = form.allDay
-      ? new Date(`${form.date}T00:00:00${tz}`).toISOString()
+      ? toPragueISO(form.date, "00:00")
       : form.time
-        ? new Date(`${form.date}T${form.time}:00${tz}`).toISOString()
-        : new Date(`${form.date}T00:00:00${tz}`).toISOString();
+        ? toPragueISO(form.date, form.time)
+        : toPragueISO(form.date, "00:00");
 
     // Build end_date
     let endDateTime: string | null = null;
     if (form.end_date) {
       // Multi-day event
       endDateTime = form.allDay
-        ? new Date(`${form.end_date}T23:59:00${tz}`).toISOString()
+        ? toPragueISO(form.end_date, "23:59")
         : form.time_to
-          ? new Date(`${form.end_date}T${form.time_to}:00${tz}`).toISOString()
-          : new Date(`${form.end_date}T23:59:00${tz}`).toISOString();
+          ? toPragueISO(form.end_date, form.time_to)
+          : toPragueISO(form.end_date, "23:59");
     } else if (!form.allDay && form.time_to) {
       // Same day, time range
-      endDateTime = new Date(`${form.date}T${form.time_to}:00${tz}`).toISOString();
+      endDateTime = toPragueISO(form.date, form.time_to);
     }
 
     const organizer = form.organizer === "__custom__" ? form.customOrganizer : form.organizer;
