@@ -105,12 +105,7 @@ html { scroll-behavior: smooth; }
 }
 .animate-float { animation: float 6s ease-in-out infinite; }
 
-/* Ticker with rolling ball */
-.ticker-container {
-  position: relative;
-  display: inline-block;
-}
-
+/* Ticker with rolling ball — parent must have position: relative + overflow: hidden */
 .ticker-ball {
   position: absolute;
   top: 50%;
@@ -130,19 +125,6 @@ html { scroll-behavior: smooth; }
   100% { left: -1.5em; opacity: 0; transform: translateY(-50%) rotate(0deg); }
 }
 
-.ticker-char, .ticker-space {
-  display: inline-block;
-  animation: ticker-glow 10s ease-in-out infinite;
-  animation-delay: calc(var(--char-index) * 0.08s);
-}
-
-.ticker-space { width: 0.25em; }
-
-@keyframes ticker-glow {
-  0%, 8% { opacity: 0.75; transform: scale(1); }
-  10% { opacity: 1; transform: scale(1.15); text-shadow: 0 0 8px rgba(255,255,255,0.6); }
-  14%, 100% { opacity: 0.75; transform: scale(1); text-shadow: none; }
-}
 
 .prose h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.025em; color: var(--color-text); }
 .prose h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; margin-top: 2rem; color: var(--color-text); }
