@@ -742,6 +742,9 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               <a href="https://www.orelsoft.cz/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">
                 <Image src="/sponsors/orelsoft.png" alt="OrelSoft.cz" width={120} height={40} className="object-contain" />
               </a>
+              <div className="grayscale hover:grayscale-0 opacity-70 hover:opacity-100 transition-all duration-300">
+                <Image src="/sponsors/pirozek.png" alt="Pirožek — Instalatérství a topenářství" width={180} height={60} className="object-contain" />
+              </div>
             </div>
 
             {/* Poděkování */}
