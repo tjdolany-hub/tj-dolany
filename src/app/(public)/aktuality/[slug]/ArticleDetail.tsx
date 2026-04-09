@@ -316,10 +316,26 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
     </div>
   );
 
-  // Footer info (venue + spectators already in header, so only referee + delegate here)
+  // Footer info: only referee + delegate (venue/spectators shown in header)
   const footerParts: string[] = [];
-  if (match.referee) footerParts.push(`Rozhodčí: ${match.referee}`);
-  if (match.delegate) footerParts.push(`Delegát: ${match.delegate}`);
+  if (match.referee) {
+    // Strip any inline Delegát/Hřiště/Diváků that may have leaked into the referee field
+    const cleanRef = match.referee
+      .replace(/\s*Delegát:.*$/i, "")
+      .replace(/\s*Hřiště:.*$/i, "")
+      .replace(/\s*Diváků:.*$/i, "")
+      .replace(/\.\s*$/, "")
+      .trim();
+    if (cleanRef) footerParts.push(`Rozhodčí: ${cleanRef}`);
+  }
+  if (match.delegate) {
+    const cleanDel = match.delegate
+      .replace(/\s*Hřiště:.*$/i, "")
+      .replace(/\s*Diváků:.*$/i, "")
+      .replace(/\.\s*$/, "")
+      .trim();
+    if (cleanDel) footerParts.push(`Delegát: ${cleanDel}`);
+  }
 
   const hasDetails = hasEvents || dolanyStarters.length > 0 || oppStarters.length > 0 || footerParts.length > 0;
 

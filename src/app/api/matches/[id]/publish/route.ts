@@ -65,28 +65,18 @@ export async function POST(
     .limit(1);
   const slug = slugCheck && slugCheck.length > 0 ? `${baseSlug}-${Date.now()}` : baseSlug;
 
-  // Build article markdown: title, report, hřiště, diváků, sestava, branky, karty
+  // Build article markdown: heading, report, sestava, branky, karty
   const contentParts: string[] = [];
 
-  // 1. Bold title
-  contentParts.push(`**${title}**`);
+  // 1. Title as heading
+  contentParts.push(`## ${title}`);
 
   // 2. Summary/report text
   if (match.summary) {
     contentParts.push(match.summary);
   }
 
-  // 3. Hřiště (venue)
-  if (match.venue) {
-    contentParts.push(`**Hřiště:** ${match.venue}`);
-  }
-
-  // 4. Diváků (spectators)
-  if (match.spectators != null) {
-    contentParts.push(`**Diváků:** ${match.spectators}`);
-  }
-
-  // 5. Sestava (lineup)
+  // 3. Sestava (lineup)
   const lineups = (match.match_lineups as { is_starter: boolean; players: { name: string } }[] | null) ?? [];
   if (lineups.length > 0) {
     const starters = lineups.filter((l) => l.is_starter).map((l) => l.players.name);
@@ -98,7 +88,7 @@ export async function POST(
     contentParts.push(lineupStr);
   }
 
-  // 6. Branky (goals — Dolany scorers - Opponent scorers, no minutes)
+  // 4. Branky (goals — Dolany scorers - Opponent scorers, no minutes)
   const dolanyScorers = (match.match_scorers as { goals: number; is_penalty: boolean; players: { name: string } }[] | null) ?? [];
   const oppScorers = (match.match_opponent_scorers as { name: string; is_penalty: boolean }[] | null) ?? [];
   if (dolanyScorers.length > 0 || oppScorers.length > 0) {
@@ -115,14 +105,14 @@ export async function POST(
     contentParts.push(`**Branky:** ${goalParts.join(" - ")}`);
   }
 
-  // 7. Karty (ŽK X:Y, ČK X:Y)
+  // 5. Karty (ŽK X:Y, ČK X:Y)
   const dolanyCards = (match.match_cards as { card_type: string }[] | null) ?? [];
   const oppCards = (match.match_opponent_cards as { card_type: string }[] | null) ?? [];
   const dolanyYellow = dolanyCards.filter((c) => c.card_type === "yellow").length;
   const dolanyRed = dolanyCards.filter((c) => c.card_type === "red").length;
   const oppYellow = oppCards.filter((c) => c.card_type === "yellow").length;
   const oppRed = oppCards.filter((c) => c.card_type === "red").length;
-  contentParts.push(`ŽK ${dolanyYellow}:${oppYellow}, ČK ${dolanyRed}:${oppRed}`);
+  contentParts.push(`**Karty:** ŽK ${dolanyYellow}:${oppYellow}, ČK ${dolanyRed}:${oppRed}`);
 
   if (match.video_url) {
     contentParts.push(match.video_url);
