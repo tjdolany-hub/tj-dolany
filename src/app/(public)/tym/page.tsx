@@ -37,6 +37,7 @@ export default async function TymPage() {
       supabase
         .from("match_results")
         .select("*, articles(slug), match_images(url, alt, sort_order)")
+        .is("deleted_at", null)
         .order("date", { ascending: true }),
       supabase.from("match_lineups").select("player_id, match_id"),
       supabase.from("match_scorers").select("player_id, goals, match_id"),

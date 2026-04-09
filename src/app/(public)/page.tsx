@@ -17,6 +17,7 @@ export default async function HomePage() {
       .from("articles")
       .select("id, title, slug, summary, category, created_at, updated_at, article_images(url, alt)")
       .eq("published", true)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(5),
     supabase
@@ -99,6 +100,7 @@ export default async function HomePage() {
       .from("articles")
       .select("slug")
       .eq("published", true)
+      .is("deleted_at", null)
       .ilike("title", `%${searchTerm}%`)
       .limit(1);
     if (matchingArticles && matchingArticles.length > 0) {

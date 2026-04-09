@@ -66,6 +66,7 @@ export default async function PlayerDetailPage({
             .from("match_results")
             .select("id, date, opponent, score_home, score_away, is_home, season, competition")
             .in("id", matchIds)
+            .is("deleted_at", null)
             .order("date", { ascending: false })
         : Promise.resolve({ data: [] }),
       supabase

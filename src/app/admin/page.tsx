@@ -8,7 +8,7 @@ export default async function AdminDashboard() {
     { count: playersCount },
     { count: eventsCount },
   ] = await Promise.all([
-    supabase.from("articles").select("*", { count: "exact", head: true }),
+    supabase.from("articles").select("*", { count: "exact", head: true }).is("deleted_at", null),
     supabase.from("players").select("*", { count: "exact", head: true }),
     supabase.from("future_events").select("*", { count: "exact", head: true }),
   ]);

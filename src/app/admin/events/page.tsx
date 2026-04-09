@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Pencil,
   Trash2,
@@ -11,6 +11,7 @@ import {
   Clock,
   FileText,
   CheckCircle,
+  ChevronDown,
 } from "lucide-react";
 import { formatDateTimeCzech, LOCATION_LABELS, ORGANIZERS, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague, toPragueISO } from "@/lib/utils";
 import RentalRequestsTab from "./RentalRequestsTab";
@@ -84,6 +85,57 @@ const DAY_NAMES = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "P�
 
 type FilterType = "all" | EventTypeValue | "zapas";
 type FilterMonth = "all" | number;
+
+function SelectDropdown<T extends string | number>({ label, options, value, onChange }: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? label;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ${
+          value !== options[0]?.value
+            ? "bg-brand-red/10 border-brand-red/30 text-brand-red"
+            : "bg-surface border-border text-text-muted hover:text-text hover:bg-surface-muted"
+        }`}
+      >
+        {label}: {selectedLabel}
+        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 bg-surface border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
+          {options.map((o) => (
+            <button
+              key={String(o.value)}
+              onClick={() => { onChange(o.value); setOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                value === o.value ? "bg-brand-red/10 text-brand-red font-semibold" : "text-text-muted hover:bg-surface-muted hover:text-text"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const DEFAULT_FORM = {
   title: "",
@@ -457,17 +509,36 @@ export default function AdminPlanAkciPage() {
       {/* ═══ EVENTS TAB ═══ */}
       {activeTab === "events" && (
         <>
-          {/* Top bar: year + add button */}
+          {/* Top bar: filters + add button */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex gap-2">
-              {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
-                <button key={y} onClick={() => setFilterYear(y)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filterYear === y ? "bg-brand-red text-white" : "bg-surface border border-border text-text-muted hover:text-text"
-                  }`}>
-                  {y}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-3">
+              <SelectDropdown
+                label="Rok"
+                options={[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => ({ value: y, label: String(y) }))}
+                value={filterYear}
+                onChange={setFilterYear}
+              />
+              <SelectDropdown
+                label="Typ"
+                options={[
+                  { value: "all" as FilterType, label: "Vše" },
+                  { value: "akce" as FilterType, label: "Akce TJ" },
+                  { value: "pronajem" as FilterType, label: "Soukromé" },
+                  { value: "volne" as FilterType, label: "Ostatní" },
+                  { value: "zapas" as FilterType, label: "Zápasy" },
+                ]}
+                value={filterType}
+                onChange={setFilterType}
+              />
+              <SelectDropdown
+                label="Měsíc"
+                options={[
+                  { value: "all" as FilterMonth, label: "Celý rok" },
+                  ...MONTH_NAMES.map((name, idx) => ({ value: idx as FilterMonth, label: name })),
+                ]}
+                value={filterMonth}
+                onChange={setFilterMonth}
+              />
             </div>
             <button
               onClick={() => { resetForm(); setShowForm(true); }}
@@ -475,39 +546,6 @@ export default function AdminPlanAkciPage() {
             >
               <Plus size={16} /> Přidat akci
             </button>
-          </div>
-
-          {/* Filters: type + month */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {([
-              { value: "all", label: "Vše" },
-              { value: "akce", label: "Akce TJ" },
-              { value: "pronajem", label: "Soukromé" },
-              { value: "volne", label: "Ostatní" },
-              { value: "zapas", label: "Zápasy" },
-            ] as { value: FilterType; label: string }[]).map((f) => (
-              <button key={f.value} onClick={() => setFilterType(f.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  filterType === f.value ? "bg-brand-yellow text-brand-dark" : "bg-surface border border-border text-text-muted"
-                }`}>
-                {f.label}
-              </button>
-            ))}
-            <span className="w-px bg-border mx-1" />
-            <button onClick={() => setFilterMonth("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                filterMonth === "all" ? "bg-brand-yellow text-brand-dark" : "bg-surface border border-border text-text-muted"
-              }`}>
-              Celý rok
-            </button>
-            {MONTH_NAMES.map((name, idx) => (
-              <button key={idx} onClick={() => setFilterMonth(idx)}
-                className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  filterMonth === idx ? "bg-brand-yellow text-brand-dark" : "bg-surface border border-border text-text-muted"
-                }`}>
-                {name.slice(0, 3)}
-              </button>
-            ))}
           </div>
 
           {/* Event form */}

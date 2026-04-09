@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { formatDateCzech, CATEGORIES } from "@/lib/utils";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, ChevronDown } from "lucide-react";
 
 interface Article {
   id: string;
@@ -16,6 +16,69 @@ interface Article {
   category: string;
   created_at: string;
   article_images: { url: string; alt: string | null }[];
+}
+
+function FilterDropdown({ label, options, selected, onToggle, onClear }: {
+  label: string;
+  options: { value: string; label: string }[];
+  selected: Set<string>;
+  onToggle: (value: string) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectedLabels = options.filter((o) => selected.has(o.value)).map((o) => o.label);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+          selected.size > 0
+            ? "bg-brand-red/10 border-brand-red/30 text-brand-red"
+            : "bg-surface border-border text-text-muted hover:text-text hover:bg-surface-muted"
+        }`}
+      >
+        {selected.size > 0 ? `${label}: ${selectedLabels.join(", ")}` : label}
+        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 bg-surface border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
+          {options.map((o) => (
+            <label key={o.value} className="flex items-center gap-2 px-3 py-1.5 hover:bg-surface-muted cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={selected.has(o.value)}
+                onChange={() => onToggle(o.value)}
+                className="rounded border-border accent-brand-red"
+              />
+              {o.label}
+            </label>
+          ))}
+          {selected.size > 0 && (
+            <>
+              <div className="h-px bg-border my-1" />
+              <button
+                onClick={() => { onClear(); setOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-xs text-text-muted hover:text-text transition-colors"
+              >
+                Zrušit filtr
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AktualityClient({ articles }: { articles: Article[] }) {
@@ -72,50 +135,21 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
       {/* Filters — sticky */}
       <div className="sticky top-16 z-30 bg-surface-muted/95 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex flex-wrap justify-center gap-2">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => toggleCat(c.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  catFilter.has(c.value)
-                    ? "bg-brand-red text-white"
-                    : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-            {catFilter.size > 0 && (
-              <button
-                onClick={() => setCatFilter(new Set())}
-                className="px-2 py-2 text-xs text-text-muted hover:text-text transition-colors"
-              >
-                ✕
-              </button>
-            )}
-            <span className="w-px h-8 bg-border mx-1 self-center" />
-            {availableYears.map((y) => (
-              <button
-                key={y}
-                onClick={() => toggleYear(y)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  yearFilter.has(y)
-                    ? "bg-brand-yellow text-brand-dark"
-                    : "bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted"
-                }`}
-              >
-                {y}
-              </button>
-            ))}
-            {yearFilter.size > 0 && (
-              <button
-                onClick={() => setYearFilter(new Set())}
-                className="px-2 py-2 text-xs text-text-muted hover:text-text transition-colors"
-              >
-                ✕
-              </button>
-            )}
+          <div className="flex flex-wrap justify-center gap-3">
+            <FilterDropdown
+              label="Kategorie"
+              options={CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+              selected={catFilter}
+              onToggle={toggleCat}
+              onClear={() => setCatFilter(new Set())}
+            />
+            <FilterDropdown
+              label="Rok"
+              options={availableYears.map((y) => ({ value: String(y), label: String(y) }))}
+              selected={new Set([...yearFilter].map(String))}
+              onToggle={(v) => toggleYear(Number(v))}
+              onClear={() => setYearFilter(new Set())}
+            />
           </div>
         </div>
         <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />

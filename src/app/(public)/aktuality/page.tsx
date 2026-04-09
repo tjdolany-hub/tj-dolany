@@ -20,6 +20,7 @@ export default async function AktualityPage() {
     .from("articles")
     .select("id, title, slug, summary, category, created_at, article_images(url, alt)")
     .eq("published", true)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   return <AktualityClient articles={articles ?? []} />;
