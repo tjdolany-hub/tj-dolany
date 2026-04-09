@@ -232,7 +232,15 @@ Two event types in form:
 
 ### Timezone Handling
 
-All datetimes stored as UTC in TIMESTAMPTZ columns. Admin match form constructs dates with **explicit timezone offset** (e.g. `2026-04-12T16:00:00+02:00`) using the browser's `getTimezoneOffset()` — never rely on `new Date("...T16:00").toISOString()` which can misinterpret local vs UTC. Display uses `getHours()`/`getMinutes()` which automatically converts UTC to browser local time. User is in Europe/Prague (CET +01:00 / CEST +02:00).
+All datetimes stored as UTC in TIMESTAMPTZ columns. User is in Europe/Prague (CET +01:00 / CEST +02:00).
+
+**Critical rules — never use bare JS date methods for display:**
+- **Never** use `getHours()`/`getMinutes()`/`getDate()`/`getMonth()` — these return UTC on Vercel server during SSR but local time in browser, causing hydration mismatches and wrong times in production.
+- **Always** use the Prague-timezone-safe utilities from `src/lib/utils.ts`: `getHoursPrague()`, `getMinutesPrague()`, `formatTimePrague()`, `isMidnightPrague()`, `getDayPrague()`, `getMonthPrague()`, `getYearPrague()`. These use `Intl.DateTimeFormat` with `timeZone: "Europe/Prague"` and work identically on server and client.
+- **Always** pass `timeZone: "Europe/Prague"` to `toLocaleDateString()`/`toLocaleTimeString()` calls.
+- **Admin forms** must use `toPragueISO(dateStr, timeStr)` from `src/lib/utils.ts` to construct ISO strings with the correct Europe/Prague offset. This function uses `Intl.DateTimeFormat` to detect CET/CEST — never relies on `getTimezoneOffset()` or the browser/server timezone. Never rely on `new Date("...T16:00").toISOString()`.
+- **All-day detection**: use `isMidnightPrague(date)` instead of `getHours() === 0 && getMinutes() === 0`.
+- **Date-only comparisons** (e.g., calendar day bucketing): use `e.date.slice(0, 10)` string comparison to avoid time-of-day issues.
 
 ### Match Gallery & Lightbox
 

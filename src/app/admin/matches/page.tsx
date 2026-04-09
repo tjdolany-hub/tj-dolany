@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
-import { formatTimePrague, getHoursPrague, getMinutesPrague } from "@/lib/utils";
+import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -401,14 +401,9 @@ export default function AdminMatchesPage() {
     e.preventDefault();
     setSaving(true);
 
-    // Build date with explicit timezone offset so Supabase stores correct UTC
+    // Build date with correct Europe/Prague offset (CET/CEST)
     const timeStr = form.time || "00:00";
-    const tempDate = new Date(`${form.date}T${timeStr}`);
-    const offsetMin = tempDate.getTimezoneOffset(); // negative for east of UTC
-    const tzSign = offsetMin <= 0 ? "+" : "-";
-    const tzH = Math.floor(Math.abs(offsetMin) / 60).toString().padStart(2, "0");
-    const tzM = (Math.abs(offsetMin) % 60).toString().padStart(2, "0");
-    const dateTime = `${form.date}T${timeStr}:00${tzSign}${tzH}:${tzM}`;
+    const dateTime = toPragueISO(form.date, timeStr);
     const isHome = form.home_team.toLowerCase().includes("dolany");
     const opponent = isHome ? form.away_team : form.home_team;
     const body = {
