@@ -56,15 +56,22 @@ export async function PUT(
 
   const { images, created_at, ...data } = parsed.data;
 
+  const admin = await createServiceClient();
+
+  // Fetch current article to detect title change
+  const { data: current } = await admin.from("articles").select("title").eq("id", id).single();
+
   const updateData = { ...data } as Database["public"]["Tables"]["articles"]["Update"];
-  if (data.title) {
-    updateData.slug = slugify(data.title);
+  if (data.title && data.title !== current?.title) {
+    const newSlug = slugify(data.title);
+    // Check slug uniqueness (exclude self)
+    const { data: slugCheck } = await admin.from("articles").select("id")
+      .eq("slug", newSlug).is("deleted_at", null).neq("id", id).limit(1);
+    updateData.slug = slugCheck && slugCheck.length > 0 ? `${newSlug}-${Date.now()}` : newSlug;
   }
   if (created_at) {
     updateData.created_at = new Date(`${created_at}T12:00:00`).toISOString();
   }
-
-  const admin = await createServiceClient();
 
   if (images) {
     await admin.from("article_images").delete().eq("article_id", id);

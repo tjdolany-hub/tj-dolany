@@ -10,6 +10,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     title: "",
@@ -55,12 +56,17 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
 
     if (res.ok) {
       setSaved(true);
+      setError(null);
+    } else {
+      const data = await res.json().catch(() => null);
+      setError(data?.error || `Chyba při ukládání (${res.status})`);
     }
     setSaving(false);
   };
 
   const updateForm = (patch: Partial<typeof form>) => {
     setSaved(false);
+    setError(null);
     setForm({ ...form, ...patch });
   };
 
@@ -169,6 +175,9 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             <span className="flex items-center gap-1.5 text-green-500 text-sm font-semibold ml-2">
               <CheckCircle size={16} /> Uloženo
             </span>
+          )}
+          {error && (
+            <span className="text-red-500 text-sm font-semibold ml-2">{error}</span>
           )}
         </div>
       </form>
