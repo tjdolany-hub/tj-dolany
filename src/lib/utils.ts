@@ -60,30 +60,6 @@ export function getYearPrague(date: Date): number {
   );
 }
 
-/**
- * Convert a date + time (both in Prague local time) to an ISO string with
- * the correct Europe/Prague UTC offset. Uses Intl to determine CET (+01:00)
- * or CEST (+02:00) — never relies on the browser/server timezone.
- *
- * @param dateStr "2026-04-12"
- * @param timeStr "16:00"
- * @returns "2026-04-12T16:00:00+02:00"
- */
-export function toPragueISO(dateStr: string, timeStr: string): string {
-  // Use a noon UTC reference to determine the Prague offset for this date
-  // (noon avoids DST transition edge cases which happen at 2-3 AM)
-  const ref = new Date(`${dateStr}T12:00:00Z`);
-  const pragueHour = parseInt(
-    new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: PRAGUE_TZ }).format(ref),
-    10,
-  );
-  // ref is 12:00 UTC — if Prague shows 14, offset is +2 (CEST); if 13, offset is +1 (CET)
-  const offsetHours = pragueHour - 12;
-  const sign = offsetHours >= 0 ? "+" : "-";
-  const abs = Math.abs(offsetHours);
-  return `${dateStr}T${timeStr}:00${sign}${abs.toString().padStart(2, "0")}:00`;
-}
-
 export function slugify(text: string): string {
   return text
     .toLowerCase()

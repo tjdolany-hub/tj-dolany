@@ -315,18 +315,14 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
     </div>
   );
 
-  // Separate goals & cards by team
-  const dolanyGoals = match.scorers.filter((s) => s.goals > 0).sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999));
-  const oppGoals = [...match.opponentScorers].sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999));
-  const dolanyCards = [...match.cards].sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999));
-  const oppCards = [...match.opponentCards].sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999));
+  // Footer info
+  const footerParts: string[] = [];
+  if (match.referee) footerParts.push(`Rozhodčí: ${match.referee}`);
+  if (match.delegate) footerParts.push(`Delegát: ${match.delegate}`);
+  if (match.venue) footerParts.push(`Hřiště: ${match.venue}`);
+  if (match.spectators != null) footerParts.push(`Diváků: ${match.spectators}`);
 
-  // Footer info (only delegate + venue — referee & spectators shown above)
-  const detailFooterParts: string[] = [];
-  if (match.delegate) detailFooterParts.push(`Delegát: ${match.delegate}`);
-  if (match.venue) detailFooterParts.push(`Hřiště: ${match.venue}`);
-
-  const hasDetails = hasEvents || dolanyStarters.length > 0 || oppStarters.length > 0 || detailFooterParts.length > 0;
+  const hasDetails = hasEvents || dolanyStarters.length > 0 || oppStarters.length > 0 || footerParts.length > 0;
 
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -369,21 +365,9 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
       </div>
 
       {/* KONEC */}
-      <div className="text-center pb-2">
+      <div className="text-center pb-3">
         <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Konec</span>
       </div>
-
-      {/* Visible info: referee + spectators */}
-      {(match.referee || match.spectators != null) && (
-        <div className="text-center pb-3 px-4">
-          <span className="text-xs text-text-muted">
-            {[
-              match.referee ? `Rozhodčí: ${match.referee}` : null,
-              match.spectators != null ? `Diváků: ${match.spectators}` : null,
-            ].filter(Boolean).join(" · ")}
-          </span>
-        </div>
-      )}
 
       {/* Collapsible "Více informací" */}
       {hasDetails && (
@@ -399,69 +383,33 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
 
           {detailsOpen && (
             <div>
-              {/* Goals & cards by team */}
+              {/* Chronological event timeline */}
               {hasEvents && (
                 <>
                   <div className="h-px bg-border" />
-                  <div className="px-4 py-3 space-y-3">
-                    {/* Dolany goals */}
-                    {dolanyGoals.length > 0 && (
-                      <div>
-                        <span className="text-sm font-bold text-text">Góly TJ Dolany: </span>
-                        <span className="text-sm text-text">
-                          {dolanyGoals.map((s, i) => {
-                            const parts: string[] = [];
-                            for (let g = 0; g < s.goals; g++) {
-                              const min = s.minute != null ? ` (${s.minute}')` : "";
-                              const pen = s.is_penalty ? " (PK)" : "";
-                              parts.push(`${s.playerName}${min}${pen}`);
-                            }
-                            return parts.join(", ");
-                          }).join(", ")}
-                        </span>
-                      </div>
-                    )}
+                  <div className="px-4 py-3">
+                    {hasHalftime ? (
+                      <>
+                        <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1">
+                          <span>1. poločas</span>
+                          <span className="tabular-nums">{match.halftime_home}:{match.halftime_away}</span>
+                        </div>
+                        {firstHalfEvents.length > 0 ? renderHalfEvents(firstHalfEvents) : (
+                          <p className="text-xs text-text-muted py-2 text-center">Bez událostí</p>
+                        )}
 
-                    {/* Opponent goals */}
-                    {oppGoals.length > 0 && (
-                      <div>
-                        <span className="text-sm font-bold text-text">Góly {match.opponent}: </span>
-                        <span className="text-sm text-text">
-                          {oppGoals.map((s) => {
-                            const min = s.minute != null ? ` (${s.minute}')` : "";
-                            const pen = s.is_penalty ? " (PK)" : "";
-                            return `${s.name}${min}${pen}`;
-                          }).join(", ")}
-                        </span>
-                      </div>
-                    )}
+                        <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border pb-1 mb-1 mt-3">
+                          <span>2. poločas</span>
+                          <span className="tabular-nums">{match.score_home - (match.halftime_home ?? 0)}:{match.score_away - (match.halftime_away ?? 0)}</span>
+                        </div>
+                        {secondHalfEvents.length > 0 ? renderHalfEvents(secondHalfEvents, match.halftime_home ?? 0, match.halftime_away ?? 0) : (
+                          <p className="text-xs text-text-muted py-2 text-center">Bez událostí</p>
+                        )}
 
-                    {/* Dolany cards */}
-                    {dolanyCards.length > 0 && (
-                      <div>
-                        <span className="text-sm font-bold text-text">Karty TJ Dolany: </span>
-                        <span className="text-sm text-text">
-                          {dolanyCards.map((c) => {
-                            const cardLabel = c.card_type === "yellow" ? "ŽK" : "ČK";
-                            const min = c.minute != null ? ` (${c.minute}')` : "";
-                            return `${cardLabel}: ${c.playerName}${min}`;
-                          }).join(", ")}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Opponent cards */}
-                    {oppCards.length > 0 && (
-                      <div>
-                        <span className="text-sm font-bold text-text">Karty {match.opponent}: </span>
-                        <span className="text-sm text-text">
-                          {oppCards.map((c) => {
-                            const cardLabel = c.card_type === "yellow" ? "ŽK" : "ČK";
-                            const min = c.minute != null ? ` (${c.minute}')` : "";
-                            return `${cardLabel}: ${c.name}${min}`;
-                          }).join(", ")}
-                        </span>
-                      </div>
+                        {noMinuteEvents.length > 0 && renderHalfEvents(noMinuteEvents, match.score_home, match.score_away)}
+                      </>
+                    ) : (
+                      renderHalfEvents(allEvents)
                     )}
                   </div>
                 </>
@@ -543,13 +491,13 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
                 </>
               )}
 
-              {/* Footer: delegate, venue */}
-              {detailFooterParts.length > 0 && (
+              {/* Footer: referee, venue, spectators */}
+              {footerParts.length > 0 && (
                 <>
                   <div className="h-px bg-border" />
                   <div className="px-4 py-3">
                     <p className="text-xs text-text-muted leading-relaxed">
-                      {detailFooterParts.join(". ")}.
+                      {footerParts.join(". ")}.
                     </p>
                   </div>
                 </>
