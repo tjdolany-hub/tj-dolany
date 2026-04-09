@@ -489,13 +489,15 @@ export default function PlanAkciClient({
                   } ${isOccupied && !isSelected && !isToday ? "bg-brand-red/15" : ""} ${
                     isNextEvent && !isSelected ? "bg-brand-red/5" : ""}`}
                 >
-                  <span className={`text-sm font-semibold ${
-                    isToday
-                      ? "bg-brand-red text-white w-6 h-6 rounded-full flex items-center justify-center"
-                      : "text-text"
-                  }`}>
-                    {day}
-                  </span>
+                  <div className="h-6 flex items-center">
+                    <span className={`text-sm font-semibold ${
+                      isToday
+                        ? "bg-brand-red text-white w-6 h-6 rounded-full flex items-center justify-center"
+                        : "text-text"
+                    }`}>
+                      {day}
+                    </span>
+                  </div>
                   {dayEvents.length > 0 && (
                     <div className="mt-1 space-y-0.5">
                       {dayEvents.slice(0, 3).map((e) => {
