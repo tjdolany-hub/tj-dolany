@@ -88,14 +88,12 @@ export async function POST(
       const suffix = s.is_penalty ? " z pen." : "";
       return `${s.name}${suffix}`;
     });
-    const dolanyStr = dolanyNames.length > 0 ? dolanyNames.join(", ") : "—";
-    const oppStr = oppNames.length > 0 ? oppNames.join(", ") : "—";
-    infoParts.push(`**Branky:** ${dolanyStr} - ${oppStr}`);
+    const parts = [dolanyNames.join(", "), oppNames.join(", ")].filter(Boolean);
+    infoParts.push(`**Branky:** ${parts.join(" - ")}`);
   }
 
   // Referee
   if (match.referee) {
-    // Use just surname for brevity
     infoParts.push(`**Rozhodčí:** ${match.referee}`);
   }
 
@@ -126,7 +124,7 @@ export async function POST(
   }
 
   if (infoParts.length > 0) {
-    contentParts.push(infoParts.join(". ") + ".");
+    contentParts.push(infoParts.join("\n\n"));
   }
 
   if (match.video_url) {

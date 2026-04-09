@@ -113,6 +113,9 @@ export default function AdminTeamsPage() {
         if (res.ok) {
           setSaved(true);
           fetchTeams();
+        } else {
+          const err = await res.json().catch(() => null);
+          alert(err?.error || `Chyba při ukládání (${res.status})`);
         }
       } else {
         const res = await fetch("/api/teams", {
@@ -123,6 +126,9 @@ export default function AdminTeamsPage() {
         if (res.ok) {
           cancel();
           fetchTeams();
+        } else {
+          const err = await res.json().catch(() => null);
+          alert(err?.error || `Chyba při ukládání (${res.status})`);
         }
       }
     } finally {

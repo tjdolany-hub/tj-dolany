@@ -86,6 +86,9 @@ export default function RentalRequestsTab({
       setActionNote("");
       setExpandedId(null);
       loadRequests();
+    } else {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || `Chyba (${res.status})`);
     }
     setActionLoading(null);
   };

@@ -32,6 +32,9 @@ export default function NewArticlePage() {
 
     if (res.ok) {
       router.push("/admin/articles");
+    } else {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || `Chyba při ukládání (${res.status})`);
     }
     setSaving(false);
   };

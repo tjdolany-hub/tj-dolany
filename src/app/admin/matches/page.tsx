@@ -483,6 +483,9 @@ export default function AdminMatchesPage() {
     if (res.ok) {
       if (editId) { setSaved(true); } else { resetForm(); }
       loadMatches();
+    } else {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || `Chyba při ukládání (${res.status})`);
     }
     setSaving(false);
   };
@@ -506,6 +509,9 @@ export default function AdminMatchesPage() {
       if (published && result.slug) {
         setShareDialog({ slug: result.slug, title: result.title });
       }
+    } else {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || `Chyba při publikování (${res.status})`);
     }
     setPublishing(null);
   };
@@ -741,6 +747,9 @@ export default function AdminMatchesPage() {
     if (res.ok) {
       if (drawEditId) { setDrawSaved(true); } else { resetDrawForm(); }
       loadDraws();
+    } else {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || `Chyba při ukládání (${res.status})`);
     }
     setDrawSaving(false);
   };

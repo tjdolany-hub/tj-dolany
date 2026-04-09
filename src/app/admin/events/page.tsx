@@ -354,6 +354,9 @@ export default function AdminPlanAkciPage() {
     if (res.ok) {
       if (editId) { setSaved(true); } else { resetForm(); }
       loadEvents();
+    } else {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || `Chyba při ukládání (${res.status})`);
     }
     setSaving(false);
   };
@@ -454,6 +457,9 @@ export default function AdminPlanAkciPage() {
     if (res.ok) {
       if (scheduleEditId) { setScheduleSaved(true); } else { resetScheduleForm(); }
       loadSchedule();
+    } else {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || `Chyba při ukládání (${res.status})`);
     }
     setScheduleSaving(false);
   };

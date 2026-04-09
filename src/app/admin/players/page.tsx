@@ -187,6 +187,9 @@ export default function AdminPlayersPage() {
       if (res.ok) {
         if (editId) { setSaved(true); } else { resetForm(); }
         await loadPlayers();
+      } else {
+        const err = await res.json().catch(() => null);
+        alert(err?.error || `Chyba při ukládání (${res.status})`);
       }
     } finally {
       setSaving(false);
