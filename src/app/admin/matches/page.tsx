@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Users, Target, ChevronDown, Save, X, Eye,
-  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera, CheckCircle, Video, Share2, Copy, ExternalLink,
+  BookOpen, Upload, UserPlus, RotateCcw, Square, AlertTriangle, Camera, CheckCircle, Video, Share2, Copy, ExternalLink, FilePlus2, RefreshCw,
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
@@ -1298,16 +1298,19 @@ export default function AdminMatchesPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        {m.article_id && (
-                          <span className="text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded hidden sm:inline-flex items-center gap-1">
-                            <BookOpen size={12} />
-                          </span>
+                        {m.article_id ? (
+                          <button onClick={(e) => { e.stopPropagation(); publishMatch(m.id, true); }} disabled={publishing === m.id}
+                            title="Aktualizovat článek"
+                            className="text-green-500 hover:text-green-700 p-1.5 disabled:opacity-50">
+                            <RefreshCw size={14} className={publishing === m.id ? "animate-spin" : ""} />
+                          </button>
+                        ) : (
+                          <button onClick={(e) => { e.stopPropagation(); publishMatch(m.id, true); }} disabled={publishing === m.id}
+                            title="Vytvořit článek"
+                            className="text-blue-500 hover:text-blue-700 p-1.5 disabled:opacity-50">
+                            <FilePlus2 size={14} />
+                          </button>
                         )}
-                        <button onClick={(e) => { e.stopPropagation(); publishMatch(m.id, true); }} disabled={publishing === m.id}
-                          title={m.article_id ? "Aktualizovat článek" : "Publikovat do Aktualit"}
-                          className="text-blue-500 hover:text-blue-700 p-1.5 disabled:opacity-50">
-                          <Upload size={14} />
-                        </button>
                         <button onClick={(e) => { e.stopPropagation(); startEdit(m); }} className="text-blue-600 hover:text-blue-800 p-1.5">
                           <Pencil size={14} />
                         </button>

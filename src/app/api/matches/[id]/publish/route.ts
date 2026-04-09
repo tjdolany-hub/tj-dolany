@@ -132,18 +132,34 @@ export async function POST(
   };
 
   // Create or update article
-  if (match.article_id) {
+  // Check if linked article still exists (may have been deleted)
+  let existingArticleId = match.article_id;
+  if (existingArticleId) {
+    const { data: existing } = await admin
+      .from("articles")
+      .select("id")
+      .eq("id", existingArticleId)
+      .is("deleted_at", null)
+      .single();
+    if (!existing) {
+      // Article was deleted — clear the stale link
+      await admin.from("match_results").update({ article_id: null }).eq("id", id);
+      existingArticleId = null;
+    }
+  }
+
+  if (existingArticleId) {
     // Update existing
     const { error: updateErr } = await admin
       .from("articles")
       .update({ title, slug, content, summary: title, published })
-      .eq("id", match.article_id);
+      .eq("id", existingArticleId);
 
     if (updateErr) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
-    await syncImages(match.article_id);
-    return NextResponse.json({ article_id: match.article_id, slug, title, updated: true });
+    await syncImages(existingArticleId);
+    return NextResponse.json({ article_id: existingArticleId, slug, title, updated: true });
   } else {
     // Create new
     const { data: article, error: insertErr } = await admin
