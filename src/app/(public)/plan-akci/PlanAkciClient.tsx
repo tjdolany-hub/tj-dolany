@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, X, MapPin, Clock, Sun } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import { formatDateCzech, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague } from "@/lib/utils";
+import { formatDateCzech, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague, getDayPrague, getMonthPrague } from "@/lib/utils";
 import RentalRequestForm from "./RentalRequestForm";
 
 interface CalEvent {
@@ -375,7 +375,7 @@ export default function PlanAkciClient({
                     <Calendar size={18} className="text-brand-red" />
                   </div>
                   <span className="text-lg font-bold text-brand-red">
-                    {d.getDate()}.{d.getMonth() + 1}.
+                    {getDayPrague(d)}.{getMonthPrague(d) + 1}.
                   </span>
                   {!isAllDay && (
                     <span className="text-xs text-text-muted ml-1">

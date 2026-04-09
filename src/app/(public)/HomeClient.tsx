@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, ImageIcon, Camera } from "lucide-react";
-import { formatDateCzech, CATEGORIES, formatTimePrague } from "@/lib/utils";
+import { formatDateCzech, CATEGORIES, formatTimePrague, getDayPrague, getMonthPrague, getHoursPrague, getMinutesPrague } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
@@ -641,7 +641,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                           <Calendar size={20} className="text-brand-red" />
                         </div>
                         <span className={`text-lg font-bold ${isHighlighted ? "text-brand-red" : "text-brand-red/80"}`}>
-                          {d.getDate()}.{d.getMonth() + 1}.
+                          {getDayPrague(d)}.{getMonthPrague(d) + 1}.
                         </span>
                         <h3 className="font-semibold text-text text-sm leading-snug mt-2 line-clamp-2">
                           {event.title}
