@@ -969,6 +969,30 @@ export interface Database {
           }
         ];
       };
+      teams: {
+        Row: {
+          id: string;
+          name: string;
+          keywords: string[];
+          logo_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          keywords?: string[];
+          logo_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          keywords?: string[];
+          logo_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

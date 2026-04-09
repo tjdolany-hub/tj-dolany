@@ -21,7 +21,7 @@ export default async function TymPage() {
   const currentSeasonYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
   const currentSeason = `${currentSeasonYear}/${currentSeasonYear + 1}`;
 
-  const [{ data: players }, { data: draws }, { data: matches }, { data: lineups }, { data: scorers }, { data: cards }, { data: matchScorersDetailed }, { data: matchCardsDetailed }, { data: oppScorers }, { data: oppCards }] =
+  const [{ data: players }, { data: draws }, { data: matches }, { data: lineups }, { data: scorers }, { data: cards }, { data: matchScorersDetailed }, { data: matchCardsDetailed }, { data: oppScorers }, { data: oppCards }, { data: teamsData }] =
     await Promise.all([
       supabase
         .from("players")
@@ -46,6 +46,7 @@ export default async function TymPage() {
       supabase.from("match_cards").select("match_id, card_type, minute, players(name)"),
       supabase.from("match_opponent_scorers").select("match_id, name, minute, is_penalty"),
       supabase.from("match_opponent_cards").select("match_id, name, card_type, minute"),
+      supabase.from("teams").select("keywords, logo_url").order("name"),
     ]);
 
   // Build match_id -> season lookup
@@ -229,6 +230,7 @@ export default async function TymPage() {
       availableSeasons={availableSeasons}
       matchEvents={matchEvents}
       trainingLeaderboard={trainingLeaderboard}
+      teams={(teamsData ?? []) as { keywords: string[]; logo_url: string | null }[]}
     />
   );
 }

@@ -143,12 +143,12 @@ export function parseMatchReport(text: string): ParsedMatchReport {
   }
 
   // --- Phase 5: Footer ---
+  // Find the footer line (may start with "Číslo utkání:" or "Rozhodčí:")
   const footerLine = lines.find(
     (l) => l.startsWith("Číslo utkání:") || l.startsWith("Rozhodčí:")
   );
   if (footerLine) {
-    const mnMatch = footerLine.match(/Číslo utkání:\s*([^.]+)/);
-    if (mnMatch) result.match_number = mnMatch[1].trim();
+    // Skip Číslo utkání — we use our own auto-numbering
 
     const refMatch = footerLine.match(/Rozhodčí:\s*([^.]+(?:\.[^.]*)*?)(?=\s*Delegát:|\s*Hřiště:|\s*Diváků:|$)/);
     if (refMatch) result.referee = refMatch[1].trim().replace(/\.\s*$/, "");
@@ -189,9 +189,7 @@ function parseGoals(goalLines: string[], result: ParsedMatchReport): void {
         const nextMinuteMatch = nextLine.match(minuteRegex);
         if (nextMinuteMatch) {
           const minute = parseInt(nextMinuteMatch[1]);
-          // Note: don't auto-detect "(penalta)" — two-column linearization can
-          // merge opponent annotations onto the wrong player's line
-          const is_penalty = false;
+          const is_penalty = /\(penalta\)/i.test(line);
           const playerName = line.replace(/\s*\(penalta\)/i, "").trim();
 
           // Determine side by checking lineups

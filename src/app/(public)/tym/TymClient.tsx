@@ -9,7 +9,7 @@ import MatchGallery from "@/components/public/MatchGallery";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 import { formatDateShort, POSITION_LABELS, getHoursPrague, getMinutesPrague, formatTimePrague, isMidnightPrague } from "@/lib/utils";
-import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
+import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
 import type { Database } from "@/types/database";
 
 type Player = Database["public"]["Tables"]["players"]["Row"];
@@ -43,7 +43,7 @@ function formatMatchTime(dateStr: string): string {
   return formatTimePrague(d);
 }
 
-function MatchTimeline({ match, events }: { match: MatchResult; events: MatchEvent[] }) {
+function MatchTimeline({ match, events, teams }: { match: MatchResult; events: MatchEvent[]; teams?: TeamEntry[] }) {
   const router = useRouter();
   const hasArticle = !!match.articles?.slug;
   const matchImages = (match.match_images ?? [])
@@ -150,7 +150,7 @@ function MatchTimeline({ match, events }: { match: MatchResult; events: MatchEve
   };
 
   // Logo-score-logo header (Livesport style)
-  const oppLogo = getTeamLogo(match.opponent);
+  const oppLogo = getTeamLogo(match.opponent, teams);
   const homeLogo = match.is_home ? DOLANY_LOGO : oppLogo;
   const awayLogo = match.is_home ? oppLogo : DOLANY_LOGO;
 
@@ -253,7 +253,7 @@ function MatchTimeline({ match, events }: { match: MatchResult; events: MatchEve
   );
 }
 
-function MatchResultsSection({ matches, matchEvents }: { matches: MatchResult[]; matchEvents?: Record<string, MatchEvent[]> }) {
+function MatchResultsSection({ matches, matchEvents, teams }: { matches: MatchResult[]; matchEvents?: Record<string, MatchEvent[]>; teams?: TeamEntry[] }) {
   const now = new Date();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -385,7 +385,7 @@ function MatchResultsSection({ matches, matchEvents }: { matches: MatchResult[];
                           </div>
                           <div className="px-4 py-3 text-text font-medium flex-1 min-w-0 flex items-center gap-1.5">
                             {(() => {
-                              const oLogo = getTeamLogo(match.opponent);
+                              const oLogo = getTeamLogo(match.opponent, teams);
                               const hLogo = match.is_home ? DOLANY_LOGO : oLogo;
                               const aLogo = match.is_home ? oLogo : DOLANY_LOGO;
                               return (
@@ -420,7 +420,7 @@ function MatchResultsSection({ matches, matchEvents }: { matches: MatchResult[];
                           </div>
                         </div>
                         {isExpanded && hasEvents && (
-                          <MatchTimeline match={match} events={events} />
+                          <MatchTimeline match={match} events={events} teams={teams} />
                         )}
                       </td>
                     </tr>
@@ -696,6 +696,7 @@ export default function TymClient({
   availableSeasons,
   matchEvents,
   trainingLeaderboard = [],
+  teams,
 }: {
   players: Player[];
   draws: Draw[];
@@ -706,6 +707,7 @@ export default function TymClient({
   availableSeasons?: string[];
   matchEvents?: Record<string, MatchEvent[]>;
   trainingLeaderboard?: { player_id: string; jde: number; nejde: number; neodpovedel: number; total: number; rate: number }[];
+  teams?: TeamEntry[];
 }) {
   const grouped = POSITION_ORDER.map((pos) => ({
     position: pos,
@@ -823,7 +825,7 @@ export default function TymClient({
         <div className="bg-surface-alt py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div id="vysledky" className="scroll-mt-28">
-          <MatchResultsSection matches={matches} matchEvents={matchEvents} />
+          <MatchResultsSection matches={matches} matchEvents={matchEvents} teams={teams} />
         </div>
         </div>
         </div>

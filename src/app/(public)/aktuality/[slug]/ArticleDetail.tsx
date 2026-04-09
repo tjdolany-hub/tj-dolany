@@ -7,7 +7,7 @@ import Link from "next/link";
 import { marked } from "marked";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatDateCzech, CATEGORIES, isMidnightPrague, formatTimePrague } from "@/lib/utils";
-import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
+import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
 import { BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 import MatchGallery from "@/components/public/MatchGallery";
 
@@ -210,10 +210,10 @@ function addRunningScores(events: MatchEvent[], startHome = 0, startAway = 0) {
 
 // ─── Match Score Header (Livesport style) ───
 
-function MatchScoreHeader({ match }: { match: MatchData }) {
+function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntry[] }) {
   const home = match.is_home ? "TJ Dolany" : match.opponent;
   const away = match.is_home ? match.opponent : "TJ Dolany";
-  const oppLogo = getTeamLogo(match.opponent);
+  const oppLogo = getTeamLogo(match.opponent, teams);
   const homeLogo = match.is_home ? DOLANY_LOGO : oppLogo;
   const awayLogo = match.is_home ? oppLogo : DOLANY_LOGO;
   const hasHalftime = match.halftime_home != null && match.halftime_away != null;
@@ -509,7 +509,7 @@ function MatchScoreHeader({ match }: { match: MatchData }) {
   );
 }
 
-export default function ArticleDetail({ article, matchData }: { article: Article; matchData?: MatchData | null }) {
+export default function ArticleDetail({ article, matchData, teams }: { article: Article; matchData?: MatchData | null; teams?: TeamEntry[] }) {
   const rawHtml = marked.parse(article.content) as string;
   const html = renderContentWithVideo(rawHtml);
   const heroImage = article.article_images?.[0];
@@ -537,7 +537,7 @@ export default function ArticleDetail({ article, matchData }: { article: Article
 
         {matchData ? (
           <>
-            <MatchScoreHeader match={matchData} />
+            <MatchScoreHeader match={matchData} teams={teams} />
 
             {/* Gallery with lightbox */}
             {article.article_images.length > 0 && (

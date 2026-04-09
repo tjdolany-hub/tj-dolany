@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, ImageIcon, Camera } from "lucide-react";
 import { formatDateCzech, CATEGORIES, formatTimePrague } from "@/lib/utils";
-import { getTeamLogo, DOLANY_LOGO } from "@/lib/team-logos";
+import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/ui/AnimatedSection";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 
@@ -83,6 +83,7 @@ interface HomeClientProps {
   leagueStandings: LeagueStandingRow[];
   top5Scorers: { name: string; goals: number }[];
   top5Appearances: { name: string; count: number }[];
+  teams?: TeamEntry[];
 }
 
 function formatMatchDate(dateStr: string): string {
@@ -97,7 +98,7 @@ function formatMatchDate(dateStr: string): string {
 const MEDAL_COLORS = ["text-yellow-500", "text-gray-400", "text-amber-700"];
 function medalClass(i: number) { return i < 3 ? MEDAL_COLORS[i] : "text-text-muted"; }
 
-export default function HomeClient({ articles, heroEvents, nextMatch, albums, clubBanner, leagueStandings, top5Scorers, top5Appearances }: HomeClientProps) {
+export default function HomeClient({ articles, heroEvents, nextMatch, albums, clubBanner, leagueStandings, top5Scorers, top5Appearances, teams }: HomeClientProps) {
   const featured = articles[0];
   const sidebar = articles.slice(1, 5);
   const [tableVariant, setTableVariant] = useState<"celkem" | "doma" | "venku">("celkem");
@@ -190,7 +191,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       {/* ── MATCH TICKER ── */}
       {nextMatch && (() => {
-        const oppLogo = getTeamLogo(nextMatch.opponent);
+        const oppLogo = getTeamLogo(nextMatch.opponent, teams);
         const homeLogo = nextMatch.is_home ? DOLANY_LOGO : oppLogo;
         const awayLogo = nextMatch.is_home ? oppLogo : DOLANY_LOGO;
         const homeTeam = nextMatch.is_home ? "TJ Dolany" : nextMatch.opponent;
@@ -280,7 +281,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                   <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-28 shrink-0">Poslední zápas</span>
                   {clubBanner.lastMatch ? (
                     (() => {
-                      const oppLogo = getTeamLogo(clubBanner.lastMatch.opponent);
+                      const oppLogo = getTeamLogo(clubBanner.lastMatch.opponent, teams);
                       const homeLogo = clubBanner.lastMatch.is_home ? DOLANY_LOGO : oppLogo;
                       const awayLogo = clubBanner.lastMatch.is_home ? oppLogo : DOLANY_LOGO;
                       const matchContent = (

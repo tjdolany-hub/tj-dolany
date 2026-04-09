@@ -194,7 +194,10 @@ export async function PUT(
 
   if (updated) {
     // Auto-assign match number if match now has a result and doesn't have a number yet
-    if (!updated.match_number && (updated.score_home > 0 || updated.score_away > 0)) {
+    // Includes 0:0 results (detected by lineup presence)
+    const hasLineup = updated.match_lineups && updated.match_lineups.length > 0;
+    const hasResult = updated.score_home > 0 || updated.score_away > 0 || hasLineup;
+    if (!updated.match_number && hasResult) {
       const { data: maxRow } = await admin
         .from("match_results")
         .select("match_number")
@@ -203,8 +206,8 @@ export async function PUT(
         .order("match_number", { ascending: false })
         .limit(1)
         .single();
-      const currentMax = maxRow?.match_number ? parseInt(maxRow.match_number) : 2174;
-      const nextNumber = (isNaN(currentMax) ? 2174 : currentMax) + 1;
+      const currentMax = maxRow?.match_number ? parseInt(maxRow.match_number) : 2173;
+      const nextNumber = (isNaN(currentMax) ? 2173 : currentMax) + 1;
       await admin
         .from("match_results")
         .update({ match_number: nextNumber.toString() })

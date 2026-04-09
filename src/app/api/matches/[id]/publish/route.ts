@@ -182,13 +182,10 @@ export async function POST(
     }
   }
 
-  // Match details footer
-  const footerParts: string[] = [];
-  if (match.referee) footerParts.push(`**Rozhodčí:** ${match.referee}`);
-  if (match.delegate) footerParts.push(`**Delegát:** ${match.delegate}`);
-  if (match.spectators != null) footerParts.push(`**Diváků:** ${match.spectators}`);
-  if (footerParts.length > 0) {
-    content += `\n\n${footerParts.join(" ")}`;
+  // Match details footer — referee, venue, spectators are shown in MatchScoreHeader,
+  // only include delegate here (not shown elsewhere)
+  if (match.delegate) {
+    content += `\n\n**Delegát:** ${match.delegate}`;
   }
 
   // Summary/report

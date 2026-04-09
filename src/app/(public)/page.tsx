@@ -11,6 +11,7 @@ export default async function HomePage() {
   const [
     articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult,
     recentMatchesResult, allScorersResult, allCardsResult, standingsResult, allStandingsResult, allLineupsResult,
+    teamsResult,
   ] = await Promise.all([
     supabase
       .from("articles")
@@ -70,6 +71,7 @@ export default async function HomePage() {
       .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
       .order("position", { ascending: true }),
     supabase.from("match_lineups").select("player_id, players(name)"),
+    supabase.from("teams").select("keywords, logo_url").order("name"),
   ]);
 
   const articles = ((articlesResult.data ?? []) as unknown as {
@@ -186,6 +188,8 @@ export default async function HomePage() {
   });
   const top5Appearances = [...appearanceMap.values()].sort((a, b) => b.count - a.count).slice(0, 6);
 
+  const teams = (teamsResult.data ?? []) as { keywords: string[]; logo_url: string | null }[];
+
   const albums = (albumsResult.data ?? []) as unknown as {
     id: string;
     title: string;
@@ -204,6 +208,7 @@ export default async function HomePage() {
       leagueStandings={(allStandings ?? []) as { position: number; team_name: string; matches_played: number; wins: number; draws: number; losses: number; goals_for: number; goals_against: number; points: number; is_our_team: boolean; variant: string }[]}
       top5Scorers={top5Scorers}
       top5Appearances={top5Appearances}
+      teams={teams}
     />
   );
 }

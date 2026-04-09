@@ -175,8 +175,9 @@ export async function POST(req: NextRequest) {
 
   if (match) {
     // Auto-assign match number if match has a result (score > 0 or lineup present)
-    // and doesn't already have a match_number
-    if (!match.match_number && (match.score_home > 0 || match.score_away > 0)) {
+    // and doesn't already have a match_number. Includes 0:0 results (detected by lineup).
+    const hasResult = match.score_home > 0 || match.score_away > 0 || (lineup && lineup.length > 0);
+    if (!match.match_number && hasResult) {
       const { data: maxRow } = await admin
         .from("match_results")
         .select("match_number")
@@ -185,8 +186,8 @@ export async function POST(req: NextRequest) {
         .order("match_number", { ascending: false })
         .limit(1)
         .single();
-      const currentMax = maxRow?.match_number ? parseInt(maxRow.match_number) : 2174;
-      const nextNumber = (isNaN(currentMax) ? 2174 : currentMax) + 1;
+      const currentMax = maxRow?.match_number ? parseInt(maxRow.match_number) : 2173;
+      const nextNumber = (isNaN(currentMax) ? 2173 : currentMax) + 1;
       await admin
         .from("match_results")
         .update({ match_number: nextNumber.toString() })

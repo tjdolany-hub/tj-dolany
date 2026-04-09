@@ -145,5 +145,10 @@ export default async function ArticlePage({ params }: Props) {
 
   const matchData = await getMatchData(article.id);
 
-  return <ArticleDetail article={article} matchData={matchData} />;
+  // Fetch teams for logo lookup
+  const supabase2 = await createClient();
+  const { data: teamsData } = await supabase2.from("teams").select("keywords, logo_url").order("name");
+  const teams = (teamsData ?? []) as { keywords: string[]; logo_url: string | null }[];
+
+  return <ArticleDetail article={article} matchData={matchData} teams={teams} />;
 }

@@ -11,13 +11,14 @@ import {
   Trophy,
   CalendarDays,
   LogOut,
-  Shield,
+  Shield as ShieldIcon,
   History,
   Trash2,
   Menu,
   X,
   BookOpen,
   ClipboardList,
+  Flag,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,8 @@ const NAV = [
   { href: "/admin/matches", label: "Zápasy", icon: Trophy },
   { href: "/admin/treninky", label: "Tréninky", icon: ClipboardList },
   { href: "/admin/kronika", label: "Kronika", icon: BookOpen },
-  { href: "/admin/users", label: "Uživatelé", icon: Shield },
+  { href: "/admin/teams", label: "Týmy", icon: Flag },
+  { href: "/admin/users", label: "Uživatelé", icon: ShieldIcon },
   { href: "/admin/audit", label: "Historie změn", icon: History },
   { href: "/admin/trash", label: "Koš", icon: Trash2 },
 ];
