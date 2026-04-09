@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import PlanAkciClient from "./PlanAkciClient";
 
@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 
 export default async function PlanAkciPage() {
   const supabase = await createClient();
+  // Service client bypasses RLS — calendar must show ALL events (including private rentals)
+  const serviceClient = await createServiceClient();
   const now = new Date().toISOString();
 
   const [{ data: upcoming }, { data: allEvents }, { data: schedule }] = await Promise.all([
@@ -28,8 +30,9 @@ export default async function PlanAkciPage() {
       .gte("date", now)
       .order("date", { ascending: true })
       .limit(5),
-    // All public events for calendar (all types including pronajem for admin visibility)
-    supabase
+    // All events for calendar — uses service client to bypass RLS
+    // (is_public means "open to public attendance", not "visible in calendar")
+    serviceClient
       .from("calendar_events")
       .select("id, title, description, date, end_date, all_day, event_type, location, organizer, is_public")
       .is("deleted_at", null)
