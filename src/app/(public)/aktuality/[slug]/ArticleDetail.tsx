@@ -315,9 +315,10 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
     </div>
   );
 
-  // Footer info (no match_number, no delegate)
+  // Footer info
   const footerParts: string[] = [];
   if (match.referee) footerParts.push(`Rozhodčí: ${match.referee}`);
+  if (match.delegate) footerParts.push(`Delegát: ${match.delegate}`);
   if (match.venue) footerParts.push(`Hřiště: ${match.venue}`);
   if (match.spectators != null) footerParts.push(`Diváků: ${match.spectators}`);
 
