@@ -201,10 +201,10 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
             <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-center gap-1.5 sm:gap-2.5">
               <span className="text-[11px] sm:text-sm font-semibold shrink-0">⚽ {formatMatchDate(nextMatch.date)}</span>
               <span className="text-[11px] sm:text-sm text-white/70 shrink-0">—</span>
-              {homeLogo && <Image src={homeLogo} alt="" width={18} height={18} className="object-contain shrink-0 sm:w-[22px] sm:h-[22px]" />}
+              {homeLogo && <Image src={homeLogo} alt="" width={18} height={18} className="object-contain shrink-0 sm:w-[22px] sm:h-[22px] drop-shadow-[0_0_1px_rgba(0,0,0,0.8)]" />}
               <span className="text-[11px] sm:text-sm font-semibold whitespace-nowrap">{homeTeam}</span>
               <span className="text-[11px] sm:text-sm font-semibold">-</span>
-              {awayLogo && <Image src={awayLogo} alt="" width={18} height={18} className="object-contain shrink-0 sm:w-[22px] sm:h-[22px]" />}
+              {awayLogo && <Image src={awayLogo} alt="" width={18} height={18} className="object-contain shrink-0 sm:w-[22px] sm:h-[22px] drop-shadow-[0_0_1px_rgba(0,0,0,0.8)]" />}
               <span className="text-[11px] sm:text-sm font-semibold whitespace-nowrap">{awayTeam}</span>
             </div>
           </div>
