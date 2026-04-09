@@ -65,17 +65,40 @@ export async function POST(
     .limit(1);
   const slug = slugCheck && slugCheck.length > 0 ? `${baseSlug}-${Date.now()}` : baseSlug;
 
-  // Build article markdown: summary + structured footer (goals, cards, referee, spectators, lineup)
+  // Build article markdown: title, report, hřiště, diváků, sestava, branky, karty
   const contentParts: string[] = [];
 
+  // 1. Bold title
+  contentParts.push(`**${title}**`);
+
+  // 2. Summary/report text
   if (match.summary) {
     contentParts.push(match.summary);
   }
 
-  // Structured match info line
-  const infoParts: string[] = [];
+  // 3. Hřiště (venue)
+  if (match.venue) {
+    contentParts.push(`**Hřiště:** ${match.venue}`);
+  }
 
-  // Goals: "Branky: Dolany scorers - Opponent scorers" (no minutes)
+  // 4. Diváků (spectators)
+  if (match.spectators != null) {
+    contentParts.push(`**Diváků:** ${match.spectators}`);
+  }
+
+  // 5. Sestava (lineup)
+  const lineups = (match.match_lineups as { is_starter: boolean; players: { name: string } }[] | null) ?? [];
+  if (lineups.length > 0) {
+    const starters = lineups.filter((l) => l.is_starter).map((l) => l.players.name);
+    const subs = lineups.filter((l) => !l.is_starter).map((l) => l.players.name);
+    let lineupStr = `**Sestava:** ${starters.join(", ")}`;
+    if (subs.length > 0) {
+      lineupStr += `. **Střídající:** ${subs.join(", ")}`;
+    }
+    contentParts.push(lineupStr);
+  }
+
+  // 6. Branky (goals — Dolany scorers - Opponent scorers, no minutes)
   const dolanyScorers = (match.match_scorers as { goals: number; is_penalty: boolean; players: { name: string } }[] | null) ?? [];
   const oppScorers = (match.match_opponent_scorers as { name: string; is_penalty: boolean }[] | null) ?? [];
   if (dolanyScorers.length > 0 || oppScorers.length > 0) {
@@ -88,44 +111,18 @@ export async function POST(
       const suffix = s.is_penalty ? " z pen." : "";
       return `${s.name}${suffix}`;
     });
-    const parts = [dolanyNames.join(", "), oppNames.join(", ")].filter(Boolean);
-    infoParts.push(`**Branky:** ${parts.join(" - ")}`);
+    const goalParts = [dolanyNames.join(", "), oppNames.join(", ")].filter(Boolean);
+    contentParts.push(`**Branky:** ${goalParts.join(" - ")}`);
   }
 
-  // Referee
-  if (match.referee) {
-    infoParts.push(`**Rozhodčí:** ${match.referee}`);
-  }
-
-  // Cards summary: ŽK X:Y, ČK X:Y
+  // 7. Karty (ŽK X:Y, ČK X:Y)
   const dolanyCards = (match.match_cards as { card_type: string }[] | null) ?? [];
   const oppCards = (match.match_opponent_cards as { card_type: string }[] | null) ?? [];
   const dolanyYellow = dolanyCards.filter((c) => c.card_type === "yellow").length;
   const dolanyRed = dolanyCards.filter((c) => c.card_type === "red").length;
   const oppYellow = oppCards.filter((c) => c.card_type === "yellow").length;
   const oppRed = oppCards.filter((c) => c.card_type === "red").length;
-  infoParts.push(`ŽK ${dolanyYellow}:${oppYellow}, ČK ${dolanyRed}:${oppRed}`);
-
-  // Spectators
-  if (match.spectators != null) {
-    infoParts.push(`**Diváků:** ${match.spectators}`);
-  }
-
-  // Lineup
-  const lineups = (match.match_lineups as { is_starter: boolean; players: { name: string } }[] | null) ?? [];
-  if (lineups.length > 0) {
-    const starters = lineups.filter((l) => l.is_starter).map((l) => l.players.name);
-    const subs = lineups.filter((l) => !l.is_starter).map((l) => l.players.name);
-    let lineupStr = `**Sestava:** ${starters.join(", ")}`;
-    if (subs.length > 0) {
-      lineupStr += `. **Střídající:** ${subs.join(", ")}`;
-    }
-    infoParts.push(lineupStr);
-  }
-
-  if (infoParts.length > 0) {
-    contentParts.push(infoParts.join("\n\n"));
-  }
+  contentParts.push(`ŽK ${dolanyYellow}:${oppYellow}, ČK ${dolanyRed}:${oppRed}`);
 
   if (match.video_url) {
     contentParts.push(match.video_url);
