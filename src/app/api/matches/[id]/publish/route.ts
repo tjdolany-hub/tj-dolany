@@ -32,18 +32,38 @@ export async function POST(
     return NextResponse.json({ error: "Zápas nenalezen" }, { status: 404 });
   }
 
+  // Check if linked article still exists (may have been deleted)
+  let existingArticleId: string | null = match.article_id;
+  if (existingArticleId) {
+    const { data: existing } = await admin
+      .from("articles")
+      .select("id")
+      .eq("id", existingArticleId)
+      .is("deleted_at", null)
+      .single();
+    if (!existing) {
+      await admin.from("match_results").update({ article_id: null }).eq("id", id);
+      existingArticleId = null;
+    }
+  }
+
   // Build article content
   const d = new Date(match.date);
-  const dateStr = d.toLocaleDateString("cs-CZ", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Prague",
-  });
   const home = match.is_home ? "TJ Dolany" : match.opponent;
   const away = match.is_home ? match.opponent : "TJ Dolany";
-  const title = `${home} - ${away} ${match.score_home}:${match.score_away}`;
-  const slug = slugify(`${title}-${d.toISOString().slice(0, 10)}`);
+  const scoreTitle = `${home} - ${away} ${match.score_home}:${match.score_away}`;
+  // Use summary_title if available, otherwise fall back to score title
+  const title = match.summary_title || scoreTitle;
+  const baseSlug = slugify(`${scoreTitle}-${d.toISOString().slice(0, 10)}`);
+  // Deduplicate slug: check if another article (not ours) already uses it
+  const { data: slugCheck } = await admin
+    .from("articles")
+    .select("id")
+    .eq("slug", baseSlug)
+    .is("deleted_at", null)
+    .neq("id", existingArticleId ?? "00000000-0000-0000-0000-000000000000")
+    .limit(1);
+  const slug = slugCheck && slugCheck.length > 0 ? `${baseSlug}-${Date.now()}` : baseSlug;
 
   // Build article markdown: summary + structured footer (goals, cards, referee, spectators, lineup)
   const contentParts: string[] = [];
@@ -132,22 +152,6 @@ export async function POST(
   };
 
   // Create or update article
-  // Check if linked article still exists (may have been deleted)
-  let existingArticleId = match.article_id;
-  if (existingArticleId) {
-    const { data: existing } = await admin
-      .from("articles")
-      .select("id")
-      .eq("id", existingArticleId)
-      .is("deleted_at", null)
-      .single();
-    if (!existing) {
-      // Article was deleted — clear the stale link
-      await admin.from("match_results").update({ article_id: null }).eq("id", id);
-      existingArticleId = null;
-    }
-  }
-
   if (existingArticleId) {
     // Update existing
     const { error: updateErr } = await admin
