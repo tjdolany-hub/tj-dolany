@@ -9,7 +9,7 @@ const updateSchema = z.object({
   title: z.string().min(1).optional(),
   content: z.string().min(1).optional(),
   summary: z.string().optional(),
-  category: z.enum(["aktuality", "fotbal", "sokolovna", "oznameni"]).optional(),
+  category: z.enum(["aktuality", "fotbal"]).optional(),
   published: z.boolean().optional(),
   created_at: z.string().optional(),
   images: z

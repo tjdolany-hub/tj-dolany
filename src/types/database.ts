@@ -67,7 +67,7 @@ export interface Database {
           slug: string;
           content: string;
           summary: string | null;
-          category: "aktuality" | "fotbal" | "sokolovna" | "oznameni";
+          category: "aktuality" | "fotbal";
           published: boolean;
           author_id: string | null;
           created_at: string;
@@ -80,7 +80,7 @@ export interface Database {
           slug: string;
           content?: string;
           summary?: string | null;
-          category?: "aktuality" | "fotbal" | "sokolovna" | "oznameni";
+          category?: "aktuality" | "fotbal";
           published?: boolean;
           author_id?: string | null;
           created_at?: string;
@@ -93,7 +93,7 @@ export interface Database {
           slug?: string;
           content?: string;
           summary?: string | null;
-          category?: "aktuality" | "fotbal" | "sokolovna" | "oznameni";
+          category?: "aktuality" | "fotbal";
           published?: boolean;
           author_id?: string | null;
           created_at?: string;

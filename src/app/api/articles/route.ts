@@ -9,7 +9,7 @@ const articleSchema = z.object({
   title: z.string().min(1, "Titulek je povinný"),
   content: z.string().min(1, "Obsah je povinný"),
   summary: z.string().optional(),
-  category: z.enum(["aktuality", "fotbal", "sokolovna", "oznameni"]),
+  category: z.enum(["aktuality", "fotbal"]),
   published: z.boolean().default(false),
   created_at: z.string().optional(),
   images: z
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   if (!all) {
     query = query.eq("published", true);
   }
-  const validCategories = ["aktuality", "fotbal", "sokolovna", "oznameni"] as const;
+  const validCategories = ["aktuality", "fotbal"] as const;
   if (category && category !== "vse" && validCategories.includes(category as typeof validCategories[number])) {
     query = query.eq("category", category as typeof validCategories[number]);
   }

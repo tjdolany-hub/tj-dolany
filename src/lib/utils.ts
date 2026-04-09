@@ -113,8 +113,6 @@ export function formatDateShort(dateStr: string): string {
 export const CATEGORIES = [
   { value: "aktuality", label: "Aktuality" },
   { value: "fotbal", label: "Fotbal" },
-  { value: "sokolovna", label: "Sokolovna" },
-  { value: "oznameni", label: "Oznámení" },
 ] as const;
 
 export const POSITIONS = [
