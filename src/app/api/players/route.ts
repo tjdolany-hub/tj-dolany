@@ -16,6 +16,7 @@ const playerSchema = z.object({
   birth_date: z.string().nullable().optional(),
   sort_order: z.number().default(0),
   active: z.boolean().default(true),
+  aliases: z.array(z.string()).default([]),
 });
 
 export async function GET() {

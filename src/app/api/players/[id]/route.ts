@@ -16,6 +16,7 @@ const updateSchema = z.object({
   birth_date: z.string().nullable().optional(),
   sort_order: z.number().optional(),
   active: z.boolean().optional(),
+  aliases: z.array(z.string()).optional(),
 });
 
 export async function PUT(

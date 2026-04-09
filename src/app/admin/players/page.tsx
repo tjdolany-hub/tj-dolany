@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
-  Pencil, Trash2, Plus, Save, X, ToggleLeft, ToggleRight, Users, CheckCircle,
+  Pencil, Trash2, Plus, Save, X, Users, CheckCircle, Eye, EyeOff, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { POSITIONS, POSITION_COLORS, POSITION_LABELS } from "@/lib/utils";
 import ImageUploader from "@/components/admin/ImageUploader";
@@ -20,6 +20,7 @@ interface Player {
   number: number | null;
   photo: string | null;
   active: boolean;
+  aliases: string[] | null;
 }
 
 interface PlayerForm {
@@ -31,6 +32,7 @@ interface PlayerForm {
   birth_date: string;
   number: string;
   active: boolean;
+  aliases: string;
 }
 
 const POSITION_ORDER = ["brankar", "obrance", "zaloznik", "utocnik"];
@@ -64,6 +66,7 @@ const emptyForm: PlayerForm = {
   birth_date: "",
   number: "",
   active: true,
+  aliases: "",
 };
 
 export default function AdminPlayersPage() {
@@ -77,6 +80,7 @@ export default function AdminPlayersPage() {
   const [saved, setSaved] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Stats from matches
   const [stats, setStats] = useState<Record<string, { matches: number; goals: number; yellows: number; reds: number }>>({});
@@ -92,7 +96,6 @@ export default function AdminPlayersPage() {
   }, []);
 
   const loadStats = useCallback(async () => {
-    // Load all matches to calculate stats
     const res = await fetch("/api/matches");
     const matches = await res.json();
     if (!Array.isArray(matches)) return;
@@ -150,6 +153,7 @@ export default function AdminPlayersPage() {
       birth_date: p.birth_date ?? "",
       number: p.number?.toString() ?? "",
       active: p.active,
+      aliases: (p.aliases ?? []).join(", "),
     });
     setImages(p.photo ? [{ url: p.photo }] : []);
     setEditId(p.id);
@@ -162,6 +166,11 @@ export default function AdminPlayersPage() {
     setSaving(true);
 
     const name = `${form.first_name} ${form.last_name}`.trim();
+    const aliases = form.aliases
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean);
+
     const body = {
       name,
       first_name: form.first_name || null,
@@ -173,6 +182,7 @@ export default function AdminPlayersPage() {
       number: form.number ? parseInt(form.number, 10) : null,
       photo: images[0]?.url ?? null,
       active: form.active,
+      aliases,
     };
 
     const url = editId ? `/api/players/${editId}` : "/api/players";
@@ -214,6 +224,15 @@ export default function AdminPlayersPage() {
       body: JSON.stringify({ active: !p.active }),
     });
     await loadPlayers();
+  };
+
+  const toggleGroup = (pos: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(pos)) next.delete(pos);
+      else next.add(pos);
+      return next;
+    });
   };
 
   const filteredPlayers = players.filter((p) => {
@@ -323,6 +342,12 @@ export default function AdminPlayersPage() {
           </div>
 
           <div>
+            <label className="block text-sm font-semibold text-text mb-1">Alternativní jména <span className="font-normal text-text-muted">(pro párování v datech, oddělená čárkou)</span></label>
+            <input type="text" value={form.aliases} onChange={(e) => updatePlayerForm({ aliases: e.target.value })} placeholder="Jirka Berger, J. Berger, Berger Jiří"
+              className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-brand-red" />
+          </div>
+
+          <div>
             <label className="block text-sm font-semibold text-text mb-1">Fotka</label>
             <ImageUploader images={images} onChange={(imgs) => { setSaved(false); setImages(imgs); }} folder="players" multiple={false} maxWidth={800} />
           </div>
@@ -345,7 +370,7 @@ export default function AdminPlayersPage() {
         </form>
       )}
 
-      {/* Player list */}
+      {/* Player table */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red" />
@@ -357,81 +382,124 @@ export default function AdminPlayersPage() {
           <p className="text-lg font-semibold">Žádní hráči</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {grouped.map((group) => (
-            <section key={group.position}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className={`inline-block w-3 h-3 rounded-full ${POSITION_COLORS[group.position]?.split(" ")[0] ?? ""}`} />
-                <h2 className="text-xl font-bold text-text">{group.label}</h2>
-                <span className="text-sm text-text-muted">({group.players.length})</span>
-              </div>
+        <div className="space-y-6">
+          {grouped.map((group) => {
+            const isCollapsed = collapsedGroups.has(group.position);
+            return (
+              <section key={group.position}>
+                <button
+                  onClick={() => toggleGroup(group.position)}
+                  className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+                >
+                  {isCollapsed ? <ChevronRight size={18} className="text-text-muted" /> : <ChevronDown size={18} className="text-text-muted" />}
+                  <span className={`inline-block w-3 h-3 rounded-full ${POSITION_COLORS[group.position]?.split(" ")[0] ?? ""}`} />
+                  <h2 className="text-lg font-bold text-text">{group.label}</h2>
+                  <span className="text-sm text-text-muted">({group.players.length})</span>
+                </button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {group.players.map((p) => {
-                  const st = stats[p.id];
-                  return (
-                    <div key={p.id}
-                      className={`bg-surface rounded-xl border border-border p-4 flex items-center gap-4 transition-opacity ${
-                        !p.active ? "opacity-50" : ""
-                      } ${deletingId === p.id ? "opacity-30 pointer-events-none" : ""}`}>
-                      <div className="w-16 h-16 rounded-full bg-surface-muted overflow-hidden shrink-0 relative">
-                        {p.photo ? (
-                          <Image src={p.photo} alt={p.name} fill className="object-cover" sizes="64px" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-text-muted text-xl font-bold">
-                            {(p.first_name?.[0] || "")}{(p.last_name?.[0] || "")}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-text truncate">
-                          {p.first_name || ""} {p.last_name || ""}
-                          {p.nickname && <span className="text-text-muted font-normal ml-1">({p.nickname})</span>}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full ${POSITION_COLORS[p.position] ?? ""}`}>
-                            {POSITION_LABELS[p.position] ?? p.position}
-                          </span>
-                          {p.number != null && (
-                            <span className="text-sm font-mono font-bold text-text-muted">#{p.number}</span>
-                          )}
-                          {p.birth_date && (
-                            <span className="text-xs text-text-muted">{calcAge(p.birth_date)} let</span>
-                          )}
-                        </div>
-                        {/* Stats row */}
-                        {st && (
-                          <div className="flex gap-3 mt-1.5 text-[11px] text-text-muted">
-                            <span>{st.matches} záp.</span>
-                            <span>{st.goals} gólů</span>
-                            {st.yellows > 0 && <span className="text-yellow-600">{st.yellows} ŽK</span>}
-                            {st.reds > 0 && <span className="text-red-600">{st.reds} ČK</span>}
-                          </div>
-                        )}
-                        {!p.active && (
-                          <span className="text-xs text-red-400 font-medium mt-1 inline-block">Neaktivní</span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1 shrink-0">
-                        <button onClick={() => toggleActive(p)} title={p.active ? "Deaktivovat" : "Aktivovat"}
-                          className="text-text-muted hover:text-text p-1 transition-colors">
-                          {p.active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
-                        </button>
-                        <button onClick={() => startEdit(p)} title="Upravit" className="text-blue-500 hover:text-blue-700 p-1 transition-colors">
-                          <Pencil size={16} />
-                        </button>
-                        <button onClick={() => deletePlayer(p.id)} title="Smazat" className="text-red-500 hover:text-red-700 p-1 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+                {!isCollapsed && (
+                  <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-surface-muted/50">
+                          <th className="text-left px-3 py-2.5 font-semibold text-text-muted w-12"></th>
+                          <th className="text-left px-3 py-2.5 font-semibold text-text-muted">Jméno</th>
+                          <th className="text-left px-3 py-2.5 font-semibold text-text-muted hidden md:table-cell">Pozice</th>
+                          <th className="text-center px-3 py-2.5 font-semibold text-text-muted hidden sm:table-cell w-12">#</th>
+                          <th className="text-center px-3 py-2.5 font-semibold text-text-muted hidden lg:table-cell w-16">Věk</th>
+                          <th className="text-center px-3 py-2.5 font-semibold text-text-muted hidden sm:table-cell w-14">Záp.</th>
+                          <th className="text-center px-3 py-2.5 font-semibold text-text-muted hidden sm:table-cell w-14">Góly</th>
+                          <th className="text-center px-3 py-2.5 font-semibold text-text-muted hidden lg:table-cell w-14">ŽK</th>
+                          <th className="text-center px-3 py-2.5 font-semibold text-text-muted hidden lg:table-cell w-14">ČK</th>
+                          <th className="text-center px-3 py-2.5 font-semibold text-text-muted w-16">Aktiv.</th>
+                          <th className="text-right px-3 py-2.5 font-semibold text-text-muted w-20">Akce</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.players.map((p) => {
+                          const st = stats[p.id];
+                          return (
+                            <tr
+                              key={p.id}
+                              className={`border-b border-border last:border-b-0 hover:bg-surface-muted/30 transition-colors ${
+                                !p.active ? "opacity-50" : ""
+                              } ${deletingId === p.id ? "opacity-30 pointer-events-none" : ""}`}
+                            >
+                              {/* Photo */}
+                              <td className="px-3 py-2">
+                                <div className="w-9 h-9 rounded-full bg-surface-muted overflow-hidden relative shrink-0">
+                                  {p.photo ? (
+                                    <Image src={p.photo} alt={p.name} fill className="object-cover" sizes="36px" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-text-muted text-xs font-bold">
+                                      {(p.first_name?.[0] || "")}{(p.last_name?.[0] || "")}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              {/* Name */}
+                              <td className="px-3 py-2">
+                                <div className="font-semibold text-text">
+                                  {p.first_name || ""} {p.last_name || ""}
+                                  {p.nickname && <span className="text-text-muted font-normal ml-1">({p.nickname})</span>}
+                                </div>
+                                {p.aliases && p.aliases.length > 0 && (
+                                  <div className="text-[11px] text-text-muted mt-0.5 truncate max-w-[250px]" title={p.aliases.join(", ")}>
+                                    {p.aliases.join(", ")}
+                                  </div>
+                                )}
+                              </td>
+                              {/* Position */}
+                              <td className="px-3 py-2 hidden md:table-cell">
+                                <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full ${POSITION_COLORS[p.position] ?? ""}`}>
+                                  {POSITION_LABELS[p.position] ?? p.position}
+                                </span>
+                              </td>
+                              {/* Number */}
+                              <td className="px-3 py-2 text-center font-mono font-bold text-text-muted hidden sm:table-cell">
+                                {p.number ?? "—"}
+                              </td>
+                              {/* Age */}
+                              <td className="px-3 py-2 text-center text-text-muted hidden lg:table-cell">
+                                {p.birth_date ? calcAge(p.birth_date) : "—"}
+                              </td>
+                              {/* Stats */}
+                              <td className="px-3 py-2 text-center text-text-muted hidden sm:table-cell">{st?.matches ?? 0}</td>
+                              <td className="px-3 py-2 text-center text-text-muted hidden sm:table-cell">{st?.goals ?? 0}</td>
+                              <td className="px-3 py-2 text-center hidden lg:table-cell">
+                                {(st?.yellows ?? 0) > 0 ? <span className="text-yellow-500 font-semibold">{st?.yellows}</span> : <span className="text-text-muted">0</span>}
+                              </td>
+                              <td className="px-3 py-2 text-center hidden lg:table-cell">
+                                {(st?.reds ?? 0) > 0 ? <span className="text-red-500 font-semibold">{st?.reds}</span> : <span className="text-text-muted">0</span>}
+                              </td>
+                              {/* Active toggle */}
+                              <td className="px-3 py-2 text-center">
+                                <button onClick={() => toggleActive(p)} title={p.active ? "Deaktivovat" : "Aktivovat"}
+                                  className="p-1 transition-colors hover:opacity-70">
+                                  {p.active ? <Eye size={16} className="text-green-500" /> : <EyeOff size={16} className="text-text-muted" />}
+                                </button>
+                              </td>
+                              {/* Actions */}
+                              <td className="px-3 py-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button onClick={() => startEdit(p)} title="Upravit" className="text-blue-500 hover:text-blue-700 p-1 transition-colors">
+                                    <Pencil size={15} />
+                                  </button>
+                                  <button onClick={() => deletePlayer(p.id)} title="Smazat" className="text-red-500 hover:text-red-700 p-1 transition-colors">
+                                    <Trash2 size={15} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
     </div>
