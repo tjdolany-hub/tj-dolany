@@ -88,19 +88,28 @@ export async function POST(
     contentParts.push(lineupStr);
   }
 
-  // 4. Branky (goals — Dolany scorers - Opponent scorers, no minutes)
+  // 4. Branky — aggregate per player, sort by count desc, format "2x Name"
   const dolanyScorers = (match.match_scorers as { goals: number; is_penalty: boolean; players: { name: string } }[] | null) ?? [];
   const oppScorers = (match.match_opponent_scorers as { name: string; is_penalty: boolean }[] | null) ?? [];
   if (dolanyScorers.length > 0 || oppScorers.length > 0) {
-    const dolanyNames = dolanyScorers.map((s) => {
-      const base = s.players.name;
-      const suffix = s.is_penalty ? " z pen." : "";
-      return s.goals > 1 ? `${base}${suffix} ${s.goals}` : `${base}${suffix}`;
-    });
-    const oppNames = oppScorers.map((s) => {
-      const suffix = s.is_penalty ? " z pen." : "";
-      return `${s.name}${suffix}`;
-    });
+    // Aggregate Dolany goals per player
+    const dolanyMap = new Map<string, number>();
+    for (const s of dolanyScorers) {
+      dolanyMap.set(s.players.name, (dolanyMap.get(s.players.name) || 0) + s.goals);
+    }
+    const dolanyNames = [...dolanyMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => count > 1 ? `${count}x ${name}` : name);
+
+    // Aggregate opponent goals per player
+    const oppMap = new Map<string, number>();
+    for (const s of oppScorers) {
+      oppMap.set(s.name, (oppMap.get(s.name) || 0) + 1);
+    }
+    const oppNames = [...oppMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => count > 1 ? `${count}x ${name}` : name);
+
     const goalParts = [dolanyNames.join(", "), oppNames.join(", ")].filter(Boolean);
     contentParts.push(`**Branky:** ${goalParts.join(" - ")}`);
   }
