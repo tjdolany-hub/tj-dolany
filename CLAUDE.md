@@ -61,7 +61,7 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 
 - **Plán akcí** (`/admin/events`) — 3 tabs: calendar events, weekly schedule (valid_from/valid_to date ranges), rental requests (approve/reject workflow)
 - **Zápasy** (`/admin/matches`) — 3 tabs: match results (lineup, scorers, cards, images, publish-to-article), season draws, league standings
-- **Hráči** (`/admin/players`) — player management with stats computed from match data, active/inactive filter tabs
+- **Hráči** (`/admin/players`) — table layout grouped by position (collapsible), stats from match data, active/inactive filter tabs. Players have `aliases` (text[]) for alternative name matching in imports (e.g., "Jirka Berger" → "Jiří Berger").
 - **Články** (`/admin/articles`) — article CRUD with markdown editor, image upload, editable publish date
 - **Uživatelé** (`/admin/users`) — read-only list of users with roles (admin/editor)
 - **Historie změn** (`/admin/audit`) — chronological audit log, filterable by entity type
@@ -140,11 +140,11 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Key Tables
 
-`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `match_opponent_lineup`, `match_opponent_scorers`, `match_opponent_cards`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`
+`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `match_opponent_lineup`, `match_opponent_scorers`, `match_opponent_cards`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`, `trainings`, `training_attendance`, `teams`
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–018). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked "SQL"`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–022). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked "SQL"`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
 
 ### Image Upload
 
@@ -212,7 +212,7 @@ Homepage H2 section headings use `font-extrabold` **without** the red bar decora
 - Season calculation: month >= 7 (August+) → year is season start; else previous year
 - Position values: `brankar`, `obrance`, `zaloznik`, `utocnik`
 - Event types: `zapas`, `trenink`, `akce`, `pronajem`, `volne`
-- `is_public` means "open to public attendance", NOT "visible in calendar" — all events show in calendar regardless
+- `is_public` means "open to public attendance", NOT "visible in calendar" — all events show in calendar regardless. The public calendar page uses `createServiceClient()` to bypass RLS and fetch all events including private rentals.
 
 ### Email System
 

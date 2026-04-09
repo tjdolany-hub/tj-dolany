@@ -172,17 +172,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
               transition={{ duration: 0.5, delay: 0.15 }}
               className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight"
             >
-              <span className="ticker-container">
-                <span className="ticker-ball">⚽</span>
-                {"TJ ".split("").map((ch, i) =>
-                  ch === " " ? <span key={i} className="ticker-space" style={{ "--char-index": i } as React.CSSProperties} /> : <span key={i} className="ticker-char" style={{ "--char-index": i } as React.CSSProperties}>{ch}</span>
-                )}
-                <span className="gradient-text">
-                  {"Dolany".split("").map((ch, i) =>
-                    <span key={i + 3} className="ticker-char" style={{ "--char-index": i + 3 } as React.CSSProperties}>{ch}</span>
-                  )}
-                </span>
-              </span>
+              TJ <span className="gradient-text">Dolany</span>
             </motion.h1>
 
             <motion.p
@@ -207,7 +197,8 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
         const homeTeam = nextMatch.is_home ? "TJ Dolany" : nextMatch.opponent;
         const awayTeam = nextMatch.is_home ? nextMatch.opponent : "TJ Dolany";
         return (
-          <div className="bg-brand-red text-white overflow-hidden">
+          <div className="bg-brand-red text-white overflow-hidden relative">
+            <span className="ticker-ball">⚽</span>
             <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-center gap-1.5 sm:gap-2.5">
               <span className="text-[11px] sm:text-sm font-semibold shrink-0">⚽ {formatMatchDate(nextMatch.date)}</span>
               <span className="text-[11px] sm:text-sm text-white/70 shrink-0">—</span>
