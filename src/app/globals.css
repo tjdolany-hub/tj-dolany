@@ -111,18 +111,39 @@ html { scroll-behavior: smooth; }
   top: 50%;
   transform: translateY(-50%);
   font-size: 1.1em;
-  animation: ball-roll 10s ease-in-out infinite;
+  animation: ball-roll 14s linear infinite;
   pointer-events: none;
   z-index: 2;
-  filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
 }
 
+/* Ball travels fast at the edges and slows across the middle third
+   (where the match info sits) so the letter highlight reads clearly. */
 @keyframes ball-roll {
-  0% { left: -1.5em; opacity: 0; transform: translateY(-50%) rotate(0deg); }
-  5% { opacity: 1; }
-  85% { left: 100%; opacity: 1; transform: translateY(-50%) rotate(720deg); }
-  90% { left: calc(100% + 2em); opacity: 0; transform: translateY(-80%) rotate(900deg); }
-  100% { left: -1.5em; opacity: 0; transform: translateY(-50%) rotate(0deg); }
+  0%   { left: -1.5em;               opacity: 0; transform: translateY(-50%) rotate(0deg); }
+  4%   { opacity: 1; }
+  18%  { left: 25%;                  opacity: 1; transform: translateY(-50%) rotate(180deg); }
+  50%  { left: 50%;                  opacity: 1; transform: translateY(-50%) rotate(360deg); }
+  82%  { left: 75%;                  opacity: 1; transform: translateY(-50%) rotate(540deg); }
+  94%  { left: 100%;                 opacity: 1; transform: translateY(-50%) rotate(720deg); }
+  97%  { left: calc(100% + 2em);     opacity: 0; transform: translateY(-80%) rotate(820deg); }
+  100% { left: -1.5em;               opacity: 0; transform: translateY(-50%) rotate(0deg); }
+}
+
+/* Per-letter highlight while the ball is passing over it. */
+.ticker-letter {
+  display: inline-block;
+  transform-origin: center bottom;
+  transition: transform 0.18s ease-out, text-shadow 0.18s ease-out, color 0.18s ease-out;
+  will-change: transform;
+}
+.ticker-letter-active {
+  transform: scale(1.1);
+  color: #fff;
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.95),
+    0 0 12px rgba(255, 255, 255, 0.6),
+    0 0 18px rgba(245, 197, 24, 0.45);
 }
 
 
