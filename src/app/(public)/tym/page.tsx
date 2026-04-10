@@ -100,22 +100,30 @@ export default async function TymPage() {
     matchMeta[m.id] = { season, half };
   }
 
-  // Build serializable stats entries
+  // Build serializable stats entries — skip rows referencing deleted/missing matches
   type StatsEntryOut = { player_id: string; season: string; half: "podzim" | "jaro"; type: "lineup" | "goal" | "card"; goals: number; card_type: string | null };
-  const statsEntries: StatsEntryOut[] = (lineups ?? []).map((l: StatRow) => ({
-    player_id: l.player_id,
-    season: matchMeta[l.match_id]?.season || "",
-    half: matchMeta[l.match_id]?.half || ("podzim" as const),
-    type: "lineup" as const,
-    goals: 0,
-    card_type: null,
-  }));
+  const statsEntries: StatsEntryOut[] = [];
+
+  for (const l of (lineups ?? []) as StatRow[]) {
+    const meta = matchMeta[l.match_id];
+    if (!meta) continue;
+    statsEntries.push({
+      player_id: l.player_id,
+      season: meta.season,
+      half: meta.half,
+      type: "lineup" as const,
+      goals: 0,
+      card_type: null,
+    });
+  }
 
   for (const s of (scorers ?? []) as ScorerRow[]) {
+    const meta = matchMeta[s.match_id];
+    if (!meta) continue;
     statsEntries.push({
       player_id: s.player_id,
-      season: matchMeta[s.match_id]?.season || "",
-      half: matchMeta[s.match_id]?.half || "podzim",
+      season: meta.season,
+      half: meta.half,
       type: "goal" as const,
       goals: s.goals,
       card_type: null,
@@ -123,10 +131,12 @@ export default async function TymPage() {
   }
 
   for (const c of (cards ?? []) as CardRow[]) {
+    const meta = matchMeta[c.match_id];
+    if (!meta) continue;
     statsEntries.push({
       player_id: c.player_id,
-      season: matchMeta[c.match_id]?.season || "",
-      half: matchMeta[c.match_id]?.half || "podzim",
+      season: meta.season,
+      half: meta.half,
       type: "card" as const,
       goals: 0,
       card_type: c.card_type,
