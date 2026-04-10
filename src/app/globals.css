@@ -114,7 +114,9 @@ html { scroll-behavior: smooth; }
   animation: ball-roll 14s linear infinite;
   pointer-events: none;
   z-index: 2;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+  /* grayscale+contrast strips the blue tint from Segoe UI Emoji on Windows
+     so the ball reads as classic black-and-white. */
+  filter: grayscale(1) contrast(1.15) drop-shadow(0 0 4px rgba(255, 255, 255, 0.55));
 }
 
 /* Ball travels fast at the edges and slows across the middle third
