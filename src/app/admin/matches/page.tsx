@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
+import { findPlayerByName } from "@/lib/player-match";
 import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -17,6 +18,9 @@ interface Player {
   name: string;
   position: string;
   active: boolean;
+  aliases: string[] | null;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 interface ScorerEntry {
@@ -546,29 +550,10 @@ export default function AdminMatchesPage() {
     return surnameA.localeCompare(surnameB, "cs");
   });
 
-  // Match parsed name (Surname Firstname) to DB player (Firstname Surname)
-  const findPlayer = (parsedName: string): Player | undefined => {
-    const nameLower = parsedName.toLowerCase();
-    const nameParts = nameLower.split(/\s+/);
-    // 1. Exact match
-    let player = players.find((p) => p.name.toLowerCase() === nameLower);
-    if (player) return player;
-    // 2. Reversed name match (parsed "Sedláček Pavel" → DB "Pavel Sedláček")
-    if (nameParts.length >= 2) {
-      const reversed = [...nameParts].reverse().join(" ");
-      player = players.find((p) => p.name.toLowerCase() === reversed);
-      if (player) return player;
-    }
-    // 3. Surname match — only if exactly one player matches
-    const surname = nameParts[0];
-    const surnameMatches = players.filter((p) => {
-      const pParts = p.name.toLowerCase().split(/\s+/);
-      return pParts[pParts.length - 1] === surname || pParts[0] === surname;
-    });
-    if (surnameMatches.length === 1) return surnameMatches[0];
-    // Ambiguous or no match
-    return undefined;
-  };
+  // Match parsed name (Surname Firstname or vice versa) to DB player.
+  // Uses shared matcher that is diacritics-insensitive and aware of aliases.
+  const findPlayer = (parsedName: string): Player | undefined =>
+    findPlayerByName(parsedName, players);
 
   const fillAllActive = () => {
     const activePlayers = players.filter((p) => p.active);

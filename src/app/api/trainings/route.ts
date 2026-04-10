@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { findPlayerByName } from "@/lib/player-match";
 
 // GET: list trainings with attendance, optionally filtered by season
 export async function GET(req: NextRequest) {
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
   // Fetch all players for name matching
   const { data: players } = await admin
     .from("players")
-    .select("id, name, first_name, last_name");
+    .select("id, name, first_name, last_name, aliases");
 
   if (!players) {
     return NextResponse.json({ error: "Nepodařilo se načíst hráče" }, { status: 500 });
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
   const playerMap = new Map<string, string>(); // playerName -> player_id
 
   for (const att of parsed.data.attendance) {
-    const matched = findPlayer(att.playerName, players);
+    const matched = findPlayerByName(att.playerName, players);
     if (matched) {
       playerMap.set(att.playerName, matched.id);
     } else {
@@ -199,51 +200,3 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ success: true });
 }
 
-// Player name matching logic (similar to match-parser)
-function findPlayer(
-  name: string,
-  players: { id: string; name: string; first_name: string | null; last_name: string | null }[]
-): { id: string; name: string } | undefined {
-  const nameLower = name.trim().toLowerCase();
-
-  // 1. Exact match on full name
-  let match = players.find((p) => p.name.toLowerCase() === nameLower);
-  if (match) return match;
-
-  // 2. Match on first_name + last_name
-  match = players.find((p) => {
-    const fullName = `${p.first_name || ""} ${p.last_name || ""}`.trim().toLowerCase();
-    return fullName === nameLower;
-  });
-  if (match) return match;
-
-  // 3. Reversed name match (e.g., "Karel Jaroslav" vs "Jaroslav Karel")
-  const parts = nameLower.split(/\s+/);
-  if (parts.length >= 2) {
-    const reversed = [...parts].reverse().join(" ");
-    match = players.find((p) => p.name.toLowerCase() === reversed);
-    if (match) return match;
-  }
-
-  // 4. Surname-only match (if unambiguous)
-  if (parts.length >= 1) {
-    const surname = parts[parts.length - 1];
-    const surnameMatches = players.filter((p) => {
-      const pParts = p.name.toLowerCase().split(/\s+/);
-      return pParts.some((pp) => pp === surname);
-    });
-    if (surnameMatches.length === 1) return surnameMatches[0];
-  }
-
-  // 5. Try first name match (if unambiguous)
-  if (parts.length >= 1) {
-    const firstName = parts[0];
-    const firstNameMatches = players.filter((p) => {
-      const pParts = p.name.toLowerCase().split(/\s+/);
-      return pParts[0] === firstName;
-    });
-    if (firstNameMatches.length === 1) return firstNameMatches[0];
-  }
-
-  return undefined;
-}

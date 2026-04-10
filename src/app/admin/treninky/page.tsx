@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
 import { getHoursPrague, formatTimePrague } from "@/lib/utils";
+import { findPlayerByName } from "@/lib/player-match";
 
 // ── Types ──
 
@@ -14,6 +15,9 @@ interface Player {
   name: string;
   position: string;
   active: boolean;
+  aliases: string[] | null;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 interface Training {
@@ -275,35 +279,6 @@ export default function AdminTreninkyPage() {
     await fetch(`/api/trainings?id=${id}`, { method: "DELETE" });
     loadData();
   };
-
-  // ── Player name matching ──
-
-  function findPlayerByName(name: string, playerList: Player[]): Player | undefined {
-    const nameLower = name.trim().toLowerCase();
-    // Exact match
-    let match = playerList.find((p) => p.name.toLowerCase() === nameLower);
-    if (match) return match;
-
-    // Reversed name
-    const parts = nameLower.split(/\s+/);
-    if (parts.length >= 2) {
-      const reversed = [...parts].reverse().join(" ");
-      match = playerList.find((p) => p.name.toLowerCase() === reversed);
-      if (match) return match;
-    }
-
-    // Surname match (unambiguous)
-    if (parts.length >= 1) {
-      const surname = parts[parts.length - 1];
-      const surnameMatches = playerList.filter((p) => {
-        const pParts = p.name.toLowerCase().split(/\s+/);
-        return pParts.some((pp) => pp === surname);
-      });
-      if (surnameMatches.length === 1) return surnameMatches[0];
-    }
-
-    return undefined;
-  }
 
   // ── Render helpers ──
 

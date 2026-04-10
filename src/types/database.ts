@@ -160,6 +160,7 @@ export interface Database {
           description: string | null;
           sort_order: number;
           active: boolean;
+          aliases: string[] | null;
           created_at: string;
         };
         Insert: {
@@ -176,6 +177,7 @@ export interface Database {
           description?: string | null;
           sort_order?: number;
           active?: boolean;
+          aliases?: string[] | null;
           created_at?: string;
         };
         Update: {
@@ -192,6 +194,7 @@ export interface Database {
           description?: string | null;
           sort_order?: number;
           active?: boolean;
+          aliases?: string[] | null;
           created_at?: string;
         };
         Relationships: [];
