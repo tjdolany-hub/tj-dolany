@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Check, X, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { LOCATION_LABELS } from "@/lib/utils";
+import { useIsAdmin } from "@/components/admin/AdminRoleContext";
 
 interface RentalRequest {
   id: string;
@@ -52,6 +53,7 @@ export default function RentalRequestsTab({
 }: {
   onPendingCountChange?: (count: number) => void;
 }) {
+  const isAdmin = useIsAdmin();
   const [requests, setRequests] = useState<RentalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -211,48 +213,52 @@ export default function RentalRequestsTab({
                       </span>
                     </td>
                     <td className="p-3 text-right">
-                      <div className="flex flex-col items-end gap-1">
-                        {r.status === "pending" && (
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() =>
-                                setExpandedId(isExpanded ? null : r.id)
-                              }
-                              className="text-text-muted hover:text-text p-1"
-                              title="Rozbalit"
-                            >
-                              {isExpanded ? (
-                                <ChevronUp size={16} />
-                              ) : (
-                                <ChevronDown size={16} />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleAction(r.id, "approved")}
-                              disabled={actionLoading === r.id}
-                              className="text-green-600 hover:text-green-800 p-1 disabled:opacity-50"
-                              title="Schválit"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleAction(r.id, "rejected")}
-                              disabled={actionLoading === r.id}
-                              className="text-red-500 hover:text-red-700 p-1 disabled:opacity-50"
-                              title="Zamítnout"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        )}
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          className="text-red-400 hover:text-red-600 p-1"
-                          title="Smazat"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                      {isAdmin ? (
+                        <div className="flex flex-col items-end gap-1">
+                          {r.status === "pending" && (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() =>
+                                  setExpandedId(isExpanded ? null : r.id)
+                                }
+                                className="text-text-muted hover:text-text p-1"
+                                title="Rozbalit"
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp size={16} />
+                                ) : (
+                                  <ChevronDown size={16} />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleAction(r.id, "approved")}
+                                disabled={actionLoading === r.id}
+                                className="text-green-600 hover:text-green-800 p-1 disabled:opacity-50"
+                                title="Schválit"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleAction(r.id, "rejected")}
+                                disabled={actionLoading === r.id}
+                                className="text-red-500 hover:text-red-700 p-1 disabled:opacity-50"
+                                title="Zamítnout"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            className="text-red-400 hover:text-red-600 p-1"
+                            title="Smazat"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-text-muted italic">pouze admin</span>
+                      )}
                     </td>
                   </tr>
                 );

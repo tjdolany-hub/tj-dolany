@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { sendRequestStatusNotification } from "@/lib/email";
+import { requireAdmin } from "@/lib/auth";
 
 const updateSchema = z.object({
   status: z.enum(["approved", "rejected"]),
@@ -14,13 +15,8 @@ export async function PUT(
 ) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
-  }
+  const authResult = await requireAdmin();
+  if (authResult.error) return authResult.error;
 
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);
@@ -146,13 +142,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
-  }
+  const authResult = await requireAdmin();
+  if (authResult.error) return authResult.error;
 
   const admin = await createServiceClient();
   const { error } = await admin.from("rental_requests").delete().eq("id", id);

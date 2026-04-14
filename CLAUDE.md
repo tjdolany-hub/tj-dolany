@@ -55,7 +55,35 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 
 ### Middleware
 
-`src/middleware.ts` refreshes Supabase auth session on every request and redirects unauthenticated users away from `/admin/*` to `/login`.
+`src/middleware.ts` refreshes Supabase auth session on every request and redirects unauthenticated users away from `/admin/*` to `/login`. Middleware does **not** enforce role — role checks live in API routes (`requireAdmin()` in `src/lib/auth.ts`) and in the admin layout (loads role, passes to `AdminRoleProvider`).
+
+### Role-based permissions
+
+Two roles in `public.profiles.role`: `admin` | `editor`.
+
+- **Editor** — full CRUD on content (articles, players, matches, calendar, weekly schedule, trainings, kronika, teams, galleries), read-only on audit log, can restore from trash.
+- **Admin** — everything editor can do, plus: user management (`/admin/users`), approve/reject/delete rental requests, permanently delete from trash.
+
+Enforcement layers:
+
+1. **API routes** — admin-only endpoints call `requireAdmin()` from `src/lib/auth.ts` (returns 403 early). Regular authenticated endpoints use `getSession()`. Admin-only endpoints today: `POST/PATCH/DELETE /api/users/*`, `POST /api/users/[id]/reset-password`, `PUT/DELETE /api/rental-requests/[id]`, `DELETE /api/trash/[id]`.
+2. **Client UI** — `useIsAdmin()` / `useAdminSession()` from `src/components/admin/AdminRoleContext` hide admin-only actions. Sidebar `NAV` items with `adminOnly: true` are filtered out for editors.
+3. **Database RLS** — migration 024 tightened `profiles`: authenticated users can SELECT all and UPDATE only their own row; role/insert/delete is funnelled through service_role API routes. Other admin tables still use blanket `authenticated` policies — defense-in-depth for admin-only operations relies on app-level `requireAdmin()`, not RLS.
+
+Invariants enforced in app code:
+- Cannot demote the last admin to editor.
+- Cannot delete the last admin.
+- Cannot delete your own account.
+
+### Password reset
+
+Supabase's built-in SMTP is not configured — all auth emails go through Resend.
+
+- **Admin-initiated** (`/admin/users` → „Reset hesla") — `POST /api/users/[id]/reset-password` generates a recovery link via `supabase.auth.admin.generateLink({ type: 'recovery' })`, then `sendPasswordResetEmail()` sends it.
+- **Self-serve** (`/forgot-password`) — `POST /api/auth/request-reset` (public, rate-limited 5/hour/IP), always returns success to avoid leaking whether an email is registered.
+- **Reset page** (`/reset-password`) — handles both PKCE (`?code=`, exchanged via `exchangeCodeForSession`) and legacy hash (`#access_token=&type=recovery`, picked up automatically by supabase-js). Calls `auth.updateUser({ password })` then signs out and redirects to `/login`.
+
+Requires `https://tjdolany.net/reset-password` in Supabase Auth → URL Configuration (allowed redirect URLs), and Resend domain verification for tjdolany.net before emails can reach arbitrary recipients.
 
 ### Admin Pages
 
@@ -63,7 +91,7 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 - **Zápasy** (`/admin/matches`) — 3 tabs: match results (lineup, scorers, cards, images, publish-to-article), season draws, league standings
 - **Hráči** (`/admin/players`) — table layout grouped by position (collapsible), stats from match data, active/inactive filter tabs. Players have `aliases` (text[]) for alternative name matching in imports (e.g., "Jirka Berger" → "Jiří Berger").
 - **Články** (`/admin/articles`) — article CRUD with markdown editor, image upload, editable publish date
-- **Uživatelé** (`/admin/users`) — read-only list of users with roles (admin/editor)
+- **Uživatelé** (`/admin/users`) — admin-only. Create new user (email, name, role, initial password, optional email invite), inline role change, admin-triggered password reset, delete. Last admin protected from demotion/deletion; self-delete blocked.
 - **Historie změn** (`/admin/audit`) — chronological audit log, filterable by entity type
 - **Koš** (`/admin/trash`) — soft-deleted items with restore and permanent delete, 30-day countdown
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -92,6 +93,15 @@ export default function LoginPage() {
           >
             {loading ? "Přihlašování..." : "Přihlásit se"}
           </button>
+
+          <div className="text-center">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-gray-400 hover:text-white"
+            >
+              Zapomenuté heslo?
+            </Link>
+          </div>
         </form>
       </div>
     </div>

@@ -8,8 +8,8 @@ export interface Database {
           id: string;
           user_id: string | null;
           user_email: string;
-          action: "create" | "update" | "delete" | "restore";
-          entity_type: "article" | "match" | "calendar_event" | "player";
+          action: "create" | "update" | "delete" | "restore" | "reset_password";
+          entity_type: "article" | "match" | "calendar_event" | "player" | "user";
           entity_id: string;
           entity_title: string | null;
           created_at: string;
@@ -18,8 +18,8 @@ export interface Database {
           id?: string;
           user_id?: string | null;
           user_email: string;
-          action: "create" | "update" | "delete" | "restore";
-          entity_type: "article" | "match" | "calendar_event" | "player";
+          action: "create" | "update" | "delete" | "restore" | "reset_password";
+          entity_type: "article" | "match" | "calendar_event" | "player" | "user";
           entity_id: string;
           entity_title?: string | null;
           created_at?: string;
@@ -28,8 +28,8 @@ export interface Database {
           id?: string;
           user_id?: string | null;
           user_email?: string;
-          action?: "create" | "update" | "delete" | "restore";
-          entity_type?: "article" | "match" | "calendar_event" | "player";
+          action?: "create" | "update" | "delete" | "restore" | "reset_password";
+          entity_type?: "article" | "match" | "calendar_event" | "player" | "user";
           entity_id?: string;
           entity_title?: string | null;
           created_at?: string;

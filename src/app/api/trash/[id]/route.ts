@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { requireAdmin } from "@/lib/auth";
 
 export async function PUT(
   req: NextRequest,
@@ -43,11 +44,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
-  }
+  const authResult = await requireAdmin();
+  if (authResult.error) return authResult.error;
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");

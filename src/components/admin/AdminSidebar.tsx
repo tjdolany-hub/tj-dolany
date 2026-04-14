@@ -24,7 +24,14 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  adminOnly?: boolean;
+};
+
+const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/articles", label: "Články", icon: FileText },
   { href: "/admin/players", label: "Hráči", icon: Users },
@@ -33,12 +40,13 @@ const NAV = [
   { href: "/admin/treninky", label: "Tréninky", icon: ClipboardList },
   { href: "/admin/kronika", label: "Kronika", icon: BookOpen },
   { href: "/admin/teams", label: "Týmy", icon: Flag },
-  { href: "/admin/users", label: "Uživatelé", icon: ShieldIcon },
+  { href: "/admin/users", label: "Uživatelé", icon: ShieldIcon, adminOnly: true },
   { href: "/admin/audit", label: "Historie změn", icon: History },
   { href: "/admin/trash", label: "Koš", icon: Trash2 },
 ];
 
-function SidebarContent({ pathname, onLogout, onNavClick }: { pathname: string; onLogout: () => void; onNavClick?: () => void }) {
+function SidebarContent({ pathname, role, onLogout, onNavClick }: { pathname: string; role: "admin" | "editor"; onLogout: () => void; onNavClick?: () => void }) {
+  const visibleNav = NAV.filter((item) => !item.adminOnly || role === "admin");
   return (
     <>
       <div className="p-5 border-b border-white/10">
@@ -52,7 +60,7 @@ function SidebarContent({ pathname, onLogout, onNavClick }: { pathname: string; 
       </div>
 
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {NAV.map((item) => (
+        {visibleNav.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -94,7 +102,7 @@ function SidebarContent({ pathname, onLogout, onNavClick }: { pathname: string; 
   );
 }
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ role }: { role: "admin" | "editor" }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -130,14 +138,14 @@ export default function AdminSidebar() {
             >
               <X size={20} />
             </button>
-            <SidebarContent pathname={pathname} onLogout={handleLogout} onNavClick={() => setMobileOpen(false)} />
+            <SidebarContent pathname={pathname} role={role} onLogout={handleLogout} onNavClick={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <aside className="fixed left-0 top-0 h-screen w-64 bg-brand-dark border-r border-white/10 flex-col z-40 hidden lg:flex">
-        <SidebarContent pathname={pathname} onLogout={handleLogout} />
+        <SidebarContent pathname={pathname} role={role} onLogout={handleLogout} />
       </aside>
     </>
   );

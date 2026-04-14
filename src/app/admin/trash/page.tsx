@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { useIsAdmin } from "@/components/admin/AdminRoleContext";
 
 interface TrashItem {
   id: string;
@@ -30,6 +31,7 @@ function daysUntilPurge(deletedAt: string): number {
 }
 
 export default function AdminTrashPage() {
+  const isAdmin = useIsAdmin();
   const [items, setItems] = useState<TrashItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -127,12 +129,14 @@ export default function AdminTrashPage() {
                   >
                     <RotateCcw size={14} /> Obnovit
                   </button>
-                  <button
-                    onClick={() => permanentDelete(item)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
-                  >
-                    <Trash2 size={14} /> Smazat trvale
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => permanentDelete(item)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+                    >
+                      <Trash2 size={14} /> Smazat trvale
+                    </button>
+                  )}
                 </div>
               </div>
             );

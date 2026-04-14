@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-type AuditAction = "create" | "update" | "delete" | "restore";
-type EntityType = "article" | "match" | "calendar_event" | "player";
+type AuditAction = "create" | "update" | "delete" | "restore" | "reset_password";
+type EntityType = "article" | "match" | "calendar_event" | "player" | "user";
 
 interface AuditEntry {
   userId: string;

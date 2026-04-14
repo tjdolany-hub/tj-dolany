@@ -120,3 +120,53 @@ export async function sendRequestStatusNotification(
     html,
   });
 }
+
+export async function sendUserInviteEmail(
+  to: string,
+  name: string,
+  role: "admin" | "editor",
+  initialPassword: string,
+) {
+  const roleLabel = role === "admin" ? "Administrátor" : "Editor";
+  const loginUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://tjdolany.net"}/login`;
+
+  const html = `
+    <h2>Byl Vám vytvořen přístup do administrace TJ Dolany</h2>
+    <p>Dobrý den${name ? " " + name : ""},</p>
+    <p>byl Vám zřízen přístup do administrace webu <a href="https://tjdolany.net">tjdolany.net</a>.</p>
+    <table style="border-collapse:collapse;font-family:sans-serif;margin:16px 0;">
+      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Role:</td><td>${roleLabel}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">E-mail:</td><td>${to}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Počáteční heslo:</td><td><code style="background:#f5f5f5;padding:2px 6px;border-radius:4px;">${initialPassword}</code></td></tr>
+    </table>
+    <p>Přihlásit se můžete na adrese <a href="${loginUrl}">${loginUrl}</a>. Doporučujeme si po prvním přihlášení heslo změnit (odkaz „Zapomenuté heslo" na přihlašovací stránce).</p>
+    <p style="margin-top:24px;color:#666;">TJ Dolany — tjdolany.net</p>
+  `;
+
+  await resend.emails.send({
+    from: FROM,
+    replyTo: ADMIN_EMAIL,
+    to,
+    subject: "Přístup do administrace TJ Dolany",
+    html,
+  });
+}
+
+export async function sendPasswordResetEmail(to: string, resetLink: string) {
+  const html = `
+    <h2>Obnovení hesla</h2>
+    <p>Dobrý den,</p>
+    <p>byla vyžádána obnova hesla pro účet <strong>${to}</strong> v administraci TJ Dolany. Pro nastavení nového hesla klikněte na tlačítko níže:</p>
+    <p style="margin:24px 0;"><a href="${resetLink}" style="display:inline-block;background:#C41E3A;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;">Nastavit nové heslo</a></p>
+    <p style="color:#666;font-size:13px;">Pokud jste o obnovu nežádali, tento email ignorujte. Odkaz je platný 1 hodinu.</p>
+    <p style="margin-top:24px;color:#666;">TJ Dolany — tjdolany.net</p>
+  `;
+
+  await resend.emails.send({
+    from: FROM,
+    replyTo: ADMIN_EMAIL,
+    to,
+    subject: "Obnovení hesla — TJ Dolany",
+    html,
+  });
+}
