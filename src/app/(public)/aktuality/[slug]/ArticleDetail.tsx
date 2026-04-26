@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { marked } from "marked";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatDateCzech, CATEGORIES, isMidnightPrague, formatTimePrague } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
