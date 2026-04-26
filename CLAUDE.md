@@ -26,6 +26,7 @@ No test framework is configured.
 - **Sharp** — server-side image optimization (WebP, resize)
 - **Resend** — transactional email (rental request notifications, calendar backup)
 - **PDFKit** — server-side PDF generation (calendar backup)
+- **DOMPurify** — HTML sanitization for markdown-rendered content
 - **Framer Motion** — animations, **Lucide React** — icons, **Marked** — Markdown rendering
 
 ## Architecture
@@ -45,6 +46,8 @@ No test framework is configured.
 
 Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data to client components (`*Client.tsx`) that live alongside them. Example: `tym/page.tsx` → `tym/TymClient.tsx`. Public pages use `revalidate = 60` for ISR.
 
+`TymClient.tsx` is the orchestrator for the tým page — it renders the squad section inline and lazy-loads heavy sub-sections via `next/dynamic`: `MatchResultsSection.tsx`, `PlayerStatistics.tsx`, `LeagueTable.tsx`.
+
 ### Supabase Clients
 
 `src/lib/supabase/server.ts` exports two factories:
@@ -55,7 +58,7 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 
 ### Middleware
 
-`src/middleware.ts` refreshes Supabase auth session on every request and redirects unauthenticated users away from `/admin/*` to `/login`. Middleware does **not** enforce role — role checks live in API routes (`requireAdmin()` in `src/lib/auth.ts`) and in the admin layout (loads role, passes to `AdminRoleProvider`).
+`src/middleware.ts` refreshes Supabase auth session on every request. Auth check (`getUser()`) only runs for `/admin/*` paths — public pages skip it for performance. Unauthenticated users on `/admin/*` are redirected to `/login`. Middleware does **not** enforce role — role checks live in API routes (`requireAdmin()` in `src/lib/auth.ts`) and in the admin layout (loads role, passes to `AdminRoleProvider`).
 
 ### Role-based permissions
 
@@ -141,6 +144,10 @@ Published articles and matches show a share button (Share2 icon) that opens a di
 
 Articles have OG meta tags (`og:title`, `og:description`, `og:image`) for rich Facebook previews.
 
+### JSON-LD
+
+A single `SportsOrganization` JSON-LD block lives in the root `layout.tsx` `<head>` — applies to all pages. Contains name, address (Dolany 98, 552 01), geo coordinates, email (`tjdolany@seznam.cz`), phone, URL. Do not duplicate in individual page components.
+
 ### Match Report Parser
 
 `src/lib/match-parser.ts` — pure regex parser that takes text copied from the district FA website and returns structured data (date, time, round, competition, teams, score, halftime, goals with minutes, lineups with jersey numbers/positions/cards, referee, venue, spectators). The admin match form has a "Vložit zápis" textarea that calls `parseMatchReport()` and pre-fills all fields. Key design: lineups are parsed BEFORE goals so goal side (home/away) can be determined by cross-referencing scorer names against lineup names. Penalty auto-detection is disabled (two-column text linearization makes it unreliable).
@@ -160,7 +167,13 @@ Legacy free-text fields `opponent_scorers` and `opponent_cards` on `match_result
 
 ### YouTube Video Embed
 
-`ArticleDetail.tsx` auto-detects YouTube URLs in article content and replaces them with responsive iframe embeds (`aspect-video`).
+`ArticleDetail.tsx` auto-detects YouTube URLs in article content and replaces them with responsive iframe embeds (`aspect-video`). Article markdown is sanitized with DOMPurify before rendering (allows `iframe` for video embeds).
+
+### Player Season Stats (Pre-aggregated)
+
+`player_season_stats` table holds pre-computed per-player per-season per-half (podzim/jaro) statistics: matches, goals, yellows, reds. Recomputed automatically when matches are created/updated/deleted via `recomputeSeasonStats()` from `src/lib/stats.ts`. Homepage and tým page read from this table instead of scanning all `match_lineups`/`match_scorers`/`match_cards` rows.
+
+`POST /api/stats/recompute` — authenticated endpoint that recomputes all seasons (one-time backfill or manual refresh).
 
 ### Database Types
 
@@ -168,11 +181,11 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Key Tables
 
-`articles`, `article_images`, `players`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `match_opponent_lineup`, `match_opponent_scorers`, `match_opponent_cards`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`, `trainings`, `training_attendance`, `teams`
+`articles`, `article_images`, `players`, `player_season_stats`, `calendar_events`, `weekly_schedule`, `rental_requests`, `match_results`, `match_lineups`, `match_scorers`, `match_cards`, `match_images`, `match_opponent_lineup`, `match_opponent_scorers`, `match_opponent_cards`, `season_draws`, `league_standings`, `photo_albums`, `photos`, `profiles`, `audit_log`, `trainings`, `training_attendance`, `teams`
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–022). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked "SQL"`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–025). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
 
 ### Image Upload
 
@@ -194,7 +207,7 @@ Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna`
 
 - Brand colors: `brand-red` (#C41E3A), `brand-yellow` (#F5C518), `brand-dark` (#111111 warm black, not navy)
 - Dark mode is the **default** for new visitors. `data-theme="dark"` attribute on `<html>`, CSS variable overrides in `globals.css` — do NOT use Tailwind `dark:` prefix, it won't work with this setup. Light mode activates only when user explicitly toggles (saved as `localStorage.theme = 'light'`)
-- Font: Inter (heading + body)
+- Font: Inter (heading + body), self-hosted via `next/font/google` in `layout.tsx` (no external Google Fonts CDN requests)
 
 ### Custom CSS & Components
 
