@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import PlanAkciClient from "./PlanAkciClient";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Plán akcí a zápasů",

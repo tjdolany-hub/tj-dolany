@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -90,5 +91,6 @@ export async function POST(req: NextRequest) {
     await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "create", entityType: "calendar_event", entityId: event.id, entityTitle: event.title });
   }
 
+  revalidatePublicPages();
   return NextResponse.json(event, { status: 201 });
 }

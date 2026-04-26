@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { recomputeSeasonStats, getSeasonForDate } from "@/lib/stats";
@@ -215,5 +216,6 @@ export async function POST(req: NextRequest) {
   const season = getSeasonForDate(new Date(match.date), match.season);
   recomputeSeasonStats(admin, season).catch(() => {});
 
+  revalidatePublicPages();
   return NextResponse.json(match, { status: 201 });
 }

@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSeasonForDate } from "@/lib/stats";
 import HomeClient from "./HomeClient";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export default async function HomePage() {
   const supabase = await createClient();

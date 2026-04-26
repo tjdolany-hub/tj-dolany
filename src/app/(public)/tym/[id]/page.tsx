@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import PlayerDetailClient from "./PlayerDetailClient";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { sendRequestStatusNotification } from "@/lib/email";
@@ -21,6 +22,7 @@ export async function PUT(
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
+    revalidatePublicPages();
     return NextResponse.json(
       { error: parsed.error.issues[0].message },
       { status: 400 }
@@ -92,6 +94,7 @@ export async function PUT(
       .single();
 
     if (calError) {
+      revalidatePublicPages();
       return NextResponse.json(
         { error: "Chyba při vytváření události: " + calError.message },
         { status: 500 }
@@ -133,6 +136,7 @@ export async function PUT(
     console.error("Failed to send status notification email");
   }
 
+  revalidatePublicPages();
   return NextResponse.json({ success: true });
 }
 
@@ -152,5 +156,6 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidatePublicPages();
   return NextResponse.json({ success: true });
 }

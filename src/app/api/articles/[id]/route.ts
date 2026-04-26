@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import { logAudit } from "@/lib/audit";
@@ -102,6 +103,7 @@ export async function PUT(
     await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "update", entityType: "article", entityId: id, entityTitle: article.title });
   }
 
+  revalidatePublicPages();
   return NextResponse.json(article);
 }
 
@@ -126,5 +128,6 @@ export async function DELETE(
 
   await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "delete", entityType: "article", entityId: id, entityTitle: article?.title ?? null });
 
+  revalidatePublicPages();
   return NextResponse.json({ success: true });
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 
@@ -157,6 +158,7 @@ export async function POST(
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
     await syncImages(existingArticleId);
+    revalidatePublicPages();
     return NextResponse.json({ article_id: existingArticleId, slug, title, updated: true });
   } else {
     // Create new
@@ -186,6 +188,7 @@ export async function POST(
 
     await syncImages(article.id);
 
+    revalidatePublicPages();
     return NextResponse.json({
       article_id: article.id,
       slug,

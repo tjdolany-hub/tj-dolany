@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
@@ -43,6 +44,7 @@ export async function PUT(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidatePublicPages();
   return NextResponse.json(entry);
 }
 
@@ -68,5 +70,6 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidatePublicPages();
   return NextResponse.json({ success: true });
 }

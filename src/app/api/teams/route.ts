@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const parsed = teamSchema.safeParse(body);
   if (!parsed.success) {
+    revalidatePublicPages();
     return NextResponse.json(
       { error: parsed.error.issues[0].message },
       { status: 400 }
@@ -47,5 +49,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidatePublicPages();
   return NextResponse.json(team, { status: 201 });
 }

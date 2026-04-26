@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
@@ -36,6 +37,7 @@ export async function PUT(
   const entityType = type === "calendar_event" ? "calendar_event" : type === "match" ? "match" : "article";
   await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "restore", entityType, entityId: id, entityTitle: title });
 
+  revalidatePublicPages();
   return NextResponse.json({ success: true });
 }
 
@@ -67,5 +69,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Neplatný typ" }, { status: 400 });
   }
 
+  revalidatePublicPages();
   return NextResponse.json({ success: true });
 }

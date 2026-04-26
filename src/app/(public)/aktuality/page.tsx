@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import AktualityClient from "./AktualityClient";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Aktuality",

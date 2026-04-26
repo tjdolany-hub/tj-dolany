@@ -6,7 +6,7 @@ import ArticleDetail from "./ArticleDetail";
 import type { MatchData } from "./ArticleDetail";
 import type { Database } from "@/types/database";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 type ArticleRow = Database["public"]["Tables"]["articles"]["Row"];
 type ArticleImageRow = Database["public"]["Tables"]["article_images"]["Row"];

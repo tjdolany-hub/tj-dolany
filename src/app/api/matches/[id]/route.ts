@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { recomputeSeasonStats, getSeasonForDate } from "@/lib/stats";
@@ -298,6 +299,7 @@ export async function PUT(
     recomputeSeasonStats(admin, season).catch(() => {});
   }
 
+  revalidatePublicPages();
   return NextResponse.json(updated);
 }
 
@@ -326,5 +328,6 @@ export async function DELETE(
   const title = match ? `${match.is_home ? "TJ Dolany" : match.opponent} vs ${match.is_home ? match.opponent : "TJ Dolany"}` : null;
   await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "delete", entityType: "match", entityId: id, entityTitle: title });
 
+  revalidatePublicPages();
   return NextResponse.json({ success: true });
 }

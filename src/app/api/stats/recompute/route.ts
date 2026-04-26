@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePublicPages } from "@/lib/revalidate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { recomputeAllSeasons } from "@/lib/stats";
 
@@ -12,5 +13,6 @@ export async function POST() {
   const admin = await createServiceClient();
   const seasons = await recomputeAllSeasons(admin);
 
+  revalidatePublicPages();
   return NextResponse.json({ ok: true, seasons });
 }

@@ -3,7 +3,7 @@ import { getSeasonForDate } from "@/lib/stats";
 import type { Metadata } from "next";
 import TymClient from "./TymClient";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Tým a výsledky",
