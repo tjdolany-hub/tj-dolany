@@ -26,7 +26,7 @@ No test framework is configured.
 - **Sharp** — server-side image optimization (WebP, resize)
 - **Resend** — transactional email (rental request notifications, calendar backup)
 - **PDFKit** — server-side PDF generation (calendar backup)
-- **DOMPurify** — HTML sanitization for markdown-rendered content
+- **isomorphic-dompurify** — HTML sanitization for markdown-rendered content (SSR-safe, works on server and client)
 - **Framer Motion** — animations, **Lucide React** — icons, **Marked** — Markdown rendering
 
 ## Architecture
@@ -44,7 +44,7 @@ No test framework is configured.
 
 ### Client/Server Component Pattern
 
-Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data to client components (`*Client.tsx`) that live alongside them. Example: `tym/page.tsx` → `tym/TymClient.tsx`. Public pages use `revalidate = 60` for ISR.
+Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data to client components (`*Client.tsx`) that live alongside them. Example: `tym/page.tsx` → `tym/TymClient.tsx`. Public pages use `revalidate = 3600` (1 hour) for ISR — admin mutations call `revalidatePublicPages()` from `src/lib/revalidate.ts` to invalidate the cache immediately.
 
 `TymClient.tsx` is the orchestrator for the tým page — it renders the squad section inline and lazy-loads heavy sub-sections via `next/dynamic`: `MatchResultsSection.tsx`, `PlayerStatistics.tsx`, `LeagueTable.tsx`.
 
@@ -113,6 +113,7 @@ Each resource has `src/app/api/{resource}/route.ts` (GET list, POST create) and 
 2. Check auth via `supabase.auth.getUser()`
 3. Use `createServiceClient()` for DB operations
 4. Log via `logAudit()` after successful mutation
+5. Call `revalidatePublicPages()` to invalidate ISR cache
 
 Exception: `POST /api/rental-requests` is public (no auth) with in-memory rate limiting (3 req/hour per IP).
 
