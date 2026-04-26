@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatDateCzech, CATEGORIES, isMidnightPrague, formatTimePrague } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
@@ -529,7 +530,8 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
 
 export default function ArticleDetail({ article, matchData, teams }: { article: Article; matchData?: MatchData | null; teams?: TeamEntry[] }) {
   const rawHtml = marked.parse(article.content) as string;
-  const html = renderContentWithVideo(rawHtml);
+  const sanitized = DOMPurify.sanitize(rawHtml, { ADD_TAGS: ["iframe"], ADD_ATTR: ["allow", "allowfullscreen", "frameborder"] });
+  const html = renderContentWithVideo(sanitized);
   const heroImage = article.article_images?.[0];
 
   return (

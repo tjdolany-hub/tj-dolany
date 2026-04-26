@@ -388,35 +388,6 @@ export default function OKlubuClient() {
 
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SportsOrganization",
-            name: "TJ Dolany",
-            sport: "Football",
-            foundingDate: "1970",
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: "Dolany 98",
-              postalCode: "552 01",
-              addressLocality: "Dolany u Jaroměře",
-              addressRegion: "Královéhradecký kraj",
-              addressCountry: "CZ",
-            },
-            geo: {
-              "@type": "GeoCoordinates",
-              latitude: "50.3735",
-              longitude: "15.9365",
-            },
-            email: "tjdolany@seznam.cz",
-            telephone: "+420604864424",
-            url: "https://tjdolany.net",
-          }),
-        }}
-      />
     </div>
   );
 }

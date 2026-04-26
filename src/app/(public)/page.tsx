@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSeasonForDate } from "@/lib/stats";
 import HomeClient from "./HomeClient";
 
 export const revalidate = 60;
@@ -7,11 +8,12 @@ export default async function HomePage() {
   const supabase = await createClient();
 
   const now = new Date().toISOString();
+  const currentSeason = getSeasonForDate(new Date());
 
   const [
     articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult,
-    recentMatchesResult, allScorersResult, allCardsResult, standingsResult, allStandingsResult, allLineupsResult,
-    teamsResult, allMatchIdsResult,
+    recentMatchesResult, standingsResult, allStandingsResult,
+    seasonStatsResult, teamsResult,
   ] = await Promise.all([
     supabase
       .from("articles")
@@ -51,7 +53,6 @@ export default async function HomePage() {
       .eq("published", true)
       .order("event_date", { ascending: false })
       .limit(4),
-    // Club banner + stats data (was sequential before)
     supabase
       .from("match_results")
       .select("id, date, opponent, score_home, score_away, is_home, competition, season, article_id, articles(slug)")
@@ -59,8 +60,6 @@ export default async function HomePage() {
       .lt("date", now)
       .order("date", { ascending: false })
       .limit(5),
-    supabase.from("match_scorers").select("player_id, goals, match_id, players(name)"),
-    supabase.from("match_cards").select("player_id, card_type, match_id, players(name)"),
     supabase
       .from("league_standings")
       .select("position, team_name, points")
@@ -71,9 +70,11 @@ export default async function HomePage() {
       .from("league_standings")
       .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
       .order("position", { ascending: true }),
-    supabase.from("match_lineups").select("player_id, match_id, players(name)"),
+    supabase
+      .from("player_season_stats")
+      .select("player_id, season, matches, goals, yellows, reds, players(name)")
+      .eq("season", currentSeason),
     supabase.from("teams").select("keywords, logo_url").order("name"),
-    supabase.from("match_results").select("id, date, season").is("deleted_at", null),
   ]);
 
   const articles = ((articlesResult.data ?? []) as unknown as {
@@ -94,7 +95,6 @@ export default async function HomePage() {
   const pastEvent = (pastEventResult.data?.[0] ?? null) as CalEvent | null;
   const futureEvents = (futureEventsResult.data ?? []) as CalEvent[];
 
-  // Try to find an article for the past event (by searching title words)
   if (pastEvent) {
     const searchTerm = pastEvent.title.split(" ").slice(0, 3).join(" ");
     const { data: matchingArticles } = await supabase
@@ -109,7 +109,6 @@ export default async function HomePage() {
     }
   }
 
-  // Build 3-card array: [past, next (highlighted), future]
   const heroEvents = [
     pastEvent,
     futureEvents[0] ?? null,
@@ -125,49 +124,42 @@ export default async function HomePage() {
       })()
     : null;
 
-  // ── Club banner data (from parallel queries above) ──
+  // ── Club banner data from pre-aggregated stats ──
   const recentMatches = recentMatchesResult.data;
-  const allScorers = allScorersResult.data;
-  const allCards = allCardsResult.data;
   const standings = standingsResult.data;
   const allStandings = allStandingsResult.data;
-  const allLineups = allLineupsResult.data;
+  const seasonStats = (seasonStatsResult.data ?? []) as unknown as {
+    player_id: string; season: string; matches: number; goals: number; yellows: number; reds: number;
+    players: { name: string } | null;
+  }[];
 
-  // Determine current season and build set of valid match IDs
-  const nowDate = new Date();
-  const currentSeasonYear = nowDate.getMonth() >= 7 ? nowDate.getFullYear() : nowDate.getFullYear() - 1;
-  const currentSeason = `${currentSeasonYear}/${currentSeasonYear + 1}`;
-
-  const currentSeasonMatchIds = new Set<string>();
-  for (const m of allMatchIdsResult.data ?? []) {
-    const d = new Date(m.date);
-    const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
-    const season = m.season || `${y}/${y + 1}`;
-    if (season === currentSeason) currentSeasonMatchIds.add(m.id);
+  // Aggregate per-player (stats table has podzim/jaro rows)
+  const playerAgg = new Map<string, { name: string; matches: number; goals: number; yellows: number; reds: number }>();
+  for (const s of seasonStats) {
+    const existing = playerAgg.get(s.player_id);
+    if (existing) {
+      existing.matches += s.matches;
+      existing.goals += s.goals;
+      existing.yellows += s.yellows;
+      existing.reds += s.reds;
+    } else {
+      playerAgg.set(s.player_id, {
+        name: s.players?.name || "?",
+        matches: s.matches,
+        goals: s.goals,
+        yellows: s.yellows,
+        reds: s.reds,
+      });
+    }
   }
 
-  // Compute top scorer (current season only, excluding deleted matches)
-  const scorerMap = new Map<string, { name: string; goals: number }>();
-  (allScorers ?? []).forEach((s: { player_id: string; goals: number; match_id: string; players: { name: string } | null }) => {
-    if (!currentSeasonMatchIds.has(s.match_id)) return;
-    const existing = scorerMap.get(s.player_id);
-    if (existing) existing.goals += s.goals;
-    else scorerMap.set(s.player_id, { name: s.players?.name || "?", goals: s.goals });
-  });
-  const topScorer = [...scorerMap.values()].sort((a, b) => b.goals - a.goals)[0] ?? null;
+  const topScorer = [...playerAgg.values()].filter((p) => p.goals > 0).sort((a, b) => b.goals - a.goals)[0] ?? null;
 
-  // Compute most cards (current season only, red = 2 points, yellow = 1)
-  const cardMap = new Map<string, { name: string; yellows: number; reds: number; score: number }>();
-  (allCards ?? []).forEach((c: { player_id: string; card_type: string; match_id: string; players: { name: string } | null }) => {
-    if (!currentSeasonMatchIds.has(c.match_id)) return;
-    const existing = cardMap.get(c.player_id) || { name: c.players?.name || "?", yellows: 0, reds: 0, score: 0 };
-    if (c.card_type === "red") { existing.reds++; existing.score += 2; }
-    else { existing.yellows++; existing.score += 1; }
-    cardMap.set(c.player_id, existing);
-  });
-  const topCards = [...cardMap.values()].sort((a, b) => b.score - a.score)[0] ?? null;
+  const topCards = [...playerAgg.values()]
+    .filter((p) => p.yellows > 0 || p.reds > 0)
+    .map((p) => ({ ...p, score: p.reds * 2 + p.yellows }))
+    .sort((a, b) => b.score - a.score)[0] ?? null;
 
-  // Build form array (last 5 results: V/R/P)
   type FormResult = "V" | "R" | "P";
   const form: FormResult[] = (recentMatches ?? []).map((m: { score_home: number; score_away: number; is_home: boolean }) => {
     const our = m.is_home ? m.score_home : m.score_away;
@@ -177,13 +169,12 @@ export default async function HomePage() {
     return "R" as FormResult;
   });
 
-  // Last match
   const lastMatch = recentMatches?.[0] as { id: string; date: string; opponent: string; score_home: number; score_away: number; is_home: boolean; articles: { slug: string } | null } | undefined ?? null;
 
   const clubBanner = {
     form,
-    topScorer,
-    topCards,
+    topScorer: topScorer ? { name: topScorer.name, goals: topScorer.goals } : null,
+    topCards: topCards ? { name: topCards.name, yellows: topCards.yellows, reds: topCards.reds, score: topCards.score } : null,
     lastMatch: lastMatch ? {
       opponent: lastMatch.opponent,
       score_home: lastMatch.score_home,
@@ -194,18 +185,8 @@ export default async function HomePage() {
     leaguePosition: standings?.[0]?.position ?? null,
   };
 
-  // Top 6 scorers
-  const top5Scorers = [...scorerMap.values()].sort((a, b) => b.goals - a.goals).slice(0, 6);
-
-  // Top 6 appearances (current season only)
-  const appearanceMap = new Map<string, { name: string; count: number }>();
-  (allLineups ?? []).forEach((l: { player_id: string; match_id: string; players: { name: string } | null }) => {
-    if (!currentSeasonMatchIds.has(l.match_id)) return;
-    const existing = appearanceMap.get(l.player_id);
-    if (existing) existing.count++;
-    else appearanceMap.set(l.player_id, { name: l.players?.name || "?", count: 1 });
-  });
-  const top5Appearances = [...appearanceMap.values()].sort((a, b) => b.count - a.count).slice(0, 6);
+  const top5Scorers = [...playerAgg.values()].filter((p) => p.goals > 0).sort((a, b) => b.goals - a.goals).slice(0, 6);
+  const top5Appearances = [...playerAgg.values()].filter((p) => p.matches > 0).sort((a, b) => b.matches - a.matches).slice(0, 6).map((p) => ({ name: p.name, count: p.matches }));
 
   const teams = (teamsResult.data ?? []) as { keywords: string[]; logo_url: string | null }[];
 

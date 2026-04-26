@@ -996,6 +996,47 @@ export interface Database {
         };
         Relationships: [];
       };
+      player_season_stats: {
+        Row: {
+          id: string;
+          player_id: string;
+          season: string;
+          half: "podzim" | "jaro";
+          matches: number;
+          goals: number;
+          yellows: number;
+          reds: number;
+        };
+        Insert: {
+          id?: string;
+          player_id: string;
+          season: string;
+          half: "podzim" | "jaro";
+          matches?: number;
+          goals?: number;
+          yellows?: number;
+          reds?: number;
+        };
+        Update: {
+          id?: string;
+          player_id?: string;
+          season?: string;
+          half?: "podzim" | "jaro";
+          matches?: number;
+          goals?: number;
+          yellows?: number;
+          reds?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_season_stats_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

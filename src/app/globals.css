@@ -17,8 +17,8 @@
   --color-text: #111111;
   --color-text-muted: #64748B;
 
-  --font-heading: "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-heading: inherit;
+  --font-body: inherit;
 }
 
 [data-theme="dark"] {

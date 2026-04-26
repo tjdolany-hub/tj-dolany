@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSeasonForDate } from "@/lib/stats";
 import type { Metadata } from "next";
 import TymClient from "./TymClient";
 
@@ -16,135 +17,84 @@ export const metadata: Metadata = {
 export default async function TymPage() {
   const supabase = await createClient();
 
-  // Determine current season
-  const now = new Date();
-  const currentSeasonYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
-  const currentSeason = `${currentSeasonYear}/${currentSeasonYear + 1}`;
+  const currentSeason = getSeasonForDate(new Date());
 
-  const [{ data: players }, { data: draws }, { data: matches }, { data: lineups }, { data: scorers }, { data: cards }, { data: matchScorersDetailed }, { data: matchCardsDetailed }, { data: oppScorers }, { data: oppCards }, { data: teamsData }] =
-    await Promise.all([
-      supabase
-        .from("players")
-        .select("*")
-        .eq("active", true)
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true }),
-      supabase
-        .from("season_draws")
-        .select("*")
-        .eq("active", true)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("match_results")
-        .select("*, articles(slug), match_images(url, alt, sort_order)")
-        .is("deleted_at", null)
-        .order("date", { ascending: true }),
-      supabase.from("match_lineups").select("player_id, match_id"),
-      supabase.from("match_scorers").select("player_id, goals, match_id"),
-      supabase.from("match_cards").select("player_id, card_type, match_id"),
-      // Detailed scorers for timeline (with minute, penalty, player name)
-      supabase.from("match_scorers").select("match_id, minute, is_penalty, players(name)"),
-      supabase.from("match_cards").select("match_id, card_type, minute, players(name)"),
-      supabase.from("match_opponent_scorers").select("match_id, name, minute, is_penalty"),
-      supabase.from("match_opponent_cards").select("match_id, name, card_type, minute"),
-      supabase.from("teams").select("keywords, logo_url").order("name"),
-    ]);
+  const [
+    { data: players }, { data: draws }, { data: matches },
+    { data: matchScorersDetailed }, { data: matchCardsDetailed },
+    { data: oppScorers }, { data: oppCards },
+    { data: teamsData }, { data: leagueStandings },
+    { data: allSeasonStats }, { data: currentSeasonStats },
+    { data: trainingAtt },
+  ] = await Promise.all([
+    supabase
+      .from("players")
+      .select("*")
+      .eq("active", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true }),
+    supabase
+      .from("season_draws")
+      .select("id, season, title, image, active, created_at")
+      .eq("active", true)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("match_results")
+      .select("*, articles(slug), match_images(url, alt, sort_order)")
+      .is("deleted_at", null)
+      .order("date", { ascending: true }),
+    supabase.from("match_scorers").select("match_id, minute, is_penalty, players(name)"),
+    supabase.from("match_cards").select("match_id, card_type, minute, players(name)"),
+    supabase.from("match_opponent_scorers").select("match_id, name, minute, is_penalty"),
+    supabase.from("match_opponent_cards").select("match_id, name, card_type, minute"),
+    supabase.from("teams").select("keywords, logo_url").order("name"),
+    supabase
+      .from("league_standings")
+      .select("id, season, variant, position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team")
+      .eq("season", currentSeason)
+      .order("position", { ascending: true }),
+    // All seasons stats for the statistics tab
+    supabase
+      .from("player_season_stats")
+      .select("player_id, season, half, matches, goals, yellows, reds"),
+    // Current season stats for squad section
+    supabase
+      .from("player_season_stats")
+      .select("player_id, matches, goals, yellows, reds")
+      .eq("season", currentSeason),
+    supabase
+      .from("training_attendance")
+      .select("player_id, response, trainings!inner(season)")
+      .eq("trainings.season", currentSeason),
+  ]);
 
-  // Build match_id -> season lookup
-  const matchSeasons: Record<string, string> = {};
-  for (const m of matches ?? []) {
-    const d = new Date(m.date);
-    const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
-    matchSeasons[m.id] = m.season || `${y}/${y + 1}`;
-  }
-
-  // Compute player stats for current season only
+  // Build playerStats for squad section from pre-aggregated current season data
   const playerStats: Record<string, { matches: number; goals: number; yellows: number; reds: number }> = {};
-
-  for (const l of lineups ?? []) {
-    if (matchSeasons[l.match_id] !== currentSeason) continue;
-    if (!playerStats[l.player_id]) playerStats[l.player_id] = { matches: 0, goals: 0, yellows: 0, reds: 0 };
-    playerStats[l.player_id].matches++;
-  }
-  for (const s of scorers ?? []) {
-    if (matchSeasons[s.match_id] !== currentSeason) continue;
-    if (!playerStats[s.player_id]) playerStats[s.player_id] = { matches: 0, goals: 0, yellows: 0, reds: 0 };
-    playerStats[s.player_id].goals += s.goals;
-  }
-  for (const c of cards ?? []) {
-    if (matchSeasons[c.match_id] !== currentSeason) continue;
-    if (!playerStats[c.player_id]) playerStats[c.player_id] = { matches: 0, goals: 0, yellows: 0, reds: 0 };
-    if (c.card_type === "yellow") playerStats[c.player_id].yellows++;
-    else playerStats[c.player_id].reds++;
+  for (const s of currentSeasonStats ?? []) {
+    const existing = playerStats[s.player_id];
+    if (existing) {
+      existing.matches += s.matches;
+      existing.goals += s.goals;
+      existing.yellows += s.yellows;
+      existing.reds += s.reds;
+    } else {
+      playerStats[s.player_id] = { matches: s.matches, goals: s.goals, yellows: s.yellows, reds: s.reds };
+    }
   }
 
-  // League standings
-  const { data: leagueStandings } = await supabase
-    .from("league_standings")
-    .select("*")
-    .eq("season", currentSeason)
-    .order("position", { ascending: true });
+  // Convert pre-aggregated stats to the format TymClient expects
+  type StatsEntryOut = { player_id: string; season: string; half: "podzim" | "jaro"; matches: number; goals: number; yellows: number; reds: number };
+  const statsEntries: StatsEntryOut[] = (allSeasonStats ?? []).map((s) => ({
+    player_id: s.player_id,
+    season: s.season,
+    half: s.half as "podzim" | "jaro",
+    matches: s.matches,
+    goals: s.goals,
+    yellows: s.yellows,
+    reds: s.reds,
+  }));
 
-  // Build all-time stats by season+half for the statistics tab
-  type StatRow = { player_id: string; match_id: string };
-  type ScorerRow = StatRow & { goals: number };
-  type CardRow = StatRow & { card_type: string };
-
-  // Attach season + half to each match
-  const matchMeta: Record<string, { season: string; half: "podzim" | "jaro" }> = {};
-  for (const m of matches ?? []) {
-    const d = new Date(m.date);
-    const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
-    const season = m.season || `${y}/${y + 1}`;
-    const half = d.getMonth() >= 7 ? "podzim" as const : "jaro" as const;
-    matchMeta[m.id] = { season, half };
-  }
-
-  // Build serializable stats entries — skip rows referencing deleted/missing matches
-  type StatsEntryOut = { player_id: string; season: string; half: "podzim" | "jaro"; type: "lineup" | "goal" | "card"; goals: number; card_type: string | null };
-  const statsEntries: StatsEntryOut[] = [];
-
-  for (const l of (lineups ?? []) as StatRow[]) {
-    const meta = matchMeta[l.match_id];
-    if (!meta) continue;
-    statsEntries.push({
-      player_id: l.player_id,
-      season: meta.season,
-      half: meta.half,
-      type: "lineup" as const,
-      goals: 0,
-      card_type: null,
-    });
-  }
-
-  for (const s of (scorers ?? []) as ScorerRow[]) {
-    const meta = matchMeta[s.match_id];
-    if (!meta) continue;
-    statsEntries.push({
-      player_id: s.player_id,
-      season: meta.season,
-      half: meta.half,
-      type: "goal" as const,
-      goals: s.goals,
-      card_type: null,
-    });
-  }
-
-  for (const c of (cards ?? []) as CardRow[]) {
-    const meta = matchMeta[c.match_id];
-    if (!meta) continue;
-    statsEntries.push({
-      player_id: c.player_id,
-      season: meta.season,
-      half: meta.half,
-      type: "card" as const,
-      goals: 0,
-      card_type: c.card_type,
-    });
-  }
-
-  // Available seasons
-  const availableSeasons = [...new Set(Object.values(matchMeta).map((m) => m.season))].sort().reverse();
+  const availableSeasons = [...new Set(statsEntries.map((s) => s.season))].sort().reverse();
 
   // Build per-match event data for timeline display
   type MatchEvent = {
@@ -158,7 +108,6 @@ export default async function TymPage() {
 
   for (const s of (matchScorersDetailed ?? []) as { match_id: string; minute: number | null; is_penalty: boolean; players: { name: string } | null }[]) {
     if (!matchEvents[s.match_id]) matchEvents[s.match_id] = [];
-    // Determine side: Dolany scorers are always "our" team
     const m = (matches ?? []).find((x) => x.id === s.match_id);
     matchEvents[s.match_id].push({
       type: "goal",
@@ -205,12 +154,7 @@ export default async function TymPage() {
     });
   }
 
-  // Fetch training attendance stats for current season
-  const { data: trainingAtt } = await supabase
-    .from("training_attendance")
-    .select("player_id, response, trainings!inner(season)")
-    .eq("trainings.season", currentSeason);
-
+  // Training attendance
   const trainingStatsMap: Record<string, { jde: number; nejde: number; neodpovedel: number; total: number }> = {};
   for (const a of trainingAtt ?? []) {
     if (!trainingStatsMap[a.player_id]) {

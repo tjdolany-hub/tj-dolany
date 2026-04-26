@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { recomputeSeasonStats, getSeasonForDate } from "@/lib/stats";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -292,6 +293,11 @@ export async function PUT(
     }
   }
 
+  if (updated) {
+    const season = getSeasonForDate(new Date(updated.date), updated.season);
+    recomputeSeasonStats(admin, season).catch(() => {});
+  }
+
   return NextResponse.json(updated);
 }
 
@@ -308,9 +314,14 @@ export async function DELETE(
 
   const admin = await createServiceClient();
 
-  const { data: match } = await admin.from("match_results").select("opponent, is_home").eq("id", id).single();
+  const { data: match } = await admin.from("match_results").select("opponent, is_home, date, season").eq("id", id).single();
 
   await admin.from("match_results").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+
+  if (match) {
+    const season = getSeasonForDate(new Date(match.date), match.season);
+    recomputeSeasonStats(admin, season).catch(() => {});
+  }
 
   const title = match ? `${match.is_home ? "TJ Dolany" : match.opponent} vs ${match.is_home ? match.opponent : "TJ Dolany"}` : null;
   await logAudit(admin, { userId: user.id, userEmail: user.email ?? "", action: "delete", entityType: "match", entityId: id, entityTitle: title });

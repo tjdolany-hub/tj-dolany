@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -18,7 +19,7 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-async function getArticle(slug: string): Promise<ArticleWithImages | null> {
+const getArticle = cache(async (slug: string): Promise<ArticleWithImages | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("articles")
@@ -29,12 +30,11 @@ async function getArticle(slug: string): Promise<ArticleWithImages | null> {
 
   if (!data || data.length === 0) return null;
   return data[0] as unknown as ArticleWithImages;
-}
+});
 
 async function getMatchData(articleId: string): Promise<MatchData | null> {
   const supabase = await createClient();
 
-  // Find match linked to this article
   const { data: match } = await supabase
     .from("match_results")
     .select("id, date, opponent, score_home, score_away, is_home, competition, season, halftime_home, halftime_away, venue, video_url, opponent_scorers, opponent_cards, round, referee, delegate, spectators, match_number, match_type")
@@ -44,7 +44,6 @@ async function getMatchData(articleId: string): Promise<MatchData | null> {
 
   if (!match) return null;
 
-  // Fetch lineups, scorers, cards, opponent data in parallel
   const [{ data: lineups }, { data: scorers }, { data: cards }, { data: oppLineup }, { data: oppScorers }, { data: oppCards }] = await Promise.all([
     supabase
       .from("match_lineups")
@@ -143,11 +142,12 @@ export default async function ArticlePage({ params }: Props) {
 
   if (!article) notFound();
 
-  const matchData = await getMatchData(article.id);
+  const supabase = await createClient();
+  const [matchData, { data: teamsData }] = await Promise.all([
+    getMatchData(article.id),
+    supabase.from("teams").select("keywords, logo_url").order("name"),
+  ]);
 
-  // Fetch teams for logo lookup
-  const supabase2 = await createClient();
-  const { data: teamsData } = await supabase2.from("teams").select("keywords, logo_url").order("name");
   const teams = (teamsData ?? []) as { keywords: string[]; logo_url: string | null }[];
 
   return <ArticleDetail article={article} matchData={matchData} teams={teams} />;

@@ -19,6 +19,11 @@ export default async function PlanAkciPage() {
   const serviceClient = await createServiceClient();
   const now = new Date().toISOString();
 
+  // Calendar range: 12 months back, to end of next calendar year
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+  const endOfNextYear = `${new Date().getFullYear() + 1}-12-31T23:59:59.999Z`;
+
   const [{ data: upcoming }, { data: allEvents }, { data: schedule }] = await Promise.all([
     // Next 5 upcoming TJ events only (akce + zapas, not volne/pronajem)
     supabase
@@ -30,12 +35,13 @@ export default async function PlanAkciPage() {
       .gte("date", now)
       .order("date", { ascending: true })
       .limit(5),
-    // All events for calendar — uses service client to bypass RLS
-    // (is_public means "open to public attendance", not "visible in calendar")
+    // Events for calendar — 12 months back to end of next year
     serviceClient
       .from("calendar_events")
       .select("id, title, description, date, end_date, all_day, event_type, location, organizer, is_public")
       .is("deleted_at", null)
+      .gte("date", twelveMonthsAgo.toISOString())
+      .lte("date", endOfNextYear)
       .order("date", { ascending: true }),
     // Weekly schedule
     supabase

@@ -756,26 +756,6 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
 
       <div className="h-1 bg-gradient-to-r from-transparent via-brand-red/50 to-transparent" />
 
-      {/* ── JSON-LD ── */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SportsOrganization",
-            name: "TJ Dolany",
-            sport: "Football",
-            foundingDate: "1970",
-            address: {
-              "@type": "PostalAddress",
-              addressLocality: "Dolany u Jaroměře",
-              addressRegion: "Královéhradecký kraj",
-              addressCountry: "CZ",
-            },
-            url: "https://tjdolany.net",
-          }),
-        }}
-      />
     </>
   );
 }

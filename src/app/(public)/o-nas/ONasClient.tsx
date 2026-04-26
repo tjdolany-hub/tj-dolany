@@ -144,35 +144,6 @@ export default function ONasClient() {
         </section>
       </AnimatedSection>
 
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SportsOrganization",
-            name: "TJ Dolany",
-            sport: "Football",
-            foundingDate: "1970",
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: "Dolany 98",
-              postalCode: "552 01",
-              addressLocality: "Dolany u Jaroměře",
-              addressRegion: "Královéhradecký kraj",
-              addressCountry: "CZ",
-            },
-            geo: {
-              "@type": "GeoCoordinates",
-              latitude: "50.367",
-              longitude: "15.882",
-            },
-            email: "tjdolany@gmail.com",
-            telephone: "+420604864424",
-            url: "https://tjdolany.net",
-          }),
-        }}
-      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { recomputeSeasonStats, getSeasonForDate } from "@/lib/stats";
 import { z } from "zod";
 
 const matchSchema = z.object({
@@ -210,6 +211,9 @@ export async function POST(req: NextRequest) {
       });
     }
   }
+
+  const season = getSeasonForDate(new Date(match.date), match.season);
+  recomputeSeasonStats(admin, season).catch(() => {});
 
   return NextResponse.json(match, { status: 201 });
 }
