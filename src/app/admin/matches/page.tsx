@@ -577,7 +577,7 @@ export default function AdminMatchesPage() {
     const dateObj = parsed.date ? new Date(parsed.date) : null;
     let season = form.season;
     if (dateObj) {
-      const y = dateObj.getMonth() >= 6 ? dateObj.getFullYear() : dateObj.getFullYear() - 1;
+      const y = dateObj.getMonth() >= 7 ? dateObj.getFullYear() : dateObj.getFullYear() - 1;
       season = `${y}/${y + 1}`;
     }
 

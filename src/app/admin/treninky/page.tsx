@@ -159,8 +159,8 @@ function getSeason(dateStr: string): string {
   const d = new Date(dateStr);
   const year = d.getFullYear();
   const month = d.getMonth();
-  // Season: July+ = current year start, before July = previous year start
-  const startYear = month >= 6 ? year : year - 1;
+  // Season: August+ = current year start, before August = previous year start
+  const startYear = month >= 7 ? year : year - 1;
   return `${startYear}/${startYear + 1}`;
 }
 

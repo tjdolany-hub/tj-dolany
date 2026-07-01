@@ -26,6 +26,7 @@ const getArticle = cache(async (slug: string): Promise<ArticleWithImages | null>
     .select("*, article_images(id, url, alt, sort_order)")
     .eq("slug", slug)
     .eq("published", true)
+    .is("deleted_at", null)
     .limit(1);
 
   if (!data || data.length === 0) return null;
