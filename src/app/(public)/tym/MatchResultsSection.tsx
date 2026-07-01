@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import MatchGallery from "@/components/public/MatchGallery";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
-import { formatDateShort, formatTimePrague, isMidnightPrague } from "@/lib/utils";
+import { formatDateShort, formatTimePrague, isMidnightPrague, getSeasonForDate, getSeasonHalf } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
 import type { Database } from "@/types/database";
 
@@ -22,17 +22,6 @@ export type MatchEvent = {
   is_penalty: boolean;
   side: "home" | "away";
 };
-
-function getSeasonForDate(d: Date): string {
-  const year = d.getFullYear();
-  const month = d.getMonth();
-  if (month >= 7) return `${year}/${year + 1}`;
-  return `${year - 1}/${year}`;
-}
-
-function getHalfForDate(d: Date): "podzim" | "jaro" {
-  return d.getMonth() >= 7 ? "podzim" : "jaro";
-}
 
 function formatMatchTime(dateStr: string): string {
   const d = new Date(dateStr);
@@ -233,7 +222,7 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
 
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const defaultSeason = getSeasonForDate(nextMonth);
-  const defaultHalf = getHalfForDate(nextMonth);
+  const defaultHalf = getSeasonHalf(nextMonth);
 
   const availableSeasons = useMemo(() => {
     const set = new Set<string>();
@@ -254,7 +243,7 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
       .filter((m) => {
         const season = m.season || getSeasonForDate(new Date(m.date));
         if (season !== selectedSeason) return false;
-        const half = getHalfForDate(new Date(m.date));
+        const half = getSeasonHalf(new Date(m.date));
         return half === selectedHalf;
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

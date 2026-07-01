@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getSeasonForDate } from "@/lib/utils";
 import PlayerDetailClient from "./PlayerDetailClient";
 
 export const revalidate = 3600;
@@ -99,9 +100,7 @@ export default async function PlayerDetailPage({
   // Compute per-season stats
   const seasonStatsMap: Record<string, SeasonStats> = {};
   for (const m of matchResults ?? []) {
-    const d = new Date(m.date);
-    const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
-    const season = m.season || `${y}/${y + 1}`;
+    const season = getSeasonForDate(new Date(m.date), m.season);
     if (!seasonStatsMap[season]) {
       seasonStatsMap[season] = { season, matches: 0, goals: 0, yellows: 0, reds: 0 };
     }

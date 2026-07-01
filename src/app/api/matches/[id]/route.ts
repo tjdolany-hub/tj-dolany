@@ -78,6 +78,14 @@ export async function PUT(
 
   const admin = await createServiceClient();
 
+  // Capture the pre-update season so stats for the OLD season get rebuilt too
+  // when a match moves seasons (via season field or a date across the Aug boundary).
+  const { data: prevMatch } = await admin
+    .from("match_results")
+    .select("date, season")
+    .eq("id", id)
+    .single();
+
   if (Object.keys(data).length > 0) {
     const { error } = await admin
       .from("match_results")
@@ -295,8 +303,19 @@ export async function PUT(
   }
 
   if (updated) {
-    const season = getSeasonForDate(new Date(updated.date), updated.season);
-    recomputeSeasonStats(admin, season).catch(() => {});
+    // Recompute both the new season and (if it changed) the old one, so a match
+    // that moved seasons is un-counted from where it left. Awaited so serverless
+    // doesn't freeze the work; errors logged, not silently swallowed.
+    const seasons = new Set<string>();
+    seasons.add(getSeasonForDate(new Date(updated.date), updated.season));
+    if (prevMatch) seasons.add(getSeasonForDate(new Date(prevMatch.date), prevMatch.season));
+    for (const season of seasons) {
+      try {
+        await recomputeSeasonStats(admin, season);
+      } catch (e) {
+        console.error(`recomputeSeasonStats failed for season ${season}:`, e);
+      }
+    }
   }
 
   revalidatePublicPages();
@@ -322,7 +341,11 @@ export async function DELETE(
 
   if (match) {
     const season = getSeasonForDate(new Date(match.date), match.season);
-    recomputeSeasonStats(admin, season).catch(() => {});
+    try {
+      await recomputeSeasonStats(admin, season);
+    } catch (e) {
+      console.error(`recomputeSeasonStats failed for season ${season}:`, e);
+    }
   }
 
   const title = match ? `${match.is_home ? "TJ Dolany" : match.opponent} vs ${match.is_home ? match.opponent : "TJ Dolany"}` : null;

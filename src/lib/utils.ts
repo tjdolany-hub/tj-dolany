@@ -89,13 +89,30 @@ export function toPragueISO(dateStr: string, timeStr: string): string {
  * automatically as the date advances.
  */
 export function getSeasonList(now: Date = new Date(), floorStartYear = 2020): string[] {
-  const currentStart = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  const currentStart = getMonthPrague(now) >= 7 ? getYearPrague(now) : getYearPrague(now) - 1;
   const topStart = currentStart + 1; // one season ahead, so the new season is always selectable
   const list: string[] = [];
   for (let s = topStart; s >= floorStartYear; s--) {
     list.push(`${s}/${s + 1}`);
   }
   return list;
+}
+
+/**
+ * Canonical football season for a date, e.g. "2025/2026". The season starts in
+ * August (Prague time), so Aug–Dec belong to `${year}/${year+1}` and Jan–Jul to
+ * `${year-1}/${year}`. Prague-safe (Intl) so server (UTC) and client agree.
+ * Single source of truth — do not reimplement inline elsewhere.
+ */
+export function getSeasonForDate(date: Date, explicitSeason?: string | null): string {
+  if (explicitSeason) return explicitSeason;
+  const y = getMonthPrague(date) >= 7 ? getYearPrague(date) : getYearPrague(date) - 1;
+  return `${y}/${y + 1}`;
+}
+
+/** Season half for a date: "podzim" (Aug–Dec) or "jaro" (Jan–Jul), Prague-safe. */
+export function getSeasonHalf(date: Date): "podzim" | "jaro" {
+  return getMonthPrague(date) >= 7 ? "podzim" : "jaro";
 }
 
 export function slugify(text: string): string {
