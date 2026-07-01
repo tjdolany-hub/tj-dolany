@@ -65,10 +65,12 @@ export default async function HomePage() {
       .select("position, team_name, points")
       .eq("is_our_team", true)
       .eq("variant", "celkem")
+      .eq("season", currentSeason)
       .limit(1),
     supabase
       .from("league_standings")
       .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
+      .eq("season", currentSeason)
       .order("position", { ascending: true }),
     supabase
       .from("player_season_stats")
