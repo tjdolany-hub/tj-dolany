@@ -81,6 +81,23 @@ export function toPragueISO(dateStr: string, timeStr: string): string {
   return `${dateStr}T${timeStr}:00${sign}${abs.toString().padStart(2, "0")}:00`;
 }
 
+/**
+ * List of football seasons for admin selectors, newest first (format "2025/2026").
+ * Always includes the upcoming season — so a new season can be set up before it
+ * starts — down to a fixed floor year. Season boundary is August (months are
+ * 0-based here, so >= 7). No manual "create season" step: seasons appear
+ * automatically as the date advances.
+ */
+export function getSeasonList(now: Date = new Date(), floorStartYear = 2020): string[] {
+  const currentStart = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  const topStart = currentStart + 1; // one season ahead, so the new season is always selectable
+  const list: string[] = [];
+  for (let s = topStart; s >= floorStartYear; s--) {
+    list.push(`${s}/${s + 1}`);
+  }
+  return list;
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

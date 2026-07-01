@@ -9,7 +9,7 @@ import {
 import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
 import { findPlayerByName } from "@/lib/player-match";
-import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO } from "@/lib/utils";
+import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO, getSeasonList } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ interface Draw {
 
 // ─── Constants ───────────────────────────────────────────────
 
-const SEASONS = ["2025/2026", "2024/2025", "2023/2024"];
+const SEASONS = getSeasonList();
 
 const emptyForm = {
   date: "",

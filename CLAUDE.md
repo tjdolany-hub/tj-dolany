@@ -17,6 +17,26 @@ npx tsc --noEmit     # Type-check without emitting
 
 No test framework is configured.
 
+### Supabase migrations
+
+Project is linked to Supabase ref `qntvgaruysxgivospeoi`. Run migrations from `supabase/migrations/`:
+
+```bash
+# bash / git bash
+SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f supabase/migrations/025_xxx.sql
+
+# PowerShell (this repo's default shell on Windows)
+$env:SUPABASE_ACCESS_TOKEN="..."; npx supabase db query --linked -f supabase/migrations/025_xxx.sql
+```
+
+### Windows / PowerShell notes
+
+The repo runs on Windows; the default shell is PowerShell. When invoking CLI tools:
+
+- Set env vars with `$env:NAME="value"` (per-process) — not bash-style `NAME=value cmd`.
+- Chain commands with `;` and `if ($?) { ... }` — `&&` / `||` are not available in PowerShell 5.1.
+- `npm`, `npx`, `vercel`, `supabase` work the same as on Unix.
+
 ## Tech Stack
 
 - **Next.js 16** (App Router), React 19, TypeScript strict
