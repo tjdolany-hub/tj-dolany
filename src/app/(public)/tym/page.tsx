@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getSeasonForDate } from "@/lib/stats";
+import { getActiveSeason } from "@/lib/settings";
 import type { Metadata } from "next";
 import TymClient from "./TymClient";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function TymPage() {
   const supabase = await createClient();
 
-  const currentSeason = getSeasonForDate(new Date());
+  const currentSeason = await getActiveSeason(supabase);
 
   const [
     { data: players }, { data: draws }, { data: matches },

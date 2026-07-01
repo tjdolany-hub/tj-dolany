@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import ActiveSeasonCard from "./ActiveSeasonCard";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -7,10 +8,12 @@ export default async function AdminDashboard() {
     { count: articlesCount },
     { count: playersCount },
     { count: eventsCount },
+    { data: settingRow },
   ] = await Promise.all([
     supabase.from("articles").select("*", { count: "exact", head: true }).is("deleted_at", null),
     supabase.from("players").select("*", { count: "exact", head: true }),
     supabase.from("future_events").select("*", { count: "exact", head: true }),
+    supabase.from("app_settings").select("active_season").eq("id", 1).maybeSingle(),
   ]);
 
   const stats = [
@@ -33,6 +36,8 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      <ActiveSeasonCard stored={settingRow?.active_season ?? null} />
     </div>
   );
 }

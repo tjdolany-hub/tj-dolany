@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getSeasonForDate } from "@/lib/stats";
+import { getActiveSeason } from "@/lib/settings";
 import HomeClient from "./HomeClient";
 
 export const revalidate = 3600;
@@ -8,7 +8,7 @@ export default async function HomePage() {
   const supabase = await createClient();
 
   const now = new Date().toISOString();
-  const currentSeason = getSeasonForDate(new Date());
+  const currentSeason = await getActiveSeason(supabase);
 
   const [
     articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult,
