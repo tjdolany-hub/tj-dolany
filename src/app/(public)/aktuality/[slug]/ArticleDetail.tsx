@@ -98,7 +98,7 @@ function renderContentWithVideo(html: string): string {
     (fullMatch, url) => {
       const videoId = extractYouTubeId(url);
       if (!videoId) return fullMatch;
-      return `<div class="relative w-full aspect-video rounded-xl overflow-hidden my-4"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute inset-0 w-full h-full"></iframe></div>`;
+      return `<div class="relative w-full aspect-video rounded-xl overflow-hidden my-4"><iframe src="https://www.youtube.com/embed/${videoId}" title="Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute inset-0 w-full h-full"></iframe></div>`;
     }
   );
 }
@@ -557,6 +557,7 @@ export default function ArticleDetail({ article, matchData, teams }: { article: 
 
         {matchData ? (
           <>
+            <h1 className="sr-only">{article.title}</h1>
             <MatchScoreHeader match={matchData} teams={teams} />
 
             {/* Gallery with lightbox */}

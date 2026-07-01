@@ -214,7 +214,11 @@ export async function POST(req: NextRequest) {
   }
 
   const season = getSeasonForDate(new Date(match.date), match.season);
-  recomputeSeasonStats(admin, season).catch(() => {});
+  try {
+    await recomputeSeasonStats(admin, season);
+  } catch (e) {
+    console.error(`recomputeSeasonStats failed for season ${season}:`, e);
+  }
 
   revalidatePublicPages();
   return NextResponse.json(match, { status: 201 });

@@ -9,7 +9,7 @@ import {
 import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
 import { findPlayerByName } from "@/lib/player-match";
-import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO } from "@/lib/utils";
+import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO, getSeasonList, getSeasonHalf } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ interface Draw {
 
 // ─── Constants ───────────────────────────────────────────────
 
-const SEASONS = ["2025/2026", "2024/2025", "2023/2024"];
+const SEASONS = getSeasonList();
 
 const emptyForm = {
   date: "",
@@ -448,10 +448,11 @@ export default function AdminMatchesPage() {
           }).join(", ")
         : (form.opponent_cards || null),
       lineup,
-      // Each row = 1 goal; same player can appear multiple times
+      // Normally each row = 1 goal; a legacy row may carry goals > 1 (no per-goal
+      // minute), so preserve s.goals instead of forcing 1 (which silently dropped goals).
       scorers: scorers.filter((s) => s.player_id).map((s) => ({
         player_id: s.player_id,
-        goals: 1,
+        goals: s.goals,
         minute: s.minute ? parseInt(s.minute) : null,
         is_penalty: s.is_penalty || false,
       })),
@@ -577,7 +578,7 @@ export default function AdminMatchesPage() {
     const dateObj = parsed.date ? new Date(parsed.date) : null;
     let season = form.season;
     if (dateObj) {
-      const y = dateObj.getMonth() >= 6 ? dateObj.getFullYear() : dateObj.getFullYear() - 1;
+      const y = dateObj.getMonth() >= 7 ? dateObj.getFullYear() : dateObj.getFullYear() - 1;
       season = `${y}/${y + 1}`;
     }
 
@@ -698,8 +699,7 @@ export default function AdminMatchesPage() {
 
   // Filter matches by half, sort ascending (oldest first)
   const filteredMatches = (half === "all" ? matches : matches.filter((m) => {
-    const month = new Date(m.date).getMonth();
-    return half === "podzim" ? month >= 7 : month < 7;
+    return getSeasonHalf(new Date(m.date)) === half;
   })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const isMatchPlayed = (m: Match) => new Date(m.date) <= new Date();

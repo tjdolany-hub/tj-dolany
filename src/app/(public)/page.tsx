@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getSeasonForDate } from "@/lib/stats";
+import { getActiveSeason } from "@/lib/settings";
 import HomeClient from "./HomeClient";
 
 export const revalidate = 3600;
@@ -8,7 +8,7 @@ export default async function HomePage() {
   const supabase = await createClient();
 
   const now = new Date().toISOString();
-  const currentSeason = getSeasonForDate(new Date());
+  const currentSeason = await getActiveSeason(supabase);
 
   const [
     articlesResult, pastEventResult, futureEventsResult, matchResult, albumsResult,
@@ -65,10 +65,12 @@ export default async function HomePage() {
       .select("position, team_name, points")
       .eq("is_our_team", true)
       .eq("variant", "celkem")
+      .eq("season", currentSeason)
       .limit(1),
     supabase
       .from("league_standings")
       .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
+      .eq("season", currentSeason)
       .order("position", { ascending: true }),
     supabase
       .from("player_season_stats")

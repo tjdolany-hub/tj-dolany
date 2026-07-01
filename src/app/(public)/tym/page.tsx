@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getSeasonForDate } from "@/lib/stats";
+import { getActiveSeason } from "@/lib/settings";
 import type { Metadata } from "next";
 import TymClient from "./TymClient";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function TymPage() {
   const supabase = await createClient();
 
-  const currentSeason = getSeasonForDate(new Date());
+  const currentSeason = await getActiveSeason(supabase);
 
   const [
     { data: players }, { data: draws }, { data: matches },
@@ -105,10 +105,11 @@ export default async function TymPage() {
     side: "home" | "away";
   };
   const matchEvents: Record<string, MatchEvent[]> = {};
+  const matchById = new Map((matches ?? []).map((x) => [x.id, x]));
 
   for (const s of (matchScorersDetailed ?? []) as { match_id: string; minute: number | null; is_penalty: boolean; players: { name: string } | null }[]) {
     if (!matchEvents[s.match_id]) matchEvents[s.match_id] = [];
-    const m = (matches ?? []).find((x) => x.id === s.match_id);
+    const m = matchById.get(s.match_id);
     matchEvents[s.match_id].push({
       type: "goal",
       minute: s.minute,
@@ -120,7 +121,7 @@ export default async function TymPage() {
 
   for (const c of (matchCardsDetailed ?? []) as { match_id: string; card_type: string; minute: number | null; players: { name: string } | null }[]) {
     if (!matchEvents[c.match_id]) matchEvents[c.match_id] = [];
-    const m = (matches ?? []).find((x) => x.id === c.match_id);
+    const m = matchById.get(c.match_id);
     matchEvents[c.match_id].push({
       type: c.card_type === "red" ? "red" : "yellow",
       minute: c.minute,
@@ -132,7 +133,7 @@ export default async function TymPage() {
 
   for (const s of (oppScorers ?? []) as { match_id: string; name: string; minute: number | null; is_penalty: boolean }[]) {
     if (!matchEvents[s.match_id]) matchEvents[s.match_id] = [];
-    const m = (matches ?? []).find((x) => x.id === s.match_id);
+    const m = matchById.get(s.match_id);
     matchEvents[s.match_id].push({
       type: "goal",
       minute: s.minute,
@@ -144,7 +145,7 @@ export default async function TymPage() {
 
   for (const c of (oppCards ?? []) as { match_id: string; name: string; card_type: string; minute: number | null }[]) {
     if (!matchEvents[c.match_id]) matchEvents[c.match_id] = [];
-    const m = (matches ?? []).find((x) => x.id === c.match_id);
+    const m = matchById.get(c.match_id);
     matchEvents[c.match_id].push({
       type: c.card_type === "red" ? "red" : "yellow",
       minute: c.minute,

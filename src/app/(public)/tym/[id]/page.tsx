@@ -1,9 +1,18 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getSeasonForDate } from "@/lib/utils";
 import PlayerDetailClient from "./PlayerDetailClient";
 
 export const revalidate = 3600;
+
+// Cached so generateMetadata and the page share a single players query per request.
+const getPlayer = cache(async (id: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase.from("players").select("*").eq("id", id).single();
+  return data;
+});
 
 export async function generateMetadata({
   params,
@@ -11,18 +20,16 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: player } = await supabase
-    .from("players")
-    .select("name")
-    .eq("id", id)
-    .single();
+  const player = await getPlayer(id);
 
   if (!player) return { title: "Hráč nenalezen" };
 
   return {
     title: `${player.name} | TJ Dolany`,
     description: `Statistiky hráče ${player.name}`,
+    openGraph: player.photo
+      ? { images: [{ url: player.photo }], title: `${player.name} | TJ Dolany` }
+      : undefined,
   };
 }
 
@@ -42,11 +49,7 @@ export default async function PlayerDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: player } = await supabase
-    .from("players")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const player = await getPlayer(id);
 
   if (!player) notFound();
 
@@ -99,9 +102,7 @@ export default async function PlayerDetailPage({
   // Compute per-season stats
   const seasonStatsMap: Record<string, SeasonStats> = {};
   for (const m of matchResults ?? []) {
-    const d = new Date(m.date);
-    const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
-    const season = m.season || `${y}/${y + 1}`;
+    const season = getSeasonForDate(new Date(m.date), m.season);
     if (!seasonStatsMap[season]) {
       seasonStatsMap[season] = { season, matches: 0, goals: 0, yellows: 0, reds: 0 };
     }

@@ -86,6 +86,9 @@ function Lightbox({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Prohlížeč fotogalerie"
       className="fixed inset-0 z-[9999] flex flex-col bg-black/95"
       onClick={onClose}
       onWheel={handleWheelDebounced}

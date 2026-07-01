@@ -161,6 +161,7 @@ export default function HomeClient({ articles, heroEvents, nextMatch, albums, cl
                 src="/logo.png"
                 alt="TJ Dolany - znak"
                 fill
+                sizes="(max-width: 768px) 96px, 128px"
                 className="object-contain drop-shadow-2xl"
                 priority
               />

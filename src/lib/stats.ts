@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { getSeasonForDate, getSeasonHalf } from "@/lib/utils";
+
+// Re-exported so existing `import { getSeasonForDate } from "@/lib/stats"` keeps working.
+export { getSeasonForDate, getSeasonHalf };
 
 export async function recomputeSeasonStats(
   admin: SupabaseClient<Database>,
@@ -18,8 +22,7 @@ export async function recomputeSeasonStats(
 
   const matchHalves: Record<string, "podzim" | "jaro"> = {};
   for (const m of matches) {
-    const month = new Date(m.date).getMonth();
-    matchHalves[m.id] = month >= 7 ? "podzim" : "jaro";
+    matchHalves[m.id] = getSeasonHalf(new Date(m.date));
   }
   const matchIds = matches.map((m) => m.id);
 
@@ -97,10 +100,4 @@ export async function recomputeAllSeasons(admin: SupabaseClient<Database>) {
   }
 
   return [...seasons];
-}
-
-export function getSeasonForDate(date: Date, explicitSeason?: string | null): string {
-  if (explicitSeason) return explicitSeason;
-  const y = date.getMonth() >= 7 ? date.getFullYear() : date.getFullYear() - 1;
-  return `${y}/${y + 1}`;
 }

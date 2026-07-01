@@ -429,7 +429,7 @@ export default function PlanAkciClient({
 
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-surface-alt transition-colors text-text">
+          <button onClick={prevMonth} aria-label="Předchozí měsíc" className="p-2 rounded-lg hover:bg-surface-alt transition-colors text-text">
             <ChevronLeft size={20} />
           </button>
           <h3 className="text-xl font-bold text-text">
@@ -440,7 +440,7 @@ export default function PlanAkciClient({
               </span>
             )}
           </h3>
-          <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-surface-alt transition-colors text-text">
+          <button onClick={nextMonth} aria-label="Další měsíc" className="p-2 rounded-lg hover:bg-surface-alt transition-colors text-text">
             <ChevronRight size={20} />
           </button>
         </div>
@@ -562,6 +562,7 @@ export default function PlanAkciClient({
             >
               <button
                 onClick={() => setSelectedDay(null)}
+                aria-label="Zavřít detail dne"
                 className="absolute top-3 right-3 p-1 rounded-lg hover:bg-surface-alt text-text-muted"
               >
                 <X size={18} />

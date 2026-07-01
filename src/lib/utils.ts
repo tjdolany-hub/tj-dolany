@@ -81,6 +81,40 @@ export function toPragueISO(dateStr: string, timeStr: string): string {
   return `${dateStr}T${timeStr}:00${sign}${abs.toString().padStart(2, "0")}:00`;
 }
 
+/**
+ * List of football seasons for admin selectors, newest first (format "2025/2026").
+ * Always includes the upcoming season — so a new season can be set up before it
+ * starts — down to a fixed floor year. Season boundary is August (months are
+ * 0-based here, so >= 7). No manual "create season" step: seasons appear
+ * automatically as the date advances.
+ */
+export function getSeasonList(now: Date = new Date(), floorStartYear = 2020): string[] {
+  const currentStart = getMonthPrague(now) >= 7 ? getYearPrague(now) : getYearPrague(now) - 1;
+  const topStart = currentStart + 1; // one season ahead, so the new season is always selectable
+  const list: string[] = [];
+  for (let s = topStart; s >= floorStartYear; s--) {
+    list.push(`${s}/${s + 1}`);
+  }
+  return list;
+}
+
+/**
+ * Canonical football season for a date, e.g. "2025/2026". The season starts in
+ * August (Prague time), so Aug–Dec belong to `${year}/${year+1}` and Jan–Jul to
+ * `${year-1}/${year}`. Prague-safe (Intl) so server (UTC) and client agree.
+ * Single source of truth — do not reimplement inline elsewhere.
+ */
+export function getSeasonForDate(date: Date, explicitSeason?: string | null): string {
+  if (explicitSeason) return explicitSeason;
+  const y = getMonthPrague(date) >= 7 ? getYearPrague(date) : getYearPrague(date) - 1;
+  return `${y}/${y + 1}`;
+}
+
+/** Season half for a date: "podzim" (Aug–Dec) or "jaro" (Jan–Jul), Prague-safe. */
+export function getSeasonHalf(date: Date): "podzim" | "jaro" {
+  return getMonthPrague(date) >= 7 ? "podzim" : "jaro";
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -123,18 +157,6 @@ export const POSITIONS = [
   { value: "trener", label: "Trenér" },
 ] as const;
 
-export const EVENT_TYPES = [
-  { value: "zapas", label: "Zápas" },
-  { value: "trenink", label: "Trénink" },
-  { value: "akce", label: "Akce" },
-  { value: "pronajem", label: "Pronájem" },
-  { value: "volne", label: "Volné" },
-] as const;
-
-export function getSupabasePublicUrl(path: string): string {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${path}`;
-}
-
 export function formatDateTimeCzech(dateStr: string): string {
   const d = new Date(dateStr);
   return `${formatDateCzech(dateStr)} ${formatTimePrague(d)}`;
@@ -154,14 +176,6 @@ export const POSITION_COLORS: Record<string, string> = {
   zaloznik: "bg-green-500 text-white",
   utocnik: "bg-red-500 text-white",
   trener: "bg-gray-600 text-white",
-};
-
-export const EVENT_TYPE_COLORS: Record<string, string> = {
-  zapas: "bg-red-500",
-  trenink: "bg-yellow-500",
-  akce: "bg-green-500",
-  pronajem: "bg-blue-500",
-  volne: "bg-cyan-500",
 };
 
 export const LOCATIONS = [

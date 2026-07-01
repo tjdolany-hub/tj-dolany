@@ -384,7 +384,7 @@ function CreateUserModal({
               )}
             </div>
             <p className="text-xs text-text-muted mt-1">
-              Uživatel si může po přihlášení heslo změnit přes „Zapomenuté heslo".
+              Uživatel si může po přihlášení heslo změnit přes „Zapomenuté heslo&ldquo;.
             </p>
           </div>
 

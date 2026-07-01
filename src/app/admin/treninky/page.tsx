@@ -5,7 +5,7 @@ import {
   Upload, CheckCircle, AlertTriangle, Users, Trophy, ClipboardPaste,
   ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
-import { getHoursPrague, formatTimePrague } from "@/lib/utils";
+import { getHoursPrague, formatTimePrague, getSeasonList } from "@/lib/utils";
 import { findPlayerByName } from "@/lib/player-match";
 
 // ── Types ──
@@ -58,7 +58,7 @@ interface ParseResult {
 
 // ── Constants ──
 
-const SEASONS = ["2025/2026", "2024/2025", "2023/2024"];
+const SEASONS = getSeasonList();
 
 const RESPONSE_COLORS: Record<string, string> = {
   jde: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -159,8 +159,8 @@ function getSeason(dateStr: string): string {
   const d = new Date(dateStr);
   const year = d.getFullYear();
   const month = d.getMonth();
-  // Season: July+ = current year start, before July = previous year start
-  const startYear = month >= 6 ? year : year - 1;
+  // Season: August+ = current year start, before August = previous year start
+  const startYear = month >= 7 ? year : year - 1;
   return `${startYear}/${startYear + 1}`;
 }
 

@@ -7,6 +7,10 @@ import { findPlayerByName } from "@/lib/player-match";
 // GET: list trainings with attendance, optionally filtered by season
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
+  // Training attendance (who is/isn't coming) is internal — require a session.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const season = searchParams.get("season");
 

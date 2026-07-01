@@ -67,6 +67,8 @@ export default function Header() {
             onClick={() => setOpen(!open)}
             className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
             aria-label="Menu"
+            aria-expanded={open}
+            aria-controls="mobilni-menu"
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -75,7 +77,7 @@ export default function Header() {
 
       {open && (
         <div className="md:hidden bg-brand-dark border-t border-white/10">
-          <nav className="px-4 py-3 space-y-1">
+          <nav id="mobilni-menu" aria-label="Hlavní menu" className="px-4 py-3 space-y-1">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}

@@ -17,6 +17,26 @@ npx tsc --noEmit     # Type-check without emitting
 
 No test framework is configured.
 
+### Supabase migrations
+
+Project is linked to Supabase ref `qntvgaruysxgivospeoi`. Run migrations from `supabase/migrations/`:
+
+```bash
+# bash / git bash
+SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f supabase/migrations/025_xxx.sql
+
+# PowerShell (this repo's default shell on Windows)
+$env:SUPABASE_ACCESS_TOKEN="..."; npx supabase db query --linked -f supabase/migrations/025_xxx.sql
+```
+
+### Windows / PowerShell notes
+
+The repo runs on Windows; the default shell is PowerShell. When invoking CLI tools:
+
+- Set env vars with `$env:NAME="value"` (per-process) — not bash-style `NAME=value cmd`.
+- Chain commands with `;` and `if ($?) { ... }` — `&&` / `||` are not available in PowerShell 5.1.
+- `npm`, `npx`, `vercel`, `supabase` work the same as on Unix.
+
 ## Tech Stack
 
 - **Next.js 16** (App Router), React 19, TypeScript strict
@@ -56,9 +76,9 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 
 `src/lib/supabase/client.ts` — browser client for client components.
 
-### Middleware
+### Middleware (proxy)
 
-`src/middleware.ts` refreshes Supabase auth session on every request. Auth check (`getUser()`) only runs for `/admin/*` paths — public pages skip it for performance. Unauthenticated users on `/admin/*` are redirected to `/login`. Middleware does **not** enforce role — role checks live in API routes (`requireAdmin()` in `src/lib/auth.ts`) and in the admin layout (loads role, passes to `AdminRoleProvider`).
+`src/proxy.ts` (Next 16 renamed the `middleware` file convention to `proxy`; exports `proxy`, not `middleware`) refreshes Supabase auth session on every request. Auth check (`getUser()`) only runs for `/admin/*` paths — public pages skip it for performance. Unauthenticated users on `/admin/*` are redirected to `/login`. Does **not** enforce role — role checks live in API routes (`requireAdmin()` in `src/lib/auth.ts`) and in the admin layout (loads role, passes to `AdminRoleProvider`).
 
 ### Role-based permissions
 
@@ -186,7 +206,13 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–025). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–028). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+
+Migration status: **026** (trigger blocking `profiles.role` self-escalation) — ✅ applied to prod. **028** (`app_settings` / active season) — ✅ applied to prod. **027** (restrict content writes to `service_role` + `deleted_at` on public SELECT) — ⏳ NOT applied; apply only after an admin-panel smoke-test (CRUD an article/match/event), since it changes write RLS on live tables.
+
+### Active season (admin-controlled)
+
+`app_settings` (singleton row) holds `active_season`. `getActiveSeason(supabase)` in `src/lib/settings.ts` returns it, falling back to the date-based `getSeasonForDate(new Date())` when null. The **homepage** and **/tym** use it for their "current season" (forma, poslední zápas, TOP střelci, tabulka) — so switching it in the admin makes those pages show the new (empty) season without waiting for the August date boundary; old seasons stay in the DB. Admin sets it via the "Aktuální sezóna" card on `/admin` (`ActiveSeasonCard`) → `PUT /api/settings`.
 
 ### Image Upload
 
@@ -194,7 +220,19 @@ SQL migrations in `supabase/migrations/` (001–025). Run via Supabase CLI: `SUP
 
 ### URL Redirects
 
-Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna` → `/plan-akci`, `/budoucnost` → `/plan-akci`, `/akce` → `/plan-akci`, `/historie` → `/o-klubu`, `/o-nas` → `/o-klubu`.
+Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna` → `/plan-akci`, `/budoucnost` → `/plan-akci`, `/akce` → `/plan-akci`, `/historie` → `/o-klubu`, `/o-nas` → `/o-klubu`. (The `/historie` and `/o-nas` page files were deleted — the redirects handle those URLs.)
+
+### Security Headers & CSP
+
+`next.config.ts` `headers()` sets a Content-Security-Policy plus HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy on all routes. The CSP allow-list covers the only third parties the site loads: Supabase (`*.supabase.co` for images/realtime), YouTube (`frame-src`/`img-src`), and Google Maps (`frame-src www.google.com`). It uses `'unsafe-inline'` for script/style (Next injects an inline bootstrap; Tailwind/framer-motion emit inline styles) — **if you add a new external resource (font CDN, analytics, embed), update the CSP or it will be blocked.**
+
+### Sitemap & Robots
+
+`src/app/sitemap.ts` (static routes + published articles + active players, ISR `revalidate = 3600`) and `src/app/robots.ts` (disallow `/admin`,`/api`,`/login`,`/*-password`; links the sitemap). Both use `NEXT_PUBLIC_SITE_URL`.
+
+### Season helpers (single source)
+
+`getSeasonForDate(date, explicitSeason?)`, `getSeasonHalf(date)`, and `getSeasonList()` live **only** in `src/lib/utils.ts` and are Prague-timezone-safe (`getMonthPrague`/`getYearPrague`). `src/lib/stats.ts` re-exports the first two for backward-compatible imports. Do not reimplement the season/half cutoff inline — the August boundary (`month >= 7`) must stay consistent everywhere. Admin season dropdowns come from `getSeasonList()` (dynamic, always includes the upcoming season).
 
 ## Design System
 
