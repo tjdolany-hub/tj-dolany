@@ -26,9 +26,11 @@ Odškrtnuté oblasti byly opraveny, ověřeny (`tsc` čistý, `lint` 0 chyb, `bu
 - [x] **P1** přepočet obou sezón při editaci + await, timezone-safe sezóny, sitemap/robots, security headers (CSP+HSTS+…), oprava ESLintu, open-redirect, SSRF guard, escapování e-mailů, `.max()` meze, auth na trénincích
 - [x] **P2** výkon (logo sizes, sezónní filtr tabulky, Map lookup, `cache()` na hráči), přístupnost (skip-link, kontrast, klávesová obsluha, dialog role, aria-labely, H1 zápasů), úklid (mrtvý kód, osiřelé stránky, `/api/events`, teams revalidate, audit.ts), `middleware`→`proxy`
 
-**Vědomě odloženo** (větší/rizikovější, nedělat narychlo na živém webu): plná pagination `/aktuality` (H1), přesun `marked`+`dompurify` na server (H3), rozpad god-componentů (`matches` 1651 ř., `events` 1019 ř.), asociace `<label>`/`htmlFor` napříč formuláři, restrukturalizace sémantiky tabulky výsledků, migrace 027 (širší RLS lockdown — připravena, čeká na ověření admin UI).
+**Vědomě odloženo** (větší/rizikovější, nedělat narychlo na živém webu): plná pagination `/aktuality` (H1), přesun `marked`+`dompurify` na server (H3), rozpad god-componentů (`matches` 1651 ř., `events` 1019 ř.), asociace `<label>`/`htmlFor` napříč formuláři, restrukturalizace sémantiky tabulky výsledků.
 
-**Nevratné produkční akce (čekají na pokyn):** `git push` větve + PR, aplikace migrací **026** (a po ověření **027**) na produkční Supabase.
+**Stav nasazení:** PR #1 **mergnuto do `main`** → Vercel produkční deploy. Migrace **026** (role trigger) a **028** (`app_settings` / aktuální sezóna) **✅ aplikované** na produkční Supabase a ověřené. Migrace **027** (širší RLS lockdown zápisů) ⏳ **NEaplikovaná** — spustit až po smoke-testu adminu (CRUD článek/zápas/akce), soubor `supabase/migrations/027_…sql`.
+
+**Nová sezóna:** přidán admin přepínač „Aktuální sezóna" na `/admin` (řídí, co ukazuje hlavní stránka + Tým). Po nasazení: `/admin` → Aktuální sezóna → `2026/2027`.
 
 ---
 
