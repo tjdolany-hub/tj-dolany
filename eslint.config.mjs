@@ -1,16 +1,20 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import nextConfig from "eslint-config-next/core-web-vitals";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
+// eslint-config-next 16 ships a native flat config (array). The previous
+// FlatCompat(...).extends("next/core-web-vitals", "next/typescript") setup threw
+// "Converting circular structure to JSON" under ESLint 9, so lint ran on 0 files.
+/** @type {import("eslint").Linter.Config[]} */
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  { ignores: [".netlify/**"] }, // Netlify build output (edge functions + nested .next)
+  ...nextConfig,
+  {
+    rules: {
+      // react-hooks 7 flags standard "load data on mount / on tab change" effects
+      // (the loaders set a loading flag). These are intentional here, not the
+      // cascading-render anti-pattern the rule targets — keep as a warning.
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ];
 
 export default eslintConfig;
