@@ -76,9 +76,9 @@ Server pages (`page.tsx`) fetch data from Supabase, then pass serializable data 
 
 `src/lib/supabase/client.ts` — browser client for client components.
 
-### Middleware
+### Middleware (proxy)
 
-`src/middleware.ts` refreshes Supabase auth session on every request. Auth check (`getUser()`) only runs for `/admin/*` paths — public pages skip it for performance. Unauthenticated users on `/admin/*` are redirected to `/login`. Middleware does **not** enforce role — role checks live in API routes (`requireAdmin()` in `src/lib/auth.ts`) and in the admin layout (loads role, passes to `AdminRoleProvider`).
+`src/proxy.ts` (Next 16 renamed the `middleware` file convention to `proxy`; exports `proxy`, not `middleware`) refreshes Supabase auth session on every request. Auth check (`getUser()`) only runs for `/admin/*` paths — public pages skip it for performance. Unauthenticated users on `/admin/*` are redirected to `/login`. Does **not** enforce role — role checks live in API routes (`requireAdmin()` in `src/lib/auth.ts`) and in the admin layout (loads role, passes to `AdminRoleProvider`).
 
 ### Role-based permissions
 
@@ -206,7 +206,9 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–025). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–027). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+
+**026 & 027 are written but NOT yet applied to prod** (see `AUDIT.md`): 026 adds a trigger blocking `profiles.role` self-escalation (safe); 027 restricts content writes to `service_role` + adds `deleted_at` to public SELECT policies (apply only after an admin-panel smoke-test — CRUD an article/match/event — since it changes write RLS on live tables).
 
 ### Image Upload
 
@@ -214,7 +216,19 @@ SQL migrations in `supabase/migrations/` (001–025). Run via Supabase CLI: `SUP
 
 ### URL Redirects
 
-Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna` → `/plan-akci`, `/budoucnost` → `/plan-akci`, `/akce` → `/plan-akci`, `/historie` → `/o-klubu`, `/o-nas` → `/o-klubu`.
+Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna` → `/plan-akci`, `/budoucnost` → `/plan-akci`, `/akce` → `/plan-akci`, `/historie` → `/o-klubu`, `/o-nas` → `/o-klubu`. (The `/historie` and `/o-nas` page files were deleted — the redirects handle those URLs.)
+
+### Security Headers & CSP
+
+`next.config.ts` `headers()` sets a Content-Security-Policy plus HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy on all routes. The CSP allow-list covers the only third parties the site loads: Supabase (`*.supabase.co` for images/realtime), YouTube (`frame-src`/`img-src`), and Google Maps (`frame-src www.google.com`). It uses `'unsafe-inline'` for script/style (Next injects an inline bootstrap; Tailwind/framer-motion emit inline styles) — **if you add a new external resource (font CDN, analytics, embed), update the CSP or it will be blocked.**
+
+### Sitemap & Robots
+
+`src/app/sitemap.ts` (static routes + published articles + active players, ISR `revalidate = 3600`) and `src/app/robots.ts` (disallow `/admin`,`/api`,`/login`,`/*-password`; links the sitemap). Both use `NEXT_PUBLIC_SITE_URL`.
+
+### Season helpers (single source)
+
+`getSeasonForDate(date, explicitSeason?)`, `getSeasonHalf(date)`, and `getSeasonList()` live **only** in `src/lib/utils.ts` and are Prague-timezone-safe (`getMonthPrague`/`getYearPrague`). `src/lib/stats.ts` re-exports the first two for backward-compatible imports. Do not reimplement the season/half cutoff inline — the August boundary (`month >= 7`) must stay consistent everywhere. Admin season dropdowns come from `getSeasonList()` (dynamic, always includes the upcoming season).
 
 ## Design System
 
