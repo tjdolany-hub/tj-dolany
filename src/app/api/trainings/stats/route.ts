@@ -4,6 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 // GET: training attendance stats per player, optionally filtered by season
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
+  // Internal attendance data — require a session (only the admin panel uses this).
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const season = searchParams.get("season");
   const playerId = searchParams.get("player_id");

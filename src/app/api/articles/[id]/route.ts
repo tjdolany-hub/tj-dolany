@@ -7,14 +7,15 @@ import { z } from "zod";
 import type { Database } from "@/types/database";
 
 const updateSchema = z.object({
-  title: z.string().min(1).optional(),
-  content: z.string().min(1).optional(),
-  summary: z.string().optional(),
+  title: z.string().min(1).max(300).optional(),
+  content: z.string().min(1).max(100000).optional(),
+  summary: z.string().max(2000).optional(),
   category: z.enum(["aktuality", "fotbal"]).optional(),
   published: z.boolean().optional(),
   created_at: z.string().optional(),
   images: z
-    .array(z.object({ url: z.string(), alt: z.string().optional() }))
+    .array(z.object({ url: z.string().url().max(2000), alt: z.string().max(500).optional() }))
+    .max(100)
     .optional(),
 });
 

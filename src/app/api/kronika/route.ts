@@ -12,6 +12,17 @@ import {
   PageBreak,
 } from "docx";
 
+// SSRF guard: only fetch images from the Supabase storage host (image URLs are
+// editor-supplied and only validated as strings), never arbitrary/internal URLs.
+function isAllowedImageUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && u.hostname.endsWith(".supabase.co");
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -263,6 +274,7 @@ export async function GET(req: NextRequest) {
     );
 
     for (const img of images) {
+      if (!isAllowedImageUrl(img.url)) continue;
       try {
         const response = await fetch(img.url);
         if (!response.ok) continue;

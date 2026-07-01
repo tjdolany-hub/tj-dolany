@@ -23,6 +23,16 @@ interface RentalRequestData {
   note: string | null;
 }
 
+/** Escape user-supplied text before interpolating into notification email HTML. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function formatLocation(loc: string): string {
   const labels: Record<string, string> = {
     cely_areal: "Celý areál",
@@ -57,8 +67,8 @@ export async function sendNewRequestNotification(data: RentalRequestData) {
     <h2>Nová žádost o akci v areálu</h2>
     <table style="border-collapse:collapse;font-family:sans-serif;">
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Typ:</td><td>${typeLabel}</td></tr>
-      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Název:</td><td>${title}</td></tr>
-      ${data.organizer ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Pořadatel:</td><td>${data.organizer}</td></tr>` : ""}
+      <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Název:</td><td>${escapeHtml(title)}</td></tr>
+      ${data.organizer ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Pořadatel:</td><td>${escapeHtml(data.organizer)}</td></tr>` : ""}
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Datum:</td><td>${dateStr}${endDateStr ? ` – ${endDateStr}` : ""}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Čas:</td><td>${timeStr}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Místo:</td><td>${formatLocation(data.location)}</td></tr>
@@ -67,11 +77,11 @@ export async function sendNewRequestNotification(data: RentalRequestData) {
     ${data.contactName || data.contactPhone || data.contactEmail ? `
     <h3>Kontakt</h3>
     <table style="border-collapse:collapse;font-family:sans-serif;">
-      ${data.contactName ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Jméno:</td><td>${data.contactName}</td></tr>` : ""}
-      ${data.contactPhone ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Telefon:</td><td>${data.contactPhone}</td></tr>` : ""}
-      ${data.contactEmail ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email:</td><td>${data.contactEmail}</td></tr>` : ""}
+      ${data.contactName ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Jméno:</td><td>${escapeHtml(data.contactName)}</td></tr>` : ""}
+      ${data.contactPhone ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Telefon:</td><td>${escapeHtml(data.contactPhone)}</td></tr>` : ""}
+      ${data.contactEmail ? `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email:</td><td>${escapeHtml(data.contactEmail)}</td></tr>` : ""}
     </table>` : ""}
-    ${data.note ? `<h3>Poznámka</h3><p>${data.note}</p>` : ""}
+    ${data.note ? `<h3>Poznámka</h3><p>${escapeHtml(data.note)}</p>` : ""}
     <p style="margin-top:24px;color:#666;">Žádost můžete schválit nebo zamítnout v <a href="https://tjdolany.net/admin/events">administraci</a>.</p>
   `;
 
@@ -105,9 +115,9 @@ export async function sendRequestStatusNotification(
 
   const html = `
     <h2>${isApproved ? "Vaše žádost byla schválena" : "Vaše žádost byla zamítnuta"}</h2>
-    <p><strong>Akce:</strong> ${eventName}</p>
+    <p><strong>Akce:</strong> ${escapeHtml(eventName)}</p>
     <p><strong>Datum:</strong> ${dateStr}</p>
-    ${adminNote ? `<p><strong>Vzkaz od správce:</strong> ${adminNote}</p>` : ""}
+    ${adminNote ? `<p><strong>Vzkaz od správce:</strong> ${escapeHtml(adminNote)}</p>` : ""}
     ${isApproved ? "<p>Vaše akce byla přidána do kalendáře areálu TJ Dolany.</p>" : ""}
     <p style="margin-top:24px;color:#666;">TJ Dolany — tjdolany.net</p>
   `;
