@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "cs_CZ",
     siteName: "TJ Dolany",
+    images: [{ url: "/logo.png", alt: "TJ Dolany" }],
   },
   icons: {
     icon: [

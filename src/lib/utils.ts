@@ -157,18 +157,6 @@ export const POSITIONS = [
   { value: "trener", label: "Trenér" },
 ] as const;
 
-export const EVENT_TYPES = [
-  { value: "zapas", label: "Zápas" },
-  { value: "trenink", label: "Trénink" },
-  { value: "akce", label: "Akce" },
-  { value: "pronajem", label: "Pronájem" },
-  { value: "volne", label: "Volné" },
-] as const;
-
-export function getSupabasePublicUrl(path: string): string {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${path}`;
-}
-
 export function formatDateTimeCzech(dateStr: string): string {
   const d = new Date(dateStr);
   return `${formatDateCzech(dateStr)} ${formatTimePrague(d)}`;
@@ -188,14 +176,6 @@ export const POSITION_COLORS: Record<string, string> = {
   zaloznik: "bg-green-500 text-white",
   utocnik: "bg-red-500 text-white",
   trener: "bg-gray-600 text-white",
-};
-
-export const EVENT_TYPE_COLORS: Record<string, string> = {
-  zapas: "bg-red-500",
-  trenink: "bg-yellow-500",
-  akce: "bg-green-500",
-  pronajem: "bg-blue-500",
-  volne: "bg-cyan-500",
 };
 
 export const LOCATIONS = [

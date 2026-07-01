@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const parsed = teamSchema.safeParse(body);
   if (!parsed.success) {
-    revalidatePublicPages();
     return NextResponse.json(
       { error: parsed.error.issues[0].message },
       { status: 400 }
