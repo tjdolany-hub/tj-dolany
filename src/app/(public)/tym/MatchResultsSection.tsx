@@ -322,6 +322,15 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
                       <td colSpan={6} className="p-0">
                         <div
                           onClick={hasEvents ? () => setExpandedId(isExpanded ? null : match.id) : undefined}
+                          onKeyDown={hasEvents ? (e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setExpandedId(isExpanded ? null : match.id);
+                            }
+                          } : undefined}
+                          role={hasEvents ? "button" : undefined}
+                          tabIndex={hasEvents ? 0 : undefined}
+                          aria-expanded={hasEvents ? isExpanded : undefined}
                           className={`flex items-center transition-colors ${
                             hasEvents ? "cursor-pointer" : ""
                           } ${match.is_home ? "bg-brand-red/5 hover:bg-brand-red/10" : "hover:bg-surface-muted"}`}
