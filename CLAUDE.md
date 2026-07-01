@@ -206,9 +206,13 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–027). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–028). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
 
-**026 & 027 are written but NOT yet applied to prod** (see `AUDIT.md`): 026 adds a trigger blocking `profiles.role` self-escalation (safe); 027 restricts content writes to `service_role` + adds `deleted_at` to public SELECT policies (apply only after an admin-panel smoke-test — CRUD an article/match/event — since it changes write RLS on live tables).
+Migration status: **026** (trigger blocking `profiles.role` self-escalation) — ✅ applied to prod. **028** (`app_settings` / active season) — ✅ applied to prod. **027** (restrict content writes to `service_role` + `deleted_at` on public SELECT) — ⏳ NOT applied; apply only after an admin-panel smoke-test (CRUD an article/match/event), since it changes write RLS on live tables.
+
+### Active season (admin-controlled)
+
+`app_settings` (singleton row) holds `active_season`. `getActiveSeason(supabase)` in `src/lib/settings.ts` returns it, falling back to the date-based `getSeasonForDate(new Date())` when null. The **homepage** and **/tym** use it for their "current season" (forma, poslední zápas, TOP střelci, tabulka) — so switching it in the admin makes those pages show the new (empty) season without waiting for the August date boundary; old seasons stay in the DB. Admin sets it via the "Aktuální sezóna" card on `/admin` (`ActiveSeasonCard`) → `PUT /api/settings`.
 
 ### Image Upload
 
