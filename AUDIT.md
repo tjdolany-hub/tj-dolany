@@ -18,6 +18,20 @@ Skóre po oblastech (počty ověřených nálezů):
 
 ---
 
+## ✅ Stav nápravy (větev `fix/audit-remediation`)
+
+Odškrtnuté oblasti byly opraveny, ověřeny (`tsc` čistý, `lint` 0 chyb, `build` prošel) a otestovány proti reálnému produkčnímu buildu (homepage, o-klubu + Google Maps, sitemap, robots — bez chyb a bez CSP porušení).
+
+- [x] **P0** soft-delete leak, hranice sezóny `>=7`, cron guard, Next.js 16.2.9 + `npm audit fix` (11→2 build-time), RLS trigger proti eskalaci role (migrace 026)
+- [x] **P1** přepočet obou sezón při editaci + await, timezone-safe sezóny, sitemap/robots, security headers (CSP+HSTS+…), oprava ESLintu, open-redirect, SSRF guard, escapování e-mailů, `.max()` meze, auth na trénincích
+- [x] **P2** výkon (logo sizes, sezónní filtr tabulky, Map lookup, `cache()` na hráči), přístupnost (skip-link, kontrast, klávesová obsluha, dialog role, aria-labely, H1 zápasů), úklid (mrtvý kód, osiřelé stránky, `/api/events`, teams revalidate, audit.ts), `middleware`→`proxy`
+
+**Vědomě odloženo** (větší/rizikovější, nedělat narychlo na živém webu): plná pagination `/aktuality` (H1), přesun `marked`+`dompurify` na server (H3), rozpad god-componentů (`matches` 1651 ř., `events` 1019 ř.), asociace `<label>`/`htmlFor` napříč formuláři, restrukturalizace sémantiky tabulky výsledků, migrace 027 (širší RLS lockdown — připravena, čeká na ověření admin UI).
+
+**Nevratné produkční akce (čekají na pokyn):** `git push` větve + PR, aplikace migrací **026** (a po ověření **027**) na produkční Supabase.
+
+---
+
 ## 🎯 Akční plán podle priority
 
 ### P0 — udělat hned (bezpečnost + únik dat + rozbité hlídání)
