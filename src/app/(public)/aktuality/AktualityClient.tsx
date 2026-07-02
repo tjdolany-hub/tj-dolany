@@ -81,9 +81,12 @@ function FilterDropdown({ label, options, selected, onToggle, onClear }: {
   );
 }
 
+const PAGE_SIZE = 24;
+
 export default function AktualityClient({ articles }: { articles: Article[] }) {
   const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
   const [yearFilter, setYearFilter] = useState<Set<number>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -116,6 +119,13 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
       return true;
     });
   }, [articles, catFilter, yearFilter]);
+
+  // Reset how many are shown whenever the filter changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [catFilter, yearFilter]);
+
+  const visible = filtered.slice(0, visibleCount);
 
   return (
     <div>
@@ -157,8 +167,9 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {filtered.length > 0 ? (
+          <>
           <StaggerContainer key={`${[...catFilter].join(",")}-${[...yearFilter].join(",")}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((article) => (
+            {visible.map((article, i) => (
               <StaggerItem key={article.id}>
                 <Link
                   href={`/aktuality/${article.slug}`}
@@ -170,6 +181,7 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
                         src={article.article_images[0].url}
                         alt={article.article_images[0].alt || article.title}
                         fill
+                        priority={i < 3}
                         className="object-cover group-hover:scale-105 transition-transform duration-700"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
@@ -198,6 +210,17 @@ export default function AktualityClient({ articles }: { articles: Article[] }) {
               </StaggerItem>
             ))}
           </StaggerContainer>
+          {visibleCount < filtered.length && (
+            <div className="flex justify-center mt-10">
+              <button
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="px-6 py-3 rounded-lg text-sm font-semibold bg-surface border border-border text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
+              >
+                Načíst další ({filtered.length - visibleCount})
+              </button>
+            </div>
+          )}
+          </>
         ) : (
           <p className="text-center text-text-muted py-12 text-lg">
             Žádné aktuality pro vybraný filtr.

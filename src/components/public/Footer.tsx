@@ -14,7 +14,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <Image src="/logo.png" alt="TJ Dolany" width={32} height={32} />
+              <Image src="/logo.png" alt="TJ Dolany" width={32} height={32} className="object-contain" style={{ height: "auto" }} />
               <span className="text-white font-bold text-sm tracking-tight">
                 TJ Dolany
               </span>

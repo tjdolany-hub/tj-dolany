@@ -30,6 +30,7 @@ export default function Header() {
             width={36}
             height={36}
             className="object-contain"
+            style={{ height: "auto" }}
           />
           <div className="hidden sm:block">
             <span className="text-sm font-bold text-white tracking-tight">

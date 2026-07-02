@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import MatchGallery from "@/components/public/MatchGallery";
@@ -318,39 +318,30 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
                   const time = formatMatchTime(match.date);
 
                   return (
-                    <tr key={match.id} className="border-b border-border last:border-0">
-                      <td colSpan={6} className="p-0">
-                        <div
-                          onClick={hasEvents ? () => setExpandedId(isExpanded ? null : match.id) : undefined}
-                          onKeyDown={hasEvents ? (e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setExpandedId(isExpanded ? null : match.id);
-                            }
-                          } : undefined}
-                          role={hasEvents ? "button" : undefined}
-                          tabIndex={hasEvents ? 0 : undefined}
-                          aria-expanded={hasEvents ? isExpanded : undefined}
-                          className={`flex items-center transition-colors ${
-                            hasEvents ? "cursor-pointer" : ""
-                          } ${match.is_home ? "bg-brand-red/5 hover:bg-brand-red/10" : "hover:bg-surface-muted"}`}
-                        >
-                          <div className="px-2 py-3 text-center w-10 shrink-0">
-                            <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                              match.is_home
-                                ? "bg-brand-red/15 text-brand-red"
-                                : "bg-surface-muted text-text-muted"
-                            }`}>
-                              {match.is_home ? "D" : "V"}
-                            </span>
-                          </div>
-                          <div className="px-4 py-3 text-text-muted whitespace-nowrap tabular-nums w-16 shrink-0">
-                            {time || "—"}
-                          </div>
-                          <div className="px-4 py-3 text-text-muted whitespace-nowrap w-24 shrink-0">
-                            {formatDateShort(match.date)}
-                          </div>
-                          <div className="px-4 py-3 text-text font-medium flex-1 min-w-0 flex items-center gap-1.5">
+                    <Fragment key={match.id}>
+                      <tr
+                        onClick={hasEvents ? () => setExpandedId(isExpanded ? null : match.id) : undefined}
+                        className={`border-b border-border last:border-0 transition-colors ${
+                          hasEvents ? "cursor-pointer" : ""
+                        } ${match.is_home ? "bg-brand-red/5 hover:bg-brand-red/10" : "hover:bg-surface-muted"}`}
+                      >
+                        <td className="px-2 py-3 text-center w-10">
+                          <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                            match.is_home
+                              ? "bg-brand-red/15 text-brand-red"
+                              : "bg-surface-muted text-text-muted"
+                          }`}>
+                            {match.is_home ? "D" : "V"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-text-muted whitespace-nowrap tabular-nums w-16">
+                          {time || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-text-muted whitespace-nowrap w-24">
+                          {formatDateShort(match.date)}
+                        </td>
+                        <td className="px-4 py-3 text-text font-medium">
+                          <div className="flex items-center gap-1.5 min-w-0">
                             {(() => {
                               const oLogo = getTeamLogo(match.opponent, teams);
                               const hLogo = match.is_home ? DOLANY_LOGO : oLogo;
@@ -366,31 +357,44 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
                               );
                             })()}
                             {hasEvents && (
-                              <span className={`ml-2 text-[10px] text-text-muted transition-transform inline-block ${isExpanded ? "rotate-180" : ""}`}>&#9660;</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : match.id); }}
+                                aria-expanded={isExpanded}
+                                aria-controls={`match-detail-${match.id}`}
+                                aria-label={isExpanded ? "Skrýt průběh zápasu" : "Zobrazit průběh zápasu"}
+                                className="ml-2 text-text-muted hover:text-text shrink-0"
+                              >
+                                <span className={`text-[10px] transition-transform inline-block ${isExpanded ? "rotate-180" : ""}`}>&#9660;</span>
+                              </button>
                             )}
                           </div>
-                          <div className="px-4 py-3 text-center w-20 shrink-0">
-                            {played ? (
-                              <span className={`inline-block px-3 py-1 rounded-lg font-bold text-sm ${
-                                isWin ? "bg-green-100 text-green-700" :
-                                isDraw ? "bg-yellow-100 text-yellow-700" :
-                                "bg-red-100 text-red-700"
-                              }`}>
-                                {match.score_home}:{match.score_away}
-                              </span>
-                            ) : (
-                              <span className="text-text-muted">—</span>
-                            )}
-                          </div>
-                          <div className="px-4 py-3 text-text-muted hidden md:block w-40 shrink-0">
-                            {match.competition || "—"}
-                          </div>
-                        </div>
-                        {isExpanded && hasEvents && (
-                          <MatchTimeline match={match} events={events} teams={teams} />
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-4 py-3 text-center w-20">
+                          {played ? (
+                            <span className={`inline-block px-3 py-1 rounded-lg font-bold text-sm ${
+                              isWin ? "bg-green-100 text-green-700" :
+                              isDraw ? "bg-yellow-100 text-yellow-700" :
+                              "bg-red-100 text-red-700"
+                            }`}>
+                              {match.score_home}:{match.score_away}
+                            </span>
+                          ) : (
+                            <span className="text-text-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-text-muted hidden md:table-cell w-40">
+                          {match.competition || "—"}
+                        </td>
+                      </tr>
+                      {isExpanded && hasEvents && (
+                        <tr id={`match-detail-${match.id}`}>
+                          <td colSpan={6} className="p-0">
+                            <MatchTimeline match={match} events={events} teams={teams} />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
                 {filteredMatches.length === 0 && (

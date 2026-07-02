@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import ArticleDetail from "./ArticleDetail";
 import type { MatchData } from "./ArticleDetail";
 import type { Database } from "@/types/database";
+import { renderArticleHtml } from "@/lib/article-html";
 
 export const revalidate = 3600;
 
@@ -150,6 +151,7 @@ export default async function ArticlePage({ params }: Props) {
   ]);
 
   const teams = (teamsData ?? []) as { keywords: string[]; logo_url: string | null }[];
+  const contentHtml = renderArticleHtml(article.content);
 
-  return <ArticleDetail article={article} matchData={matchData} teams={teams} />;
+  return <ArticleDetail article={article} contentHtml={contentHtml} matchData={matchData} teams={teams} />;
 }

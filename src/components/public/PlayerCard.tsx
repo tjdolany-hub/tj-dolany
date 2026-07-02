@@ -18,6 +18,8 @@ interface PlayerCardProps {
   photo?: string | null;
   description?: string | null;
   stats?: { matches: number; goals: number; yellows: number; reds: number } | null;
+  /** Set for above-the-fold cards so the LCP image isn't lazy-loaded. */
+  priority?: boolean;
 }
 
 function calcAge(birthDate: string): number {
@@ -35,6 +37,7 @@ export default function PlayerCard({
   number,
   photo,
   stats,
+  priority = false,
 }: PlayerCardProps) {
   const posColor = POSITION_COLORS[position] || "bg-gray-500 text-white";
   const posLabel = POSITION_LABELS[position] || position;
@@ -52,6 +55,7 @@ export default function PlayerCard({
               src={photo}
               alt={name}
               fill
+              priority={priority}
               className="object-cover transition-transform duration-500 hover:scale-105"
               sizes="(max-width: 768px) 33vw, 16vw"
             />

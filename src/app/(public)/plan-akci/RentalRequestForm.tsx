@@ -233,8 +233,9 @@ export default function RentalRequestForm({
         >
           {/* Event type */}
           <div>
-            <label className="block text-sm font-semibold text-text mb-1">Typ akce</label>
+            <label htmlFor="rq-event-type" className="block text-sm font-semibold text-text mb-1">Typ akce</label>
             <select
+              id="rq-event-type"
               value={form.event_type}
               onChange={(e) => {
                 const val = e.target.value as "pronajem" | "volne";
@@ -260,8 +261,9 @@ export default function RentalRequestForm({
           {/* Fields for "pronajem" type */}
           {form.event_type === "pronajem" && (
             <div>
-              <label className="block text-sm font-semibold text-text mb-1">Pořadatel (Jméno)</label>
+              <label htmlFor="rq-pronajem-name" className="block text-sm font-semibold text-text mb-1">Pořadatel (Jméno)</label>
               <input
+                id="rq-pronajem-name"
                 type="text"
                 value={form.pronajemName}
                 onChange={(e) => setForm({ ...form, pronajemName: e.target.value })}
@@ -277,8 +279,9 @@ export default function RentalRequestForm({
           {form.event_type === "volne" && (
             <>
               <div>
-                <label className="block text-sm font-semibold text-text mb-1">Název akce</label>
+                <label htmlFor="rq-event-name" className="block text-sm font-semibold text-text mb-1">Název akce</label>
                 <input
+                  id="rq-event-name"
                   type="text"
                   value={form.event_name}
                   onChange={(e) => setForm({ ...form, event_name: e.target.value })}
@@ -288,8 +291,9 @@ export default function RentalRequestForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
+                <label htmlFor="rq-organizer" className="block text-sm font-semibold text-text mb-1">Pořadatel</label>
                 <select
+                  id="rq-organizer"
                   value={form.organizer}
                   onChange={(e) =>
                     setForm({ ...form, organizer: e.target.value, customOrganizer: "" })
@@ -306,6 +310,7 @@ export default function RentalRequestForm({
                 {isCustomOrganizer && (
                   <input
                     type="text"
+                    aria-label="Jméno pořadatele"
                     value={form.customOrganizer}
                     onChange={(e) => setForm({ ...form, customOrganizer: e.target.value })}
                     placeholder="Jméno pořadatele"
@@ -352,21 +357,21 @@ export default function RentalRequestForm({
               {/* Single-day: Datum | Čas od – do | Celý den */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Datum</label>
-                  <input type="date" value={form.date}
+                  <label htmlFor="rq-date" className="block text-sm font-semibold text-text mb-1">Datum</label>
+                  <input id="rq-date" type="date" value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                     required min={new Date().toISOString().slice(0, 10)} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Čas</label>
+                  <label htmlFor="rq-time-from" className="block text-sm font-semibold text-text mb-1">Čas</label>
                   {form.allDay ? (
                     <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">Celý den</div>
                   ) : (
                     <div className="flex gap-2 items-center">
-                      <input type="time" value={form.time}
+                      <input id="rq-time-from" type="time" aria-label="Čas od" value={form.time}
                         onChange={(e) => setForm({ ...form, time: e.target.value })} className={inputClass} />
                       <span className="text-text-muted text-sm">–</span>
-                      <input type="time" value={form.time_to}
+                      <input type="time" aria-label="Čas do" value={form.time_to}
                         onChange={(e) => setForm({ ...form, time_to: e.target.value })} className={inputClass} />
                     </div>
                   )}
@@ -383,32 +388,32 @@ export default function RentalRequestForm({
               {/* Multi-day: Datum od + Čas od | Datum do + Čas do | Celé dny */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Datum od</label>
-                  <input type="date" value={form.date}
+                  <label htmlFor="rq-date-from" className="block text-sm font-semibold text-text mb-1">Datum od</label>
+                  <input id="rq-date-from" type="date" value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                     required min={new Date().toISOString().slice(0, 10)} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Čas od</label>
+                  <label htmlFor="rq-time-from-md" className="block text-sm font-semibold text-text mb-1">Čas od</label>
                   {form.allDay ? (
                     <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">—</div>
                   ) : (
-                    <input type="time" value={form.time}
+                    <input id="rq-time-from-md" type="time" value={form.time}
                       onChange={(e) => setForm({ ...form, time: e.target.value })} className={inputClass} />
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Datum do</label>
-                  <input type="date" value={form.end_date}
+                  <label htmlFor="rq-end-date" className="block text-sm font-semibold text-text mb-1">Datum do</label>
+                  <input id="rq-end-date" type="date" value={form.end_date}
                     onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                     required min={form.date} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-text mb-1">Čas do</label>
+                  <label htmlFor="rq-time-to-md" className="block text-sm font-semibold text-text mb-1">Čas do</label>
                   {form.allDay ? (
                     <div className="w-full px-3 py-2 bg-surface-muted border border-border rounded-lg text-text-muted text-sm">—</div>
                   ) : (
-                    <input type="time" value={form.time_to}
+                    <input id="rq-time-to-md" type="time" value={form.time_to}
                       onChange={(e) => setForm({ ...form, time_to: e.target.value })} className={inputClass} />
                   )}
                 </div>
@@ -481,8 +486,9 @@ export default function RentalRequestForm({
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-text mb-1">Jméno</label>
+                <label htmlFor="rq-contact-name" className="block text-sm font-semibold text-text mb-1">Jméno</label>
                 <input
+                  id="rq-contact-name"
                   type="text"
                   value={form.contact_name}
                   onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
@@ -492,8 +498,9 @@ export default function RentalRequestForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-text mb-1">Telefon</label>
+                <label htmlFor="rq-contact-phone" className="block text-sm font-semibold text-text mb-1">Telefon</label>
                 <input
+                  id="rq-contact-phone"
                   type="tel"
                   value={form.contact_phone}
                   onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
@@ -503,8 +510,9 @@ export default function RentalRequestForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-text mb-1">Email</label>
+                <label htmlFor="rq-contact-email" className="block text-sm font-semibold text-text mb-1">Email</label>
                 <input
+                  id="rq-contact-email"
                   type="email"
                   value={form.contact_email}
                   onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
@@ -518,10 +526,11 @@ export default function RentalRequestForm({
           {/* Description — only for "volne" + veřejná */}
           {form.event_type === "volne" && form.is_public && (
             <div>
-              <label className="block text-sm font-semibold text-text mb-1">
+              <label htmlFor="rq-description" className="block text-sm font-semibold text-text mb-1">
                 Popis akce <span className="font-normal text-text-muted">(zobrazí se v kalendáři akcí)</span>
               </label>
               <textarea
+                id="rq-description"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={3}
@@ -534,12 +543,13 @@ export default function RentalRequestForm({
 
           {/* Note */}
           <div>
-            <label className="block text-sm font-semibold text-text mb-1">
+            <label htmlFor="rq-note" className="block text-sm font-semibold text-text mb-1">
               Poznámka <span className="font-normal text-text-muted">
                 ({form.event_type === "pronajem" ? "volitelné, pro administrátora" : "volitelné"})
               </span>
             </label>
             <textarea
+              id="rq-note"
               value={form.note}
               onChange={(e) => setForm({ ...form, note: e.target.value })}
               rows={3}

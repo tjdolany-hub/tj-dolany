@@ -4,8 +4,6 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatDateCzech, CATEGORIES, isMidnightPrague, formatTimePrague } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
@@ -85,22 +83,6 @@ export interface MatchData {
     card_type: "yellow" | "red";
     minute: number | null;
   }[];
-}
-
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
-}
-
-function renderContentWithVideo(html: string): string {
-  return html.replace(
-    /<a href="(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)[^"]+)">[^<]+<\/a>/g,
-    (fullMatch, url) => {
-      const videoId = extractYouTubeId(url);
-      if (!videoId) return fullMatch;
-      return `<div class="relative w-full aspect-video rounded-xl overflow-hidden my-4"><iframe src="https://www.youtube.com/embed/${videoId}" title="Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute inset-0 w-full h-full"></iframe></div>`;
-    }
-  );
 }
 
 function formatMatchDate(dateStr: string): string {
@@ -528,10 +510,8 @@ function MatchScoreHeader({ match, teams }: { match: MatchData; teams?: TeamEntr
   );
 }
 
-export default function ArticleDetail({ article, matchData, teams }: { article: Article; matchData?: MatchData | null; teams?: TeamEntry[] }) {
-  const rawHtml = marked.parse(article.content) as string;
-  const sanitized = DOMPurify.sanitize(rawHtml, { ADD_TAGS: ["iframe"], ADD_ATTR: ["allow", "allowfullscreen", "frameborder"] });
-  const html = renderContentWithVideo(sanitized);
+export default function ArticleDetail({ article, contentHtml, matchData, teams }: { article: Article; contentHtml: string; matchData?: MatchData | null; teams?: TeamEntry[] }) {
+  const html = contentHtml;
   const heroImage = article.article_images?.[0];
 
   return (
