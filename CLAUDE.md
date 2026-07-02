@@ -110,8 +110,8 @@ Requires `https://tjdolany.net/reset-password` in Supabase Auth → URL Configur
 
 ### Admin Pages
 
-- **Plán akcí** (`/admin/events`) — 3 tabs: calendar events, weekly schedule (valid_from/valid_to date ranges), rental requests (approve/reject workflow)
-- **Zápasy** (`/admin/matches`) — 3 tabs: match results (lineup, scorers, cards, images, publish-to-article), season draws, league standings
+- **Plán akcí** (`/admin/events`) — 3 tabs: calendar events (form stays in `page.tsx`), weekly schedule (extracted `ScheduleTab.tsx`, valid_from/valid_to date ranges), rental requests (extracted `RentalRequestsTab.tsx`, approve/reject workflow)
+- **Zápasy** (`/admin/matches`) — 3 tabs: match results (lineup, scorers, cards, images, publish-to-article — form stays in `page.tsx`), season draws (extracted `DrawsTab.tsx`), league standings (extracted `StandingsTab.tsx`). Each extracted tab is a self-contained component that owns its state and API calls.
 - **Hráči** (`/admin/players`) — table layout grouped by position (collapsible), stats from match data, active/inactive filter tabs. Players have `aliases` (text[]) for alternative name matching in imports (e.g., "Jirka Berger" → "Jiří Berger").
 - **Články** (`/admin/articles`) — article CRUD with markdown editor, image upload, editable publish date
 - **Uživatelé** (`/admin/users`) — admin-only. Create new user (email, name, role, initial password, optional email invite), inline role change, admin-triggered password reset, delete. Last admin protected from demotion/deletion; self-delete blocked.
@@ -188,7 +188,7 @@ Legacy free-text fields `opponent_scorers` and `opponent_cards` on `match_result
 
 ### YouTube Video Embed
 
-`ArticleDetail.tsx` auto-detects YouTube URLs in article content and replaces them with responsive iframe embeds (`aspect-video`). Article markdown is sanitized with DOMPurify before rendering (allows `iframe` for video embeds).
+`ArticleDetail.tsx` renders article content that was **parsed + sanitized on the server**: `page.tsx` calls `renderArticleHtml()` from `src/lib/article-html.ts` (marked → DOMPurify → YouTube-embed replacement) and passes ready HTML via the `contentHtml` prop. This keeps `marked` + `isomorphic-dompurify` out of the client bundle. DOMPurify allows `iframe` so YouTube URLs become responsive `aspect-video` embeds. `ArticleDetail` is a client component only for the interactive gallery/match header — it no longer parses markdown.
 
 ### Player Season Stats (Pre-aggregated)
 
@@ -208,7 +208,7 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 SQL migrations in `supabase/migrations/` (001–028). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
 
-Migration status: **026** (trigger blocking `profiles.role` self-escalation) — ✅ applied to prod. **028** (`app_settings` / active season) — ✅ applied to prod. **027** (restrict content writes to `service_role` + `deleted_at` on public SELECT) — ⏳ NOT applied; apply only after an admin-panel smoke-test (CRUD an article/match/event), since it changes write RLS on live tables.
+Migration status: **026** (trigger blocking `profiles.role` self-escalation) — ✅ applied to prod. **027** (restrict content writes to `service_role` + `deleted_at` on public SELECT) — ✅ applied to prod (2026-07-02). **028** (`app_settings` / active season) — ✅ applied to prod. All content tables now expose exactly: `Auth users can read all …` (SELECT authenticated), `Public can read …` (SELECT public), `Service role can manage …` (ALL service_role) — direct PostgREST writes by editors are blocked; every mutation must go through a `createServiceClient()` API route.
 
 ### Active season (admin-controlled)
 
@@ -224,7 +224,7 @@ Legacy routes configured in `next.config.ts`: `/fotbal` → `/tym`, `/sokolovna`
 
 ### Security Headers & CSP
 
-`next.config.ts` `headers()` sets a Content-Security-Policy plus HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy on all routes. The CSP allow-list covers the only third parties the site loads: Supabase (`*.supabase.co` for images/realtime), YouTube (`frame-src`/`img-src`), and Google Maps (`frame-src www.google.com`). It uses `'unsafe-inline'` for script/style (Next injects an inline bootstrap; Tailwind/framer-motion emit inline styles) — **if you add a new external resource (font CDN, analytics, embed), update the CSP or it will be blocked.**
+`next.config.ts` `headers()` sets a Content-Security-Policy plus HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy on all routes. The CSP allow-list covers the only third parties the site loads: Supabase (`*.supabase.co` for images/realtime), YouTube (`frame-src`/`img-src`), and Google Maps (`frame-src www.google.com`). It uses `'unsafe-inline'` for script/style (Next injects an inline bootstrap; Tailwind/framer-motion emit inline styles) — **if you add a new external resource (font CDN, analytics, embed), update the CSP or it will be blocked.** `'unsafe-eval'` is added to `script-src` **only in development** (`process.env.NODE_ENV === "development"`) because Turbopack HMR / React dev tooling require `eval()`; production stays strict (React prod never uses eval). Without the dev exception, `npm run dev` breaks all client interactivity.
 
 ### Sitemap & Robots
 
