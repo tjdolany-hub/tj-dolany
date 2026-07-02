@@ -121,14 +121,14 @@ export default function TymClient({
           </h2>
         </AnimatedSection>
 
-        {grouped.map((group) => (
+        {grouped.map((group, groupIndex) => (
           <AnimatedSection key={group.position} className="mb-12">
             <h3 className="text-lg font-bold text-text mb-6 flex items-center justify-center gap-3">
               <span className="w-6 h-0.5 bg-brand-red rounded-full" />
               {PLURAL_LABELS[group.position] || group.label}
             </h3>
             <StaggerContainer className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {group.players.map((player) => (
+              {group.players.map((player, playerIndex) => (
                 <StaggerItem key={player.id}>
                   <PlayerCard
                     id={player.id}
@@ -142,6 +142,7 @@ export default function TymClient({
                     photo={player.photo}
                     description={player.description}
                     stats={playerStats?.[player.id] ?? null}
+                    priority={groupIndex === 0 && playerIndex < 6}
                   />
                 </StaggerItem>
               ))}

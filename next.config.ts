@@ -5,9 +5,13 @@ import type { NextConfig } from "next";
 // inline styles (a nonce-based policy would require middleware plumbing). The
 // allow-list covers the only third parties the site loads: Supabase (storage +
 // realtime), YouTube embeds, and the Google Maps iframe.
+// Next.js dev mode (Turbopack HMR + React dev tooling) requires eval(); production
+// never uses it, so 'unsafe-eval' is added only in development to keep prod strict.
+const isDev = process.env.NODE_ENV === "development";
+
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com https://*.ytimg.com",
   "font-src 'self' data:",
