@@ -13,6 +13,7 @@ export async function recomputeSeasonStats(
     .from("match_results")
     .select("id, date")
     .eq("season", season)
+    .eq("match_type", "mistrovsky")
     .is("deleted_at", null);
 
   if (!matches || matches.length === 0) {

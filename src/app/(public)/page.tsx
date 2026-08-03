@@ -56,6 +56,7 @@ export default async function HomePage() {
     supabase
       .from("match_results")
       .select("id, date, opponent, score_home, score_away, is_home, competition, season, article_id, articles(slug)")
+      .eq("match_type", "mistrovsky")
       .is("deleted_at", null)
       .lt("date", now)
       .order("date", { ascending: false })
