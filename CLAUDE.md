@@ -196,6 +196,8 @@ Legacy free-text fields `opponent_scorers` and `opponent_cards` on `match_result
 
 `POST /api/stats/recompute` — authenticated endpoint that recomputes all seasons (one-time backfill or manual refresh).
 
+**Friendly matches never count.** `recomputeSeasonStats()` only pulls `match_results` where `match_type = 'mistrovsky'` — `pratelsky` (přípravné/friendly) matches never contribute to `player_season_stats`, regardless of season. Same rule on the homepage's "poslední zápas / forma" widget (`src/app/(public)/page.tsx`) — its `match_results` query also filters `match_type = 'mistrovsky'`. Friendlies still show up in the `/tym` match history list and get their own article/score header like any other match — they're just excluded from anything that aggregates results into stats or team form.
+
 ### Database Types
 
 Manually maintained in `src/types/database.ts` (not auto-generated from Supabase CLI). Must be updated when DB schema changes.
