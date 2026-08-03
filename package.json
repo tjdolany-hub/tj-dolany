@@ -12,9 +12,9 @@
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.49.0",
     "@types/pdfkit": "^0.17.5",
+    "@types/sanitize-html": "^2.16.1",
     "docx": "^9.6.1",
     "framer-motion": "^12.38.0",
-    "isomorphic-dompurify": "^3.18.0",
     "lucide-react": "^1.7.0",
     "marked": "^17.0.5",
     "next": "^16.2.9",
@@ -22,6 +22,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "resend": "^6.16.0",
+    "sanitize-html": "^2.17.6",
     "sharp": "^0.34.5",
     "zod": "^4.3.6"
   },

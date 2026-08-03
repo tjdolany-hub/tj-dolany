@@ -1,5 +1,5 @@
 import { marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
 function extractYouTubeId(url: string): string | null {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
@@ -17,13 +17,32 @@ function renderContentWithVideo(html: string): string {
   );
 }
 
+const ALLOWED_TAGS = [
+  "h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "hr",
+  "strong", "em", "b", "i", "u", "s", "del",
+  "blockquote", "ul", "ol", "li",
+  "a", "img", "code", "pre",
+  "table", "thead", "tbody", "tr", "td", "th",
+];
+
 /**
  * Render article markdown to sanitized HTML with YouTube embeds.
- * Runs on the server (in ISR page components) so the heavy `marked` +
- * `isomorphic-dompurify` parsers never ship to the client bundle.
+ * Runs on the server (in ISR page components) so the heavy `marked` parser
+ * never ships to the client bundle. Uses `sanitize-html` (pure JS, no jsdom)
+ * instead of DOMPurify — jsdom's html-encoding-sniffer dependency pulls in
+ * an ESM-only package that Turbopack's server bundler can't require(),
+ * crashing every article page in production (works fine locally, breaks
+ * only in the actual deployed build).
  */
 export function renderArticleHtml(content: string): string {
   const rawHtml = marked.parse(content) as string;
-  const sanitized = DOMPurify.sanitize(rawHtml, { ADD_TAGS: ["iframe"], ADD_ATTR: ["allow", "allowfullscreen", "frameborder"] });
+  const sanitized = sanitizeHtml(rawHtml, {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+      img: ["src", "alt", "width", "height"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+  });
   return renderContentWithVideo(sanitized);
 }
