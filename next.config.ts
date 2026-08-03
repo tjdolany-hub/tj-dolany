@@ -33,6 +33,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["jsdom", "isomorphic-dompurify"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
