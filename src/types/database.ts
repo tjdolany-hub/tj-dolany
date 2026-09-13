@@ -21,6 +21,24 @@ export interface Database {
         };
         Relationships: [];
       };
+      site_visits: {
+        Row: {
+          day: string;
+          visitor_hash: string;
+          created_at: string;
+        };
+        Insert: {
+          day: string;
+          visitor_hash: string;
+          created_at?: string;
+        };
+        Update: {
+          day?: string;
+          visitor_hash?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       audit_log: {
         Row: {
           id: string;

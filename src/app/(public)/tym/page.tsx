@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getActiveSeason } from "@/lib/settings";
+import { queryWithRetry, assertLoaded } from "@/lib/supabase/query";
 import type { Metadata } from "next";
 import TymClient from "./TymClient";
 
@@ -20,53 +21,59 @@ export default async function TymPage() {
   const currentSeason = await getActiveSeason(supabase);
 
   const [
-    { data: players }, { data: draws }, { data: matches },
+    playersResult, drawsResult, matchesResult,
     { data: matchScorersDetailed }, { data: matchCardsDetailed },
     { data: oppScorers }, { data: oppCards },
     { data: teamsData }, { data: leagueStandings },
-    { data: allSeasonStats }, { data: currentSeasonStats },
+    allSeasonStatsResult, { data: currentSeasonStats },
     { data: trainingAtt },
   ] = await Promise.all([
-    supabase
+    queryWithRetry("tym/players", () => supabase
       .from("players")
       .select("*")
       .eq("active", true)
       .order("sort_order", { ascending: true })
-      .order("name", { ascending: true }),
-    supabase
+      .order("name", { ascending: true })),
+    queryWithRetry("tym/season_draws", () => supabase
       .from("season_draws")
       .select("id, season, title, image, active, created_at")
       .eq("active", true)
-      .order("created_at", { ascending: false }),
-    supabase
+      .order("created_at", { ascending: false })),
+    queryWithRetry("tym/match_results", () => supabase
       .from("match_results")
       .select("*, articles(slug), match_images(url, alt, sort_order)")
       .is("deleted_at", null)
-      .order("date", { ascending: true }),
-    supabase.from("match_scorers").select("match_id, minute, is_penalty, players(name)"),
-    supabase.from("match_cards").select("match_id, card_type, minute, players(name)"),
-    supabase.from("match_opponent_scorers").select("match_id, name, minute, is_penalty"),
-    supabase.from("match_opponent_cards").select("match_id, name, card_type, minute"),
-    supabase.from("teams").select("keywords, logo_url").order("name"),
-    supabase
+      .order("date", { ascending: true })),
+    queryWithRetry("tym/match_scorers", () => supabase.from("match_scorers").select("match_id, minute, is_penalty, players(name)")),
+    queryWithRetry("tym/match_cards", () => supabase.from("match_cards").select("match_id, card_type, minute, players(name)")),
+    queryWithRetry("tym/match_opponent_scorers", () => supabase.from("match_opponent_scorers").select("match_id, name, minute, is_penalty")),
+    queryWithRetry("tym/match_opponent_cards", () => supabase.from("match_opponent_cards").select("match_id, name, card_type, minute")),
+    queryWithRetry("tym/teams", () => supabase.from("teams").select("keywords, logo_url").order("name")),
+    queryWithRetry("tym/league_standings", () => supabase
       .from("league_standings")
       .select("id, season, variant, position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team")
       .eq("season", currentSeason)
-      .order("position", { ascending: true }),
+      .order("position", { ascending: true })),
     // All seasons stats for the statistics tab
-    supabase
+    queryWithRetry("tym/player_season_stats", () => supabase
       .from("player_season_stats")
-      .select("player_id, season, half, matches, goals, yellows, reds"),
+      .select("player_id, season, half, matches, goals, yellows, reds")),
     // Current season stats for squad section
-    supabase
+    queryWithRetry("tym/player_season_stats_current", () => supabase
       .from("player_season_stats")
       .select("player_id, matches, goals, yellows, reds")
-      .eq("season", currentSeason),
-    supabase
+      .eq("season", currentSeason)),
+    queryWithRetry("tym/training_attendance", () => supabase
       .from("training_attendance")
       .select("player_id, response, trainings!inner(season)")
-      .eq("trainings.season", currentSeason),
+      .eq("trainings.season", currentSeason)),
   ]);
+
+  assertLoaded("tym", { players: playersResult, draws: drawsResult, matches: matchesResult, stats: allSeasonStatsResult });
+  const players = playersResult.data;
+  const draws = drawsResult.data;
+  const matches = matchesResult.data;
+  const allSeasonStats = allSeasonStatsResult.data;
 
   // Build playerStats for squad section from pre-aggregated current season data
   const playerStats: Record<string, { matches: number; goals: number; yellows: number; reds: number }> = {};

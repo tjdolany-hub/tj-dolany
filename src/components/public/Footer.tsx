@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, MapPin } from "lucide-react";
+import VisitorCounter from "./VisitorCounter";
 
 export default function Footer() {
   return (
@@ -98,11 +99,12 @@ export default function Footer() {
       </div>
 
       <div className="relative border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col lg:flex-row justify-between items-center gap-3">
           <p className="text-xs text-gray-400">
             &copy; {new Date().getFullYear()} TJ Dolany. Všechna práva
             vyhrazena.
           </p>
+          <VisitorCounter />
           <a
             href="https://www.carbeat.cz"
             target="_blank"

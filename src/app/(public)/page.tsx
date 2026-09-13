@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getActiveSeason } from "@/lib/settings";
+import { queryWithRetry, assertLoaded } from "@/lib/supabase/query";
 import HomeClient from "./HomeClient";
 
 export const revalidate = 3600;
@@ -15,14 +16,14 @@ export default async function HomePage() {
     recentMatchesResult, standingsResult, allStandingsResult,
     seasonStatsResult, teamsResult,
   ] = await Promise.all([
-    supabase
+    queryWithRetry("home/articles", () => supabase
       .from("articles")
       .select("id, title, slug, summary, category, created_at, updated_at, article_images(url, alt)")
       .eq("published", true)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
-      .limit(5),
-    supabase
+      .limit(5)),
+    queryWithRetry("home/past_event", () => supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type")
       .eq("event_type", "akce")
@@ -30,8 +31,8 @@ export default async function HomePage() {
       .is("deleted_at", null)
       .lt("date", now)
       .order("date", { ascending: false })
-      .limit(1),
-    supabase
+      .limit(1)),
+    queryWithRetry("home/future_events", () => supabase
       .from("calendar_events")
       .select("id, title, description, date, event_type")
       .eq("event_type", "akce")
@@ -39,46 +40,48 @@ export default async function HomePage() {
       .is("deleted_at", null)
       .gte("date", now)
       .order("date", { ascending: true })
-      .limit(2),
-    supabase
+      .limit(2)),
+    queryWithRetry("home/next_match", () => supabase
       .from("match_results")
       .select("opponent, date, is_home, competition, venue")
       .is("deleted_at", null)
       .gte("date", now)
       .order("date", { ascending: true })
-      .limit(1),
-    supabase
+      .limit(1)),
+    queryWithRetry("home/photo_albums", () => supabase
       .from("photo_albums")
       .select("id, title, slug, cover_url, event_date")
       .eq("published", true)
       .order("event_date", { ascending: false })
-      .limit(4),
-    supabase
+      .limit(4)),
+    queryWithRetry("home/recent_matches", () => supabase
       .from("match_results")
       .select("id, date, opponent, score_home, score_away, is_home, competition, season, article_id, articles(slug)")
       .eq("match_type", "mistrovsky")
       .is("deleted_at", null)
       .lt("date", now)
       .order("date", { ascending: false })
-      .limit(5),
-    supabase
+      .limit(5)),
+    queryWithRetry("home/our_standing", () => supabase
       .from("league_standings")
       .select("position, team_name, points")
       .eq("is_our_team", true)
       .eq("variant", "celkem")
       .eq("season", currentSeason)
-      .limit(1),
-    supabase
+      .limit(1)),
+    queryWithRetry("home/league_standings", () => supabase
       .from("league_standings")
       .select("position, team_name, matches_played, wins, draws, losses, goals_for, goals_against, points, is_our_team, variant")
       .eq("season", currentSeason)
-      .order("position", { ascending: true }),
-    supabase
+      .order("position", { ascending: true })),
+    queryWithRetry("home/player_season_stats", () => supabase
       .from("player_season_stats")
       .select("player_id, season, matches, goals, yellows, reds, players(name)")
-      .eq("season", currentSeason),
-    supabase.from("teams").select("keywords, logo_url").order("name"),
+      .eq("season", currentSeason)),
+    queryWithRetry("home/teams", () => supabase.from("teams").select("keywords, logo_url").order("name")),
   ]);
+
+  assertLoaded("home", { articles: articlesResult, recentMatches: recentMatchesResult, stats: seasonStatsResult });
 
   const articles = ((articlesResult.data ?? []) as unknown as {
     id: string;
