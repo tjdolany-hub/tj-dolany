@@ -9,7 +9,8 @@ import {
 import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
 import { findPlayerByName } from "@/lib/player-match";
-import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO, getSeasonList, getSeasonHalf } from "@/lib/utils";
+import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO, getSeasonList } from "@/lib/utils";
+import { SeasonHalfFilter, useSeasonHalfFilter } from "@/components/admin/SeasonHalfFilter";
 import DrawsTab from "./DrawsTab";
 import StandingsTab from "./StandingsTab";
 
@@ -147,8 +148,7 @@ export default function AdminMatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
-  const [season, setSeason] = useState("2025/2026");
-  const [half, setHalf] = useState<"all" | "podzim" | "jaro">("all");
+  const periodFilter = useSeasonHalfFilter("admin-matches-filters");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -168,18 +168,28 @@ export default function AdminMatchesPage() {
 
   // ── Load data ──
 
+  const { ready: filtersReady, seasonsKey } = periodFilter;
+
   const loadMatches = useCallback(() => {
+    if (!filtersReady) return;
+    const seasons = seasonsKey ? seasonsKey.split(",") : [];
     setLoading(true);
-    fetch(`/api/matches?season=${encodeURIComponent(season)}`)
-      .then((r) => r.json())
-      .then((data) => setMatches(Array.isArray(data) ? data : []))
+    Promise.all(seasons.map((s) =>
+      fetch(`/api/matches?season=${encodeURIComponent(s)}`)
+        .then((r) => r.json())
+        .then((data: Match[]) => (Array.isArray(data) ? data : []))
+    ))
+      .then((lists) => setMatches(lists.flat()))
       .finally(() => setLoading(false));
-  }, [season]);
+  }, [seasonsKey, filtersReady]);
 
   useEffect(() => {
     loadMatches();
-    fetch("/api/players").then((r) => r.json()).then((d) => setPlayers(Array.isArray(d) ? d : []));
   }, [loadMatches]);
+
+  useEffect(() => {
+    fetch("/api/players").then((r) => r.json()).then((d) => setPlayers(Array.isArray(d) ? d : []));
+  }, []);
 
   // ── Match form logic ──
 
@@ -457,7 +467,8 @@ export default function AdminMatchesPage() {
       referee: parsed.referee || "",
       delegate: parsed.delegate || "",
       spectators: parsed.spectators?.toString() ?? "",
-      match_number: parsed.match_number || "",
+      // Report never carries our internal number — keep the existing one when re-importing
+      match_number: parsed.match_number || form.match_number,
       match_type: "mistrovsky",
     });
 
@@ -549,10 +560,10 @@ export default function AdminMatchesPage() {
     return { label: "R", color: "bg-yellow-500" };
   };
 
-  // Filter matches by half, sort ascending (oldest first)
-  const filteredMatches = (half === "all" ? matches : matches.filter((m) => {
-    return getSeasonHalf(new Date(m.date)) === half;
-  })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Filter matches by selected season+half combos, sort ascending (oldest first)
+  const filteredMatches = matches
+    .filter((m) => periodFilter.includes(m.date, m.season))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const isMatchPlayed = (m: Match) => new Date(m.date) <= new Date();
 
@@ -560,7 +571,7 @@ export default function AdminMatchesPage() {
 
   // ── Stats ──
   const playerStats = new Map<string, { name: string; matches: number; goals: number }>();
-  matches.forEach((m) => {
+  filteredMatches.forEach((m) => {
     m.match_lineups?.forEach((l) => {
       const name = l.players?.name || "?";
       const existing = playerStats.get(l.player_id) || { name, matches: 0, goals: 0 };
@@ -603,29 +614,13 @@ export default function AdminMatchesPage() {
       {/* ═══ MATCHES TAB ═══ */}
       {activeTab === "matches" && (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex gap-2 flex-wrap">
-              {SEASONS.map((s) => (
-                <button key={s} onClick={() => setSeason(s)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${season === s ? "bg-brand-red text-white" : "bg-surface border border-border text-text-muted hover:text-text"}`}>
-                  {s}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center justify-between gap-3 mb-6">
+            {/* Season/half filter (multi-select, remembered) */}
+            <SeasonHalfFilter filters={periodFilter.filters} onChange={periodFilter.setFilters} />
             <button onClick={() => { resetForm(); setShowForm(!showForm); }}
-              className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
+              className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors shrink-0">
               <Plus size={16} /> Nový zápas
             </button>
-          </div>
-
-          {/* Half filter */}
-          <div className="flex gap-2 mb-6">
-            {([["all", "Vše"], ["podzim", "Podzim"], ["jaro", "Jaro"]] as const).map(([val, label]) => (
-              <button key={val} onClick={() => setHalf(val)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${half === val ? "bg-brand-yellow text-brand-dark" : "bg-surface border border-border text-text-muted"}`}>
-                {label}
-              </button>
-            ))}
           </div>
 
           {/* Stats */}
@@ -1229,7 +1224,7 @@ export default function AdminMatchesPage() {
                 );
               })}
               {filteredMatches.length === 0 && (
-                <p className="text-center text-text-muted py-8">Žádné zápasy pro sezónu {season}</p>
+                <p className="text-center text-text-muted py-8">Žádné zápasy pro vybrané období</p>
               )}
             </div>
           )}

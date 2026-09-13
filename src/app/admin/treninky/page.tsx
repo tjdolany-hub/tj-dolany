@@ -5,7 +5,8 @@ import {
   Upload, CheckCircle, AlertTriangle, Users, Trophy, ClipboardPaste,
   ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
-import { getHoursPrague, formatTimePrague, getSeasonList } from "@/lib/utils";
+import { getHoursPrague, formatTimePrague, getSeasonForDate } from "@/lib/utils";
+import { SeasonHalfFilter, useSeasonHalfFilter } from "@/components/admin/SeasonHalfFilter";
 import { findPlayerByName } from "@/lib/player-match";
 
 // ── Types ──
@@ -57,8 +58,6 @@ interface ParseResult {
 }
 
 // ── Constants ──
-
-const SEASONS = getSeasonList();
 
 const RESPONSE_COLORS: Record<string, string> = {
   jde: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -169,8 +168,8 @@ function getSeason(dateStr: string): string {
 export default function AdminTreninkyPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
-  const [stats, setStats] = useState<PlayerStat[]>([]);
-  const [season, setSeason] = useState("2025/2026");
+  const periodFilter = useSeasonHalfFilter("admin-trainings-filters");
+  const { ready: filtersReady, seasonsKey } = periodFilter;
   const [loading, setLoading] = useState(true);
 
   // Import state
@@ -193,21 +192,42 @@ export default function AdminTreninkyPage() {
   // ── Load data ──
 
   const loadData = useCallback(() => {
+    if (!filtersReady) return;
+    const seasons = seasonsKey ? seasonsKey.split(",") : [];
     setLoading(true);
     Promise.all([
       fetch("/api/players").then((r) => r.json()),
-      fetch(`/api/trainings?season=${encodeURIComponent(season)}`).then((r) => r.json()),
-      fetch(`/api/trainings/stats?season=${encodeURIComponent(season)}`).then((r) => r.json()),
-    ]).then(([p, t, s]) => {
+      ...seasons.map((s) => fetch(`/api/trainings?season=${encodeURIComponent(s)}`).then((r) => r.json())),
+    ]).then(([p, ...lists]) => {
       setPlayers(Array.isArray(p) ? p : []);
-      setTrainings(Array.isArray(t) ? t : []);
-      setStats(Array.isArray(s) ? s : []);
+      setTrainings(lists.flatMap((t) => (Array.isArray(t) ? t : [])));
     }).finally(() => setLoading(false));
-  }, [season]);
+  }, [seasonsKey, filtersReady]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Trainings in the selected season+half periods, oldest first
+  const filteredTrainings = trainings
+    .filter((t) => periodFilter.includes(t.date, t.season))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Attendance stats per player over the filtered trainings (same logic as /api/trainings/stats)
+  const statsMap = new Map<string, { jde: number; nejde: number; neodpovedel: number; total: number }>();
+  for (const t of filteredTrainings) {
+    for (const a of t.training_attendance || []) {
+      const existing = statsMap.get(a.player_id) ?? { jde: 0, nejde: 0, neodpovedel: 0, total: 0 };
+      existing.total++;
+      if (a.response === "jde") existing.jde++;
+      else if (a.response === "nejde") existing.nejde++;
+      else existing.neodpovedel++;
+      statsMap.set(a.player_id, existing);
+    }
+  }
+  const stats: PlayerStat[] = [...statsMap.entries()]
+    .map(([player_id, s]) => ({ player_id, ...s, attendance_rate: s.total > 0 ? Math.round((s.jde / s.total) * 100) : 0 }))
+    .sort((a, b) => b.attendance_rate - a.attendance_rate || b.jde - a.jde);
 
   // ── Parse ──
 
@@ -234,7 +254,7 @@ export default function AdminTreninkyPage() {
 
     const autoSeason = parseResult.columns[0]?.date
       ? getSeason(parseResult.columns[0].date)
-      : season;
+      : getSeasonForDate(new Date());
 
     const body = {
       trainings: parseResult.columns.map((c) => ({
@@ -296,19 +316,10 @@ export default function AdminTreninkyPage() {
       <h1 className="text-3xl font-bold text-text mb-6">Tréninky</h1>
 
       {/* Season filter + import toggle */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex gap-2">
-          {SEASONS.map((s) => (
-            <button key={s} onClick={() => setSeason(s)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                season === s ? "bg-brand-red text-white" : "bg-surface border border-border text-text-muted hover:text-text"
-              }`}>
-              {s}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <SeasonHalfFilter filters={periodFilter.filters} onChange={periodFilter.setFilters} />
         <button onClick={() => setShowImport(!showImport)}
-          className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
+          className="bg-brand-red hover:bg-brand-red-dark text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors shrink-0">
           <Upload size={16} /> Import docházky
         </button>
       </div>
@@ -511,14 +522,14 @@ export default function AdminTreninkyPage() {
       )}
 
       {/* ═══ TRAININGS LIST ═══ */}
-      <h2 className="text-xl font-bold text-text mb-4">Tréninky v sezóně {season}</h2>
+      <h2 className="text-xl font-bold text-text mb-4">Tréninky ve vybraném období</h2>
       {loading ? (
         <p className="text-text-muted">Načítám...</p>
-      ) : trainings.length === 0 ? (
-        <p className="text-text-muted">Žádné tréninky v této sezóně. Importujte data z Excelu.</p>
+      ) : filteredTrainings.length === 0 ? (
+        <p className="text-text-muted">Žádné tréninky ve vybraném období. Importujte data z Excelu.</p>
       ) : (
         <div className="space-y-2">
-          {trainings.map((t) => {
+          {filteredTrainings.map((t) => {
             const d = new Date(t.date);
             const isExpanded = expandedTraining === t.id;
             const attendees = t.training_attendance || [];
