@@ -29,6 +29,8 @@ SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f supabase/migrations/
 $env:SUPABASE_ACCESS_TOKEN="..."; npx supabase db query --linked -f supabase/migrations/025_xxx.sql
 ```
 
+**Supabase dashboard access:** organization `tj-dolany` (Free plan), project `tjdolany` (ref `qntvgaruysxgivospeoi`). Log in via **Continue with GitHub** → the club GitHub account, which itself signs in with Google as `tjdolany@gmail.com`. If the CLI token fails (e.g. 401), run the migration manually in the SQL editor: https://supabase.com/dashboard/project/qntvgaruysxgivospeoi/sql/new (this is how 029 was applied).
+
 ### Windows / PowerShell notes
 
 The repo runs on Windows; the default shell is PowerShell. When invoking CLI tools:
@@ -181,6 +183,18 @@ A single `SportsOrganization` JSON-LD block lives in the root `layout.tsx` `<hea
 
 `src/components/ui/SeasonHalfFilter.tsx` — the one filter UI for season-based lists: two compact multi-select dropdowns (sezóny + Podzim/Jaro); a list item matches when both its season and half are selected. `useSeasonHalfFilter(storageKey)` persists the selection in localStorage (admin Zápasy, Tréninky); public `/tym` (MatchResultsSection, PlayerStatistics) uses the component with local state and passes only seasons that have data. Don't add rows of season/half buttons — use this component (single-season contexts like the standings tab use a plain `<select>`).
 
+### Public Page Data Loading
+
+Homepage and `/tym` wrap every Supabase query in `queryWithRetry(label, () => query)` from `src/lib/supabase/query.ts` (retries once, logs `[supabase] label failed` to Vercel runtime logs). Critical results go through `assertLoaded()`, which throws → `src/app/(public)/error.tsx` ("Nepodařilo se načíst data" + reload) instead of silently rendering empty sections.
+
+### Match Calendar (ICS)
+
+`GET /api/calendar/zapasy.ics` — webcal subscription feed of all non-deleted matches (home/away, league/friendly) from 60 days back; `GET /api/calendar/zapas/[id]` — single match download. Built by `src/lib/ics.ts`; UID `match-<id>@tjdolany.net` is stable so subscribed calendars update events instead of duplicating. UI: `CalendarSubscribe.tsx` + icon on upcoming rows in `MatchResultsSection`.
+
+### Visitor Counter
+
+Footer `VisitorCounter` → `/api/visits` (POST once per browser session records, GET reads; counts today / 7 days / 30 days / total). Table `site_visits` (migration 029, service-role only) stores one row per day per `HMAC(day|ip|user-agent)` keyed with the service role key — no cookies, no IPs stored; bot user-agents skipped.
+
 ### Match Opponent Data
 
 Opponent match data stored in structured tables (not free text):
@@ -216,9 +230,9 @@ Manually maintained in `src/types/database.ts` (not auto-generated from Supabase
 
 ### Migrations
 
-SQL migrations in `supabase/migrations/` (001–028). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
+SQL migrations in `supabase/migrations/` (001–029). Run via Supabase CLI: `SUPABASE_ACCESS_TOKEN=... npx supabase db query --linked -f path/to/file.sql`. Project is linked to ref `qntvgaruysxgivospeoi`. Schema is SQL-first, not ORM-generated.
 
-Migration status: **026** (trigger blocking `profiles.role` self-escalation) — ✅ applied to prod. **027** (restrict content writes to `service_role` + `deleted_at` on public SELECT) — ✅ applied to prod (2026-07-02). **028** (`app_settings` / active season) — ✅ applied to prod. All content tables now expose exactly: `Auth users can read all …` (SELECT authenticated), `Public can read …` (SELECT public), `Service role can manage …` (ALL service_role) — direct PostgREST writes by editors are blocked; every mutation must go through a `createServiceClient()` API route.
+Migration status: **026** (trigger blocking `profiles.role` self-escalation) — ✅ applied to prod. **027** (restrict content writes to `service_role` + `deleted_at` on public SELECT) — ✅ applied to prod (2026-07-02). **028** (`app_settings` / active season) — ✅ applied to prod. **029** (`site_visits` visitor counter) — ✅ applied to prod (2026-09-13, via SQL editor). All content tables now expose exactly: `Auth users can read all …` (SELECT authenticated), `Public can read …` (SELECT public), `Service role can manage …` (ALL service_role) — direct PostgREST writes by editors are blocked; every mutation must go through a `createServiceClient()` API route.
 
 ### Active season (admin-controlled)
 
