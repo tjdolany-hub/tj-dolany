@@ -173,6 +173,14 @@ A single `SportsOrganization` JSON-LD block lives in the root `layout.tsx` `<hea
 
 `src/lib/match-parser.ts` — pure regex parser that takes text copied from the district FA website and returns structured data (date, time, round, competition, teams, score, halftime, goals with minutes, lineups with jersey numbers/positions/cards, referee, venue, spectators). The admin match form has a "Vložit zápis" textarea that calls `parseMatchReport()` and pre-fills all fields. Key design: lineups are parsed BEFORE goals so goal side (home/away) can be determined by cross-referencing scorer names against lineup names. Penalty auto-detection is disabled (two-column text linearization makes it unreliable).
 
+### Match Numbers
+
+`match_results.match_number` is the club's running match counter (text, e.g. "2186"), chronological across seasons — first numbered match is 2174 (jaro 2026). The PUT/POST `/api/matches` handlers auto-assign `max + 1` when a match has a result (score or lineup) and **no** number. The report parser never yields a number, so `handlePasteReport` keeps the existing `form.match_number` — re-importing a report must never clear it (that used to renumber matches). If numbers get out of order, fix them directly in the DB by date order.
+
+### Season/Half Filter
+
+`src/components/ui/SeasonHalfFilter.tsx` — the one filter UI for season-based lists: two compact multi-select dropdowns (sezóny + Podzim/Jaro); a list item matches when both its season and half are selected. `useSeasonHalfFilter(storageKey)` persists the selection in localStorage (admin Zápasy, Tréninky); public `/tym` (MatchResultsSection, PlayerStatistics) uses the component with local state and passes only seasons that have data. Don't add rows of season/half buttons — use this component (single-season contexts like the standings tab use a plain `<select>`).
+
 ### Match Opponent Data
 
 Opponent match data stored in structured tables (not free text):
