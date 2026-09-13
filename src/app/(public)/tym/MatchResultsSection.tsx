@@ -7,6 +7,8 @@ import MatchGallery from "@/components/public/MatchGallery";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
 import { SeasonHalfFilter, type PeriodFilters } from "@/components/ui/SeasonHalfFilter";
+import { CalendarPlus } from "lucide-react";
+import CalendarSubscribe from "./CalendarSubscribe";
 import { formatDateShort, formatTimePrague, isMidnightPrague, getSeasonForDate, getSeasonHalf } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
 import type { Database } from "@/types/database";
@@ -259,7 +261,10 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
           Zápasy — výsledky a program
         </h2>
 
-        <SeasonHalfFilter filters={filters} onChange={setFilters} seasons={availableSeasons} className="justify-center mb-8" />
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+          <SeasonHalfFilter filters={filters} onChange={setFilters} seasons={availableSeasons} className="justify-center" />
+          <CalendarSubscribe />
+        </div>
 
         <div className="bg-surface rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
@@ -350,7 +355,15 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
                               {match.score_home}:{match.score_away}
                             </span>
                           ) : (
-                            <span className="text-text-muted">—</span>
+                            <a
+                              href={`/api/calendar/zapas/${match.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              title="Přidat do kalendáře"
+                              aria-label="Přidat zápas do kalendáře"
+                              className="inline-flex p-1.5 rounded-lg text-text-muted hover:text-brand-red hover:bg-surface-muted transition-colors"
+                            >
+                              <CalendarPlus size={18} />
+                            </a>
                           )}
                         </td>
                         <td className="px-4 py-3 text-text-muted hidden md:table-cell w-40">
