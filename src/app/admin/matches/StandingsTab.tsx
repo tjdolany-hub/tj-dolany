@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Save, Eye } from "lucide-react";
-import { getSeasonList } from "@/lib/utils";
+import { getSeasonList, getSeasonForDate } from "@/lib/utils";
 
 const SEASONS = getSeasonList();
 
@@ -70,7 +70,7 @@ function parseAllVariants(text: string): Record<StandingsVariant, Standing[]> {
 export default function StandingsTab() {
   const [standingsData, setStandingsData] = useState<Record<StandingsVariant, Standing[]>>({ celkem: [], doma: [], venku: [] });
   const [standingsSaving, setStandingsSaving] = useState(false);
-  const [standingsSeason, setStandingsSeason] = useState("2025/2026");
+  const [standingsSeason, setStandingsSeason] = useState(() => getSeasonForDate(new Date()));
   const [standingsPreviewVariant, setStandingsPreviewVariant] = useState<StandingsVariant>("celkem");
   const [standingsText, setStandingsText] = useState("");
 
@@ -136,14 +136,10 @@ export default function StandingsTab() {
     <>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-text">Tabulka soutěže</h2>
-        <div className="flex gap-2">
-          {SEASONS.map((s) => (
-            <button key={s} onClick={() => setStandingsSeason(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${standingsSeason === s ? "bg-brand-red text-white" : "bg-surface border border-border text-text-muted"}`}>
-              {s}
-            </button>
-          ))}
-        </div>
+        <select value={standingsSeason} onChange={(e) => setStandingsSeason(e.target.value)}
+          className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand-red">
+          {SEASONS.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
 
       {/* Textarea for pasting all 3 variants at once */}

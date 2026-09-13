@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
 import { getHoursPrague, formatTimePrague, getSeasonForDate } from "@/lib/utils";
-import { SeasonHalfFilter, useSeasonHalfFilter } from "@/components/admin/SeasonHalfFilter";
+import { SeasonHalfFilter, useSeasonHalfFilter } from "@/components/ui/SeasonHalfFilter";
 import { findPlayerByName } from "@/lib/player-match";
 
 // ── Types ──

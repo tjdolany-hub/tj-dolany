@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { JerseyIcon, BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
-import { ChevronDown } from "lucide-react";
+import { SeasonHalfFilter, type PeriodFilters } from "@/components/ui/SeasonHalfFilter";
 
 export type StatsEntry = {
   player_id: string;
@@ -14,62 +14,10 @@ export type StatsEntry = {
   reds: number;
 };
 
-function SelectDropdown<T extends string | number>({ label, options, value, onChange }: {
-  label: string;
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const selectedLabel = options.find((o) => o.value === value)?.label ?? label;
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ${
-          value !== options[0]?.value
-            ? "bg-brand-red/10 border-brand-red/30 text-brand-red"
-            : "bg-surface border-border text-text-muted hover:text-text hover:bg-surface-muted"
-        }`}
-      >
-        {label}: {selectedLabel}
-        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute z-50 mt-1 bg-surface border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
-          {options.map((o) => (
-            <button
-              key={String(o.value)}
-              onClick={() => { onChange(o.value); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
-                value === o.value ? "bg-brand-red/10 text-brand-red font-semibold" : "text-text-muted hover:bg-surface-muted hover:text-text"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 type SortKey = "matches" | "goals" | "yellows" | "reds";
 
 export default function PlayerStatistics({ players, entries, seasons }: { players: { id: string; name: string }[]; entries: StatsEntry[]; seasons: string[] }) {
-  const [filterSeason, setFilterSeason] = useState<string>("all");
-  const [filterHalf, setFilterHalf] = useState<"all" | "podzim" | "jaro">("all");
+  const [filters, setFilters] = useState<PeriodFilters>(() => ({ seasons, halves: ["podzim", "jaro"] }));
   const [sortBy, setSortBy] = useState<SortKey>("matches");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -79,11 +27,7 @@ export default function PlayerStatistics({ players, entries, seasons }: { player
   };
 
   const rawStats = useMemo(() => {
-    const filtered = entries.filter((e) => {
-      if (filterSeason !== "all" && e.season !== filterSeason) return false;
-      if (filterHalf !== "all" && e.half !== filterHalf) return false;
-      return true;
-    });
+    const filtered = entries.filter((e) => filters.seasons.includes(e.season) && filters.halves.includes(e.half));
 
     const map = new Map<string, { name: string; matches: number; goals: number; yellows: number; reds: number }>();
 
@@ -100,7 +44,7 @@ export default function PlayerStatistics({ players, entries, seasons }: { player
     }
 
     return [...map.values()];
-  }, [entries, players, filterSeason, filterHalf]);
+  }, [entries, players, filters]);
 
   const stats = useMemo(() => {
     const sorted = [...rawStats].sort((a, b) => {
@@ -118,29 +62,7 @@ export default function PlayerStatistics({ players, entries, seasons }: { player
       </h2>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-        <SelectDropdown
-          label="Sezóna"
-          options={[
-            { value: "all", label: "Celkově" },
-            ...seasons.map((s) => ({ value: s, label: s })),
-          ]}
-          value={filterSeason}
-          onChange={(v) => { setFilterSeason(v); if (v === "all") setFilterHalf("all"); }}
-        />
-        {filterSeason !== "all" && (
-          <SelectDropdown
-            label="Období"
-            options={[
-              { value: "all" as "all" | "podzim" | "jaro", label: "Celá sezóna" },
-              { value: "podzim" as "all" | "podzim" | "jaro", label: "Podzim" },
-              { value: "jaro" as "all" | "podzim" | "jaro", label: "Jaro" },
-            ]}
-            value={filterHalf}
-            onChange={setFilterHalf}
-          />
-        )}
-      </div>
+      <SeasonHalfFilter filters={filters} onChange={setFilters} seasons={seasons} className="justify-center mb-6" />
 
       <div className="bg-surface rounded-xl border border-border overflow-hidden max-w-4xl mx-auto">
         <div className="overflow-x-auto">

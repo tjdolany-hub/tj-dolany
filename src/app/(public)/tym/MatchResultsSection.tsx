@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import MatchGallery from "@/components/public/MatchGallery";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { BallIcon, YellowCard, RedCard } from "@/components/ui/StatIcons";
+import { SeasonHalfFilter, type PeriodFilters } from "@/components/ui/SeasonHalfFilter";
 import { formatDateShort, formatTimePrague, isMidnightPrague, getSeasonForDate, getSeasonHalf } from "@/lib/utils";
 import { getTeamLogo, DOLANY_LOGO, type TeamEntry } from "@/lib/team-logos";
 import type { Database } from "@/types/database";
@@ -233,21 +234,20 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
     return [...set].sort((a, b) => b.localeCompare(a));
   }, [matches]);
 
-  const [selectedSeason, setSelectedSeason] = useState(
-    availableSeasons.includes(defaultSeason) ? defaultSeason : availableSeasons[0] || ""
-  );
-  const [selectedHalf, setSelectedHalf] = useState<"podzim" | "jaro">(defaultHalf);
+  const [filters, setFilters] = useState<PeriodFilters>(() => ({
+    seasons: [availableSeasons.includes(defaultSeason) ? defaultSeason : availableSeasons[0] || ""],
+    halves: [defaultHalf],
+  }));
 
   const filteredMatches = useMemo(() => {
     return matches
       .filter((m) => {
         const season = m.season || getSeasonForDate(new Date(m.date));
-        if (season !== selectedSeason) return false;
-        const half = getSeasonHalf(new Date(m.date));
-        return half === selectedHalf;
+        if (!filters.seasons.includes(season)) return false;
+        return filters.halves.includes(getSeasonHalf(new Date(m.date)));
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [matches, selectedSeason, selectedHalf]);
+  }, [matches, filters]);
 
   const isPlayed = (match: MatchResult) => new Date(match.date) <= now;
 
@@ -259,37 +259,7 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
           Zápasy — výsledky a program
         </h2>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-          {availableSeasons.map((s) => (
-            <button
-              key={s}
-              onClick={() => setSelectedSeason(s)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedSeason === s
-                  ? "bg-brand-red text-white"
-                  : "bg-surface border border-border text-text-muted hover:text-text"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex justify-center gap-2 mb-8">
-          {(["podzim", "jaro"] as const).map((half) => (
-            <button
-              key={half}
-              onClick={() => setSelectedHalf(half)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedHalf === half
-                  ? "bg-brand-yellow text-brand-dark"
-                  : "bg-surface border border-border text-text-muted hover:text-text"
-              }`}
-            >
-              {half === "podzim" ? "Podzim" : "Jaro"}
-            </button>
-          ))}
-        </div>
+        <SeasonHalfFilter filters={filters} onChange={setFilters} seasons={availableSeasons} className="justify-center mb-8" />
 
         <div className="bg-surface rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
@@ -400,7 +370,7 @@ export default function MatchResultsSection({ matches, matchEvents, teams }: { m
                 {filteredMatches.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-12 text-center text-text-muted">
-                      Žádné zápasy pro {selectedSeason} – {selectedHalf === "podzim" ? "podzim" : "jaro"}
+                      Žádné zápasy pro vybrané období
                     </td>
                   </tr>
                 )}

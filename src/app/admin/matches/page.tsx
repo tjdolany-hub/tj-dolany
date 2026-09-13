@@ -10,7 +10,7 @@ import ImageUploader from "@/components/admin/ImageUploader";
 import { parseMatchReport } from "@/lib/match-parser";
 import { findPlayerByName } from "@/lib/player-match";
 import { formatTimePrague, getHoursPrague, getMinutesPrague, toPragueISO, getSeasonList } from "@/lib/utils";
-import { SeasonHalfFilter, useSeasonHalfFilter } from "@/components/admin/SeasonHalfFilter";
+import { SeasonHalfFilter, useSeasonHalfFilter } from "@/components/ui/SeasonHalfFilter";
 import DrawsTab from "./DrawsTab";
 import StandingsTab from "./StandingsTab";
 
